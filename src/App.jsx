@@ -1,34 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="app-container">
+      <nav className="navbar">
+        <div className="navbar-brand">
+          <h1>Stats for Strava Config Tool</h1>
+        </div>
+        <div className="navbar-menu">
+          <a href="#home">Home</a>
+          <a href="#settings">Settings</a>
+          <a href="#about">About</a>
+        </div>
+      </nav>
+      
+      <div className="main-layout">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2>Navigation</h2>
+          </div>
+          <ul className="sidebar-menu">
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="#activities">Activities</a></li>
+            <li><a href="#stats">Statistics</a></li>
+            <li><a href="#config">Configuration</a></li>
+            <li><a href="#export">Export</a></li>
+          </ul>
+        </aside>
+        
+        <main className="content-area">
+          {/* Content area ready for the web app's content */}
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   )
 }
 
