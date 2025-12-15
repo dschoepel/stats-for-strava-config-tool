@@ -1,15 +1,93 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react';
 import './App.css'
+import YamlUtility from './components/YamlUtility'
+import SettingsModal from './components/SettingsModal'
+import NextConfigFileList from './components/NextConfigFileList'
+import { loadSettings, saveSettings, getSetting } from './utils/settingsManager'
 
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(true)
+  // Initialize settings
+  const [settings, setSettings] = useState(() => loadSettings());
+  const [isDarkMode, setIsDarkMode] = useState(() => getSetting('ui.theme', 'dark') === 'dark')
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
-  const [currentPage, setCurrentPage] = useState('Main Configuration')
-  const [breadcrumbs, setBreadcrumbs] = useState(['Main Configuration'])
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (typeof window === 'undefined') return 'Configuration';
+    try {
+      const saved = localStorage.getItem('stats-config-current-page');
+      return saved || 'Configuration';
+    } catch {
+      return 'Configuration';
+    }
+  })
+  const [breadcrumbs, setBreadcrumbs] = useState(() => {
+    if (typeof window === 'undefined') return ['Configuration'];
+    try {
+      const saved = localStorage.getItem('stats-config-breadcrumbs');
+      return saved ? JSON.parse(saved) : ['Configuration'];
+    } catch {
+      return ['Configuration'];
+    }
+  })
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => getSetting('ui.sidebarCollapsed', false))
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
 
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode)
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    // Save theme to settings
+    const newSettings = { ...settings };
+    newSettings.ui.theme = newTheme ? 'dark' : 'light';
+    setSettings(newSettings);
+    saveSettings(newSettings);
   }
+
+  const toggleSidebar = () => {
+    const newCollapsed = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newCollapsed);
+    // Save sidebar state to settings
+    const newSettings = { ...settings };
+    newSettings.ui.sidebarCollapsed = newCollapsed;
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  }
+
+  // Save current page and breadcrumbs to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('stats-config-current-page', currentPage);
+      localStorage.setItem('stats-config-breadcrumbs', JSON.stringify(breadcrumbs));
+    } catch (error) {
+      console.error('Error saving navigation state:', error);
+    }
+  }, [currentPage, breadcrumbs])
+
+  // Handle settings changes
+  const handleSettingsChange = (newSettings) => {
+    setSettings(newSettings);
+    // Update UI state based on new settings
+    setIsDarkMode(newSettings.ui.theme === 'dark');
+    setIsSidebarCollapsed(newSettings.ui.sidebarCollapsed);
+  }
+
+  // Listen for settings changes from other parts of the app
+  useEffect(() => {
+    const handleSettingsChangedEvent = (event) => {
+      handleSettingsChange(event.detail);
+    };
+    
+    const handleSettingsResetEvent = () => {
+      const defaultSettings = loadSettings();
+      handleSettingsChange(defaultSettings);
+    };
+
+    window.addEventListener('settingsChanged', handleSettingsChangedEvent);
+    window.addEventListener('settingsReset', handleSettingsResetEvent);
+
+    return () => {
+      window.removeEventListener('settingsChanged', handleSettingsChangedEvent);
+      window.removeEventListener('settingsReset', handleSettingsResetEvent);
+    };
+  }, []);
 
   const handleNavClick = (page, parentPage = null) => {
     if (parentPage) {
@@ -30,11 +108,19 @@ function App() {
     <div className={`app-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
       <nav className="navbar">
         <div className="navbar-brand">
+          <button 
+            className="mobile-menu-toggle"
+            onClick={toggleSidebar}
+            aria-label="Toggle menu"
+          >
+            ☰
+          </button>
+          <img src="/logo.svg" alt="Stats for Strava" className="app-logo" />
           <h1>Stats for Strava Config Tool</h1>
         </div>
         <div className="navbar-menu">
-          <a href="#home">Home</a>
-          <a href="#settings">Settings</a>
+          <a href="#home" onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}>Home</a>
+          <a href="#settings" onClick={(e) => { e.preventDefault(); setShowSettingsModal(true); }}>Settings</a>
           <a href="#about">About</a>
           <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
             {isDarkMode ? '☀️' : '🌙'}
@@ -43,9 +129,16 @@ function App() {
       </nav>
       
       <div className="main-layout">
-        <aside className="sidebar">
+        <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : 'show'}`}>
           <div className="sidebar-header">
             <h2>Navigation</h2>
+            <button 
+              className="sidebar-toggle"
+              onClick={toggleSidebar}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isSidebarCollapsed ? '▶' : '◀'}
+            </button>
           </div>
           <ul className="sidebar-menu">
             <li>
@@ -54,12 +147,20 @@ function App() {
                   href="#main-config" 
                   onClick={(e) => {
                     e.preventDefault()
-                    handleNavClick('Main Configuration')
-                    setIsMainConfigExpanded(!isMainConfigExpanded)
+                    handleNavClick('Configuration')
+                    // When sidebar is collapsed, expand both sidebar and submenu
+                    if (isSidebarCollapsed) {
+                      setIsSidebarCollapsed(false)
+                      setIsMainConfigExpanded(true)
+                    } else {
+                      setIsMainConfigExpanded(!isMainConfigExpanded)
+                    }
                   }}
                   className="menu-item-with-toggle"
+                  title="Configuration"
                 >
-                  Main Configuration
+                  <span className="menu-icon">⚙️</span>
+                  <span className="menu-text">Configuration</span>
                 </a>
                 <button 
                   className="expand-toggle"
@@ -71,27 +172,35 @@ function App() {
               </div>
               {isMainConfigExpanded && (
                 <ul className="submenu">
-                  <li><a href="#general" onClick={(e) => { e.preventDefault(); handleNavClick('General', 'Main Configuration') }}>General</a></li>
-                  <li><a href="#athlete" onClick={(e) => { e.preventDefault(); handleNavClick('Athlete', 'Main Configuration') }}>Athlete</a></li>
-                  <li><a href="#appearance" onClick={(e) => { e.preventDefault(); handleNavClick('Appearance', 'Main Configuration') }}>Appearance</a></li>
-                  <li><a href="#import" onClick={(e) => { e.preventDefault(); handleNavClick('Import', 'Main Configuration') }}>Import</a></li>
-                  <li><a href="#metrics" onClick={(e) => { e.preventDefault(); handleNavClick('Metrics', 'Main Configuration') }}>Metrics</a></li>
-                  <li><a href="#gear" onClick={(e) => { e.preventDefault(); handleNavClick('Gear', 'Main Configuration') }}>Gear</a></li>
-                  <li><a href="#zwift" onClick={(e) => { e.preventDefault(); handleNavClick('Zwift', 'Main Configuration') }}>Zwift</a></li>
-                  <li><a href="#integrations" onClick={(e) => { e.preventDefault(); handleNavClick('Integrations', 'Main Configuration') }}>Integrations</a></li>
-                  <li><a href="#scheduling" onClick={(e) => { e.preventDefault(); handleNavClick('Scheduling Daemon', 'Main Configuration') }}>Scheduling Daemon</a></li>
+                  <li><a href="#general" onClick={(e) => { e.preventDefault(); handleNavClick('General', 'Configuration') }} title="General"><span className="menu-icon">🔧</span><span className="menu-text">General</span></a></li>
+                  <li><a href="#athlete" onClick={(e) => { e.preventDefault(); handleNavClick('Athlete', 'Configuration') }} title="Athlete"><span className="menu-icon">👤</span><span className="menu-text">Athlete</span></a></li>
+                  <li><a href="#appearance" onClick={(e) => { e.preventDefault(); handleNavClick('Appearance', 'Configuration') }} title="Appearance"><span className="menu-icon">🎨</span><span className="menu-text">Appearance</span></a></li>
+                  <li><a href="#import" onClick={(e) => { e.preventDefault(); handleNavClick('Import', 'Configuration') }} title="Import"><span className="menu-icon">📥</span><span className="menu-text">Import</span></a></li>
+                  <li><a href="#metrics" onClick={(e) => { e.preventDefault(); handleNavClick('Metrics', 'Configuration') }} title="Metrics"><span className="menu-icon">📊</span><span className="menu-text">Metrics</span></a></li>
+                  <li><a href="#gear" onClick={(e) => { e.preventDefault(); handleNavClick('Gear', 'Configuration') }} title="Gear"><span className="menu-icon">🚴</span><span className="menu-text">Gear</span></a></li>
+                  <li><a href="#zwift" onClick={(e) => { e.preventDefault(); handleNavClick('Zwift', 'Configuration') }} title="Zwift"><span className="menu-icon">🖥️</span><span className="menu-text">Zwift</span></a></li>
+                  <li><a href="#integrations" onClick={(e) => { e.preventDefault(); handleNavClick('Integrations', 'Configuration') }} title="Integrations"><span className="menu-icon">🔗</span><span className="menu-text">Integrations</span></a></li>
+                  <li><a href="#scheduling" onClick={(e) => { e.preventDefault(); handleNavClick('Scheduling Daemon', 'Configuration') }} title="Scheduling Daemon"><span className="menu-icon">⏰</span><span className="menu-text">Scheduling Daemon</span></a></li>
                 </ul>
               )}
             </li>
-            <li><a href="#activities" onClick={(e) => { e.preventDefault(); handleNavClick('Activities') }}>Activities</a></li>
-            <li><a href="#stats" onClick={(e) => { e.preventDefault(); handleNavClick('Statistics') }}>Statistics</a></li>
-            <li><a href="#config" onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}>Configuration</a></li>
-            <li><a href="#export" onClick={(e) => { e.preventDefault(); handleNavClick('Export') }}>Export</a></li>
+            <li><a href="#activities" onClick={(e) => { e.preventDefault(); handleNavClick('Activities') }} title="Activities"><span className="menu-icon">🏃</span><span className="menu-text">Activities</span></a></li>
+            <li><a href="#stats" onClick={(e) => { e.preventDefault(); handleNavClick('Statistics') }} title="Statistics"><span className="menu-icon">📈</span><span className="menu-text">Statistics</span></a></li>
+            <li><a href="#yaml-utility" onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility') }} title="YAML Utility"><span className="menu-icon">📄</span><span className="menu-text">YAML Utility</span></a></li>
+            <li><a href="#export" onClick={(e) => { e.preventDefault(); handleNavClick('Export') }} title="Export"><span className="menu-icon">📤</span><span className="menu-text">Export</span></a></li>
           </ul>
         </aside>
         
         <main className="content-area">
-          <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <nav className="breadcrumbs" aria-label="Breadcrumb" suppressHydrationWarning={true}>
+            <a 
+              href="#" 
+              onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}
+              className="breadcrumb-home"
+              title="Go to Configuration"
+            >
+              🏠
+            </a>
             {breadcrumbs.map((crumb, index) => (
               <span key={index}>
                 {index > 0 && <span className="breadcrumb-separator"> / </span>}
@@ -106,11 +215,29 @@ function App() {
             ))}
           </nav>
           <div className="content-body">
-            <h2>{currentPage}</h2>
-            {/* Content for {currentPage} will be displayed here */}
+            {currentPage === 'YAML Utility' ? (
+              <YamlUtility />
+            ) : currentPage === 'Configuration' ? (
+              <>
+                <h2>{currentPage}</h2>
+                <NextConfigFileList />
+              </>
+            ) : (
+              <>
+                <h2>{currentPage}</h2>
+                {/* Content for {currentPage} will be displayed here */}
+              </>
+            )}
           </div>
         </main>
       </div>
+      
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        onSettingsChange={handleSettingsChange}
+      />
     </div>
   )
 }

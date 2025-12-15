@@ -43,11 +43,33 @@
   z-index: 1000;
 }
 
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-logo {
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+}
+
 .navbar-brand h1 {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
   color: white;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
 }
 
 .navbar-menu {
@@ -103,13 +125,114 @@
   padding: 1.5rem 0;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+  overflow: visible;
+}
+
+.sidebar.collapsed .sidebar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.sidebar.collapsed .sidebar-header h2 {
+  display: none;
+}
+
+.sidebar.collapsed .menu-text {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1.2rem;
+  border-radius: 4px;
+}
+
+.sidebar.collapsed .sidebar-toggle:hover {
+  color: #fc4c02;
+  background-color: var(--bg-tertiary);
+}
+
+.sidebar.collapsed .expand-toggle {
+  display: none;
+}
+
+.sidebar.collapsed .submenu {
+  display: none;
+}
+
+.sidebar.collapsed .menu-item-with-toggle {
+  justify-content: center;
+  padding: 0.75rem 0;
+}
+
+.sidebar.collapsed .menu-item-wrapper {
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar.collapsed .sidebar-menu a {
+  justify-content: center;
+  padding: 0.75rem 0;
+  width: 100%;
+  text-align: center;
+}
+
+.sidebar.collapsed .menu-icon {
+  margin: 0;
+  font-size: 1.3rem;
+  display: inline-block;
+}
+
+/* Tooltip styles for collapsed sidebar */
+.sidebar.collapsed .sidebar-menu a::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 1000;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar.collapsed .sidebar-menu a:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .sidebar-header {
   padding: 0 1.5rem 1rem;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .sidebar-header h2 {
@@ -117,6 +240,25 @@
   font-weight: 600;
   margin: 0;
   color: #fc4c02;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1rem;
+  transition: color 0.2s;
+  border-radius: 4px;
+  flex-shrink: 0;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.sidebar-toggle:hover {
+  color: #fc4c02;
+  background-color: var(--bg-tertiary);
 }
 
 .sidebar-menu {
@@ -130,16 +272,30 @@
 }
 
 .sidebar-menu a {
-  display: block;
+  display: flex;
+  align-items: center;
   padding: 0.75rem 1.5rem;
   color: var(--text-primary);
   text-decoration: none;
   transition: background-color 0.2s;
+  position: relative;
 }
 
 .sidebar-menu a:hover {
   background-color: var(--bg-tertiary);
   color: #fc4c02;
+}
+
+.menu-icon {
+  display: inline-block;
+  margin-right: 0.75rem;
+  font-size: 1.2rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+.menu-text {
+  flex: 1;
 }
 
 /* Menu Item with Toggle */
@@ -180,7 +336,7 @@
 }
 
 .submenu a {
-  padding: 0.6rem 1.5rem 0.6rem 3rem;
+  padding: 0.6rem 1.5rem 0.6rem 2.5rem;
   font-size: 0.9rem;
   color: var(--text-secondary);
 }
@@ -188,6 +344,12 @@
 .submenu a:hover {
   color: #fc4c02;
   background-color: var(--bg-secondary);
+}
+
+.submenu .menu-icon {
+  margin-right: 0.5rem;
+  font-size: 1rem;
+  min-width: 16px;
 }
 
 /* Content Area */
@@ -223,6 +385,22 @@
   font-weight: 600;
 }
 
+.breadcrumb-home {
+  color: var(--text-secondary);
+  margin-right: 0.75rem;
+  font-size: 1.1em;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  transition: color 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+
+.breadcrumb-home:hover {
+  color: #fc4c02;
+  transform: scale(1.1);
+}
+
 .breadcrumb-separator {
   color: var(--text-secondary);
   margin: 0 0.5rem;
@@ -239,4 +417,86 @@
   color: var(--text-primary);
   font-size: 1.8rem;
   font-weight: 600;
+}
+
+/* Tooltip arrow for collapsed sidebar */
+.sidebar.collapsed .sidebar-menu a::before {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: var(--bg-tertiary);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 1001;
+}
+
+.sidebar.collapsed .sidebar-menu a:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .navbar-brand h1 {
+    font-size: 1.2rem;
+  }
+  
+  .app-logo {
+    height: 28px;
+    width: 28px;
+  }
+  
+  .mobile-menu-toggle {
+    display: block;
+  }
+  
+  .navbar-menu {
+    display: none; /* Hide full menu on mobile */
+  }
+  
+  .main-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    border-right: 1px solid var(--border-color);
+  }
+  
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+  
+  .content-area {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .breadcrumbs {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .breadcrumb-home {
+    font-size: 1.2rem;
+  }
 }
