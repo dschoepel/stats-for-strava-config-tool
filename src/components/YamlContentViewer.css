@@ -171,12 +171,13 @@
 }
 
 .yaml-code {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', 'SF Mono', 'Cascadia Code', 'Roboto Mono', 'Source Code Pro', 'Menlo', 'DejaVu Sans Mono', monospace !important;
   font-size: 14px;
   line-height: 1.5;
-  white-space: pre;
+  white-space: pre !important;
   padding: 16px;
   font-weight: 400;
+  tab-size: 2 !important;
 }
 
 .code-line {
@@ -201,10 +202,10 @@
 
 .line-text {
   flex: 1;
-  white-space: pre;
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
+  white-space: pre !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
   letter-spacing: 0.01em;
 }
 

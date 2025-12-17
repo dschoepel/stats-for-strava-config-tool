@@ -30,6 +30,237 @@
   font-size: 0.9em;
 }
 
+/* Info Cards - Consistent styling for configuration mode and section mapping */
+.info-card {
+  margin-top: 1rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-1px);
+  border-color: #fc4c02;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+  background: transparent;
+  border-bottom: none;
+}
+
+.info-card-header.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.info-card-header.clickable:hover {
+  background: var(--bg-primary);
+}
+
+.info-card-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(252, 76, 2, 0.1);
+  border-radius: 6px;
+  color: #fc4c02;
+}
+
+.info-card-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  flex-grow: 1;
+}
+
+.section-count {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.expand-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-toggle:hover {
+  background: var(--bg-secondary);
+  color: #fc4c02;
+}
+
+.mode-badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.mode-badge.single-file {
+  background: #fc4c02;
+  color: white;
+}
+
+.mode-badge.multi-file {
+  background: rgba(252, 76, 2, 0.8);
+  color: white;
+}
+
+.mode-badge.unknown {
+  background: rgba(255, 193, 7, 0.8);
+  color: #856404;
+}
+
+.mode-badge.invalid {
+  background: rgba(220, 53, 69, 0.8);
+  color: white;
+}
+
+.info-card-content {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+}
+
+.info-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.info-description.error {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+/* Dark mode styles */
+.dark-mode .mode-badge.single-file {
+  background: #fc4c02;
+  color: white;
+}
+
+.dark-mode .mode-badge.multi-file {
+  background: rgba(252, 76, 2, 0.9);
+  color: white;
+}
+
+.dark-mode .mode-badge.unknown {
+  background: rgba(255, 193, 7, 0.9);
+  color: #1a1a1a;
+}
+
+.dark-mode .mode-badge.invalid {
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+}
+
+.dark-mode .info-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .info-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Section Mapping Grid */
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.mapping-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mapping-item:hover {
+  transform: translateY(-1px);
+  border-color: #fc4c02;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-name {
+  font-weight: 600;
+  color: #fc4c02;
+  background: rgba(252, 76, 2, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  min-width: 0;
+  flex-shrink: 0;
+  border: 1px solid rgba(252, 76, 2, 0.2);
+  font-size: 0.85rem;
+}
+
+.mapping-arrow {
+  color: var(--text-secondary);
+  font-weight: bold;
+  flex-shrink: 0;
+  font-size: 1.1em;
+}
+
+.mapping-item .file-name {
+  color: var(--text-secondary);
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.8em;
+  background: var(--bg-secondary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  min-width: 0;
+  word-break: break-all;
+  border: 1px solid var(--border-color);
+  flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+  .mapping-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .mapping-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.25rem;
+  }
+  
+  .mapping-arrow {
+    transform: rotate(90deg);
+  }
+}
+
 .file-list-controls {
   margin-bottom: 1.5rem;
 }
@@ -428,7 +659,7 @@
 
 /* Dark/Light theme support */
 .app-container.dark-mode .config-file-list {
-  --bg-primary: #2d3436;
+  --bg-primary: #1A1A1A;
   --bg-secondary: #636e72;
   --bg-tertiary: #636e72;
   --text-primary: #ddd;

@@ -3,9 +3,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import crypto from 'crypto';
 
 // Configure runtime to use Node.js
 export const runtime = 'nodejs';
+
+// Calculate SHA-256 hash of file content for change detection
+async function calculateFileHash(filePath) {
+  try {
+    const content = await fs.readFile(filePath);
+    return crypto.createHash('sha256').update(content).digest('hex');
+  } catch (error) {
+    console.warn(`Failed to calculate hash for ${filePath}:`, error.message);
+    return null;
+  }
+}
 
 export async function GET(request) {
   console.log('GET /api/config-files called');
@@ -54,12 +66,14 @@ export async function GET(request) {
         if (fileName === 'config.yaml' || (fileName.startsWith('config-') && fileName.endsWith('.yaml'))) {
           const filePath = path.join(configPath, fileName);
           const stats = await fs.stat(filePath);
+          const fileHash = await calculateFileHash(filePath);
           
           configFiles.push({
             name: fileName,
             path: filePath,
             size: stats.size,
             lastModified: stats.mtime,
+            hash: fileHash,
             isMainConfig: fileName === 'config.yaml'
           });
         }
@@ -128,12 +142,14 @@ export async function POST(request) {
         if (fileName === 'config.yaml' || (fileName.startsWith('config-') && fileName.endsWith('.yaml'))) {
           const filePath = path.join(directory, fileName);
           const stats = await fs.stat(filePath);
+          const fileHash = await calculateFileHash(filePath);
           
           configFiles.push({
             name: fileName,
             path: filePath,
             size: stats.size,
             lastModified: stats.mtime,
+            hash: fileHash,
             isMainConfig: fileName === 'config.yaml'
           });
         }

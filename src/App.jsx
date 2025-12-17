@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './App.css'
 import YamlUtility from './components/YamlUtility'
 import SettingsModal from './components/SettingsModal'
 import NextConfigFileList from './components/NextConfigFileList'
+import ConfigSectionEditor from './components/ConfigSectionEditor'
+import Help from './components/Help'
 import { loadSettings, saveSettings, getSetting } from './utils/settingsManager'
 
 function App() {
@@ -10,26 +12,19 @@ function App() {
   const [settings, setSettings] = useState(() => loadSettings());
   const [isDarkMode, setIsDarkMode] = useState(() => getSetting('ui.theme', 'dark') === 'dark')
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
-  const [currentPage, setCurrentPage] = useState(() => {
-    if (typeof window === 'undefined') return 'Configuration';
-    try {
-      const saved = localStorage.getItem('stats-config-current-page');
-      return saved || 'Configuration';
-    } catch {
-      return 'Configuration';
-    }
-  })
-  const [breadcrumbs, setBreadcrumbs] = useState(() => {
-    if (typeof window === 'undefined') return ['Configuration'];
-    try {
-      const saved = localStorage.getItem('stats-config-breadcrumbs');
-      return saved ? JSON.parse(saved) : ['Configuration'];
-    } catch {
-      return ['Configuration'];
-    }
-  })
+  const [currentPage, setCurrentPage] = useState('Configuration')
+  const [breadcrumbs, setBreadcrumbs] = useState(['Configuration'])
+  const [hasHydrated, setHasHydrated] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => getSetting('ui.sidebarCollapsed', false))
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  
+  // File cache management at app level to persist across navigation
+  const configListRef = useRef(null)
+  const [fileCache, setFileCache] = useState({ files: [], fileHashes: new Map(), directory: null })
+  const [hasConfigInitialized, setHasConfigInitialized] = useState(false)
+  const [sectionToFileMap, setSectionToFileMap] = useState(new Map())
+  const [sectionData, setSectionData] = useState({})
+  const [isLoadingSectionData, setIsLoadingSectionData] = useState(false)
 
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -50,6 +45,26 @@ function App() {
     setSettings(newSettings);
     saveSettings(newSettings);
   }
+
+  // Restore state from localStorage after hydration
+  useEffect(() => {
+    try {
+      const savedPage = localStorage.getItem('stats-config-current-page');
+      const savedBreadcrumbs = localStorage.getItem('stats-config-breadcrumbs');
+      
+      if (savedPage) {
+        setCurrentPage(savedPage);
+      }
+      if (savedBreadcrumbs) {
+        setBreadcrumbs(JSON.parse(savedBreadcrumbs));
+      }
+      
+      setHasHydrated(true);
+    } catch (error) {
+      console.error('Error restoring navigation state:', error);
+      setHasHydrated(true);
+    }
+  }, []);
 
   // Save current page and breadcrumbs to localStorage
   useEffect(() => {
@@ -101,8 +116,171 @@ function App() {
   const handleBreadcrumbClick = (index) => {
     const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
     setBreadcrumbs(newBreadcrumbs)
-    setCurrentPage(newBreadcrumbs[newBreadcrumbs.length - 1])
+    const targetPage = newBreadcrumbs[newBreadcrumbs.length - 1]
+    setCurrentPage(targetPage)
   }
+
+  // Load section data when navigating to a section page
+  const loadSectionData = useCallback(async (sectionName) => {
+    setIsLoadingSectionData(true)
+    try {
+      console.log('Loading section data for:', sectionName)
+      console.log('Available section mappings:', Array.from(sectionToFileMap.keys()))
+      console.log('Section mapping entries:', Array.from(sectionToFileMap.entries()))
+      
+      // Map section names to the appropriate keys in the section mapping
+      const sectionKey = sectionName.toLowerCase()
+      let sectionInfo = null
+      
+      // Get section info from mapping (handle both string and object formats)
+      sectionInfo = sectionToFileMap.get(sectionKey)
+      console.log(`Section info for ${sectionKey}:`, sectionInfo)
+      
+      if (!sectionInfo) {
+        console.log(`No section info found for '${sectionKey}', available keys:`, Array.from(sectionToFileMap.keys()))
+      }
+      
+      // Handle both string filename and full object formats
+      let filePath = null
+      if (typeof sectionInfo === 'string') {
+        // API returned simple mapping with just filename
+        filePath = `${fileCache.directory}/${sectionInfo}`
+        console.log(`Constructed file path from string: ${filePath}`)
+      } else if (sectionInfo && sectionInfo.filePath) {
+        // API returned detailed mapping with full object
+        filePath = sectionInfo.filePath
+        console.log(`Using file path from object: ${filePath}`)
+      }
+      
+      if (filePath) {
+        console.log('Found section info, using file path:', filePath)
+        const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`)
+        const result = await response.json()
+        
+        if (result.success) {
+          // Parse YAML and extract the section data
+          const YAML = await import('yaml')
+          const parsedData = YAML.parse(result.content)
+          console.log('Parsed YAML data:', parsedData)
+          
+          let sectionContent = {}
+          if (sectionName.toLowerCase() === 'athlete') {
+            // Athlete data comes from general.athlete
+            sectionContent = parsedData.general?.athlete || {}
+            console.log('Extracted athlete data:', sectionContent)
+          } else if (sectionName.toLowerCase() === 'general') {
+            // General section excludes athlete data
+            const { athlete: _athlete, ...generalData } = parsedData.general || {}
+            sectionContent = generalData
+            console.log('Extracted general data:', sectionContent)
+          } else {
+            // Other sections are top-level
+            sectionContent = parsedData[sectionName.toLowerCase()] || {}
+            console.log('Extracted section data:', sectionContent)
+          }
+          
+          setSectionData(prev => ({
+            ...prev,
+            [sectionName.toLowerCase()]: sectionContent
+          }))
+        } else {
+          console.error('Failed to load file content:', result.error)
+        }
+      } else {
+        console.error('Section info not found for:', sectionKey)
+      }
+    } catch (error) {
+      console.error('Error loading section data:', error)
+    } finally {
+      setIsLoadingSectionData(false)
+    }
+  }, [sectionToFileMap, fileCache.directory])
+
+  // Save section data
+  const saveSectionData = async (sectionName, data) => {
+    setIsLoadingSectionData(true)
+    try {
+      const sectionInfo = sectionToFileMap.get(sectionName.toLowerCase())
+      
+      // Handle both string filename and full object formats
+      let filePath = null
+      if (typeof sectionInfo === 'string') {
+        filePath = `${fileCache.directory}/${sectionInfo}`
+      } else if (sectionInfo && sectionInfo.filePath) {
+        filePath = sectionInfo.filePath
+      }
+      
+      if (filePath) {
+        const response = await fetch('/api/update-section', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filePath: filePath,
+            sectionName: sectionName.toLowerCase(),
+            sectionData: data,
+            isAthlete: sectionName.toLowerCase() === 'athlete'
+          })
+        })
+        
+        const result = await response.json()
+        if (result.success) {
+          // Reload section data to ensure form reflects actual saved data
+          await loadSectionData(sectionName)
+          
+          // Show success message or toast
+          console.log('Section updated successfully')
+          
+          // Navigate back to Configuration
+          handleNavClick('Configuration')
+        } else {
+          throw new Error(result.error)
+        }
+      }
+    } catch (error) {
+      console.error('Error saving section data:', error)
+      // Show error message
+    } finally {
+      setIsLoadingSectionData(false)
+    }
+  }
+
+  // Load section data when navigating to General or Athlete pages
+  useEffect(() => {
+    if ((currentPage === 'General' || currentPage === 'Athlete') && sectionToFileMap.size > 0) {
+      loadSectionData(currentPage)
+    }
+  }, [currentPage, sectionToFileMap])
+
+  // Determine configuration mode based on available files
+  const detectConfigurationMode = (files) => {
+    const hasMainConfig = files.some(f => f.name === 'config.yaml')
+    const hasConfigFiles = files.some(f => f.name.startsWith('config-') && f.name.endsWith('.yaml'))
+    const totalFiles = files.length
+    
+    // config.yaml must always be present
+    if (!hasMainConfig) {
+      return 'invalid' // Missing required config.yaml
+    }
+    
+    if (totalFiles === 1 && hasMainConfig) {
+      return 'single-file'
+    } else if (hasMainConfig && hasConfigFiles) {
+      return 'multi-file'
+    } else {
+      return 'unknown'
+    }
+  }
+
+  // Calculate configuration mode based on current files
+  const configMode = useMemo(() => {
+    if (fileCache.files && fileCache.files.length > 0) {
+      const mode = detectConfigurationMode(fileCache.files)
+      console.log(`Configuration mode detected: ${mode}`);
+      console.log('Files:', fileCache.files.map(f => f.name));
+      return mode
+    }
+    return null
+  }, [fileCache.files])
 
   return (
     <div className={`app-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
@@ -188,11 +366,12 @@ function App() {
             <li><a href="#stats" onClick={(e) => { e.preventDefault(); handleNavClick('Statistics') }} title="Statistics"><span className="menu-icon">📈</span><span className="menu-text">Statistics</span></a></li>
             <li><a href="#yaml-utility" onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility') }} title="YAML Utility"><span className="menu-icon">📄</span><span className="menu-text">YAML Utility</span></a></li>
             <li><a href="#export" onClick={(e) => { e.preventDefault(); handleNavClick('Export') }} title="Export"><span className="menu-icon">📤</span><span className="menu-text">Export</span></a></li>
+            <li><a href="#help" onClick={(e) => { e.preventDefault(); handleNavClick('Help & Documentation') }} title="Help & Documentation"><span className="menu-icon">❓</span><span className="menu-text">Help & Documentation</span></a></li>
           </ul>
         </aside>
         
         <main className="content-area">
-          <nav className="breadcrumbs" aria-label="Breadcrumb" suppressHydrationWarning={true}>
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
             <a 
               href="#" 
               onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}
@@ -201,7 +380,7 @@ function App() {
             >
               🏠
             </a>
-            {breadcrumbs.map((crumb, index) => (
+            {hasHydrated && breadcrumbs.map((crumb, index) => (
               <span key={index}>
                 {index > 0 && <span className="breadcrumb-separator"> / </span>}
                 <a 
@@ -220,8 +399,38 @@ function App() {
             ) : currentPage === 'Configuration' ? (
               <>
                 <h2>{currentPage}</h2>
-                <NextConfigFileList />
+                <NextConfigFileList 
+                  ref={configListRef}
+                  fileCache={fileCache}
+                  setFileCache={setFileCache}
+                  hasConfigInitialized={hasConfigInitialized}
+                  setHasConfigInitialized={setHasConfigInitialized}
+                  configMode={configMode}
+                  sectionToFileMap={sectionToFileMap}
+                  setSectionToFileMap={setSectionToFileMap}
+                />
               </>
+            ) : currentPage === 'General' ? (
+              <ConfigSectionEditor
+                sectionName="general"
+                initialData={sectionData.general || {}}
+                onSave={(data) => saveSectionData('general', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+              />
+            ) : currentPage === 'Athlete' ? (
+              <>
+                {console.log('Athlete page - sectionData.athlete:', sectionData.athlete)}
+                <ConfigSectionEditor
+                  sectionName="athlete"
+                  initialData={sectionData.athlete || {}}
+                  onSave={(data) => saveSectionData('athlete', data)}
+                  onCancel={() => handleNavClick('Configuration')}
+                  isLoading={isLoadingSectionData}
+                />
+              </>
+            ) : currentPage === 'Help & Documentation' ? (
+              <Help />
             ) : (
               <>
                 <h2>{currentPage}</h2>
