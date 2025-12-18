@@ -6,5 +6,12 @@
   "eslint.validate": [
     "javascript",
     "javascriptreact"
-  ]
+  ],
+  "files.exclude": {
+    "**/.next": true
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/node_modules": true
+  }
 }

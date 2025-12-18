@@ -9,13 +9,13 @@ import { loadSettings, saveSettings, getSetting } from './utils/settingsManager'
 
 function App() {
   // Initialize settings
-  const [settings, setSettings] = useState(() => loadSettings());
-  const [isDarkMode, setIsDarkMode] = useState(() => getSetting('ui.theme', 'dark') === 'dark')
+  const [settings, setSettings] = useState({}); // Will be loaded after hydration
+  const [isDarkMode, setIsDarkMode] = useState(false) // Will be set after hydration
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
   const [currentPage, setCurrentPage] = useState('Configuration')
   const [breadcrumbs, setBreadcrumbs] = useState(['Configuration'])
   const [hasHydrated, setHasHydrated] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => getSetting('ui.sidebarCollapsed', false))
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Will be set after hydration
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   
   // File cache management at app level to persist across navigation
@@ -25,6 +25,7 @@ function App() {
   const [sectionToFileMap, setSectionToFileMap] = useState(new Map())
   const [sectionData, setSectionData] = useState({})
   const [isLoadingSectionData, setIsLoadingSectionData] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -58,6 +59,12 @@ function App() {
       if (savedBreadcrumbs) {
         setBreadcrumbs(JSON.parse(savedBreadcrumbs));
       }
+      
+      // Initialize client-side state after hydration to prevent mismatch
+      const loadedSettings = loadSettings();
+      setSettings(loadedSettings);
+      setIsDarkMode(getSetting('ui.theme', 'dark') === 'dark');
+      setIsSidebarCollapsed(getSetting('ui.sidebarCollapsed', false));
       
       setHasHydrated(true);
     } catch (error) {
@@ -104,7 +111,15 @@ function App() {
     };
   }, []);
 
-  const handleNavClick = (page, parentPage = null) => {
+  const handleNavClick = (page, parentPage = null, skipUnsavedCheck = false) => {
+    // Warn if trying to navigate away with unsaved changes
+    if (!skipUnsavedCheck && hasUnsavedChanges) {
+      if (!window.confirm('You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?')) {
+        return;
+      }
+      setHasUnsavedChanges(false);
+    }
+    
     if (parentPage) {
       setBreadcrumbs([parentPage, page])
     } else {
@@ -135,6 +150,13 @@ function App() {
       // Get section info from mapping (handle both string and object formats)
       sectionInfo = sectionToFileMap.get(sectionKey)
       console.log(`Section info for ${sectionKey}:`, sectionInfo)
+      
+      if (!sectionInfo && sectionKey === 'athlete') {
+        // Fallback: if athlete section not found, try to use general section
+        console.log('Athlete section not found, trying to use general section as fallback')
+        sectionInfo = sectionToFileMap.get('general')
+        console.log('Using general section for athlete data:', sectionInfo)
+      }
       
       if (!sectionInfo) {
         console.log(`No section info found for '${sectionKey}', available keys:`, Array.from(sectionToFileMap.keys()))
@@ -167,7 +189,6 @@ function App() {
           if (sectionName.toLowerCase() === 'athlete') {
             // Athlete data comes from general.athlete
             sectionContent = parsedData.general?.athlete || {}
-            console.log('Extracted athlete data:', sectionContent)
           } else if (sectionName.toLowerCase() === 'general') {
             // General section excludes athlete data
             const { athlete: _athlete, ...generalData } = parsedData.general || {}
@@ -230,8 +251,11 @@ function App() {
           // Show success message or toast
           console.log('Section updated successfully')
           
-          // Navigate back to Configuration
-          handleNavClick('Configuration')
+          // Clear unsaved changes flag and navigate back to Configuration
+          setHasUnsavedChanges(false)
+          
+          // Navigate back to Configuration (skip unsaved check since we just saved)
+          handleNavClick('Configuration', null, true)
         } else {
           throw new Error(result.error)
         }
@@ -249,7 +273,7 @@ function App() {
     if ((currentPage === 'General' || currentPage === 'Athlete') && sectionToFileMap.size > 0) {
       loadSectionData(currentPage)
     }
-  }, [currentPage, sectionToFileMap])
+  }, [currentPage, sectionToFileMap, loadSectionData])
 
   // Determine configuration mode based on available files
   const detectConfigurationMode = (files) => {
@@ -417,18 +441,18 @@ function App() {
                 onSave={(data) => saveSectionData('general', data)}
                 onCancel={() => handleNavClick('Configuration')}
                 isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
               />
             ) : currentPage === 'Athlete' ? (
-              <>
-                {console.log('Athlete page - sectionData.athlete:', sectionData.athlete)}
-                <ConfigSectionEditor
+              <ConfigSectionEditor
                   sectionName="athlete"
                   initialData={sectionData.athlete || {}}
                   onSave={(data) => saveSectionData('athlete', data)}
                   onCancel={() => handleNavClick('Configuration')}
                   isLoading={isLoadingSectionData}
+                  onDirtyChange={setHasUnsavedChanges}
                 />
-              </>
+
             ) : currentPage === 'Help & Documentation' ? (
               <Help />
             ) : (

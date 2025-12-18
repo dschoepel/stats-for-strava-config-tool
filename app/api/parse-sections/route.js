@@ -82,8 +82,8 @@ export async function POST(request) {
               const generalData = yamlData.general;
               console.log('Found general section in', file.name, 'with keys:', Object.keys(generalData || {}));
               
-              // If general contains athlete, map athlete section separately
-              if (generalData?.athlete) {
+              // If general contains athlete, map athlete section separately (even if it's empty/placeholder)
+              if (generalData && typeof generalData === 'object' && 'athlete' in generalData) {
                 console.log('Creating athlete mapping for', file.name);
                 const athleteInfo = {
                   fileName: file.name,

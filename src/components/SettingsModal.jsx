@@ -1,23 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import SportsListEditor from './SportsListEditor';
 import { loadSettings, saveSettings, resetSettings, exportSettingsAsYaml, importSettingsFromYaml } from '../utils/settingsManager';
 import './SettingsModal.css';
 
 const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
-  const [settings, setSettings] = useState(() => loadSettings());
+  const [settings, setSettings] = useState({}); // Will be loaded when modal opens
   const [activeTab, setActiveTab] = useState('ui');
   const [isDirty, setIsDirty] = useState(false);
+  const [sportsListDirty, setSportsListDirty] = useState(false);
   const [importExportMode, setImportExportMode] = useState(null); // 'import' or 'export'
   const [yamlContent, setYamlContent] = useState('');
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize settings when modal opens
-  if (isOpen && !isInitialized) {
-    setSettings(loadSettings());
-    setIsDirty(false);
-    setIsInitialized(true);
-  } else if (!isOpen && isInitialized) {
-    setIsInitialized(false);
-  }
+  useEffect(() => {
+    if (isOpen) {
+      const loadedSettings = loadSettings();
+      setSettings(loadedSettings);
+      setIsDirty(false);
+      setSportsListDirty(false);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    if (isDirty || sportsListDirty) {
+      const message = sportsListDirty 
+        ? 'You have unsaved changes in the Sports List. These changes will be lost if you close without saving.'
+        : 'You have unsaved settings. These changes will be lost if you close without saving.';
+      
+      if (window.confirm(`${message}\n\nAre you sure you want to close?`)) {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
+
+  const handleTabChange = (newTab) => {
+    if (activeTab === 'sportsList' && sportsListDirty) {
+      if (window.confirm('You have unsaved changes in the Sports List. These changes will be lost if you switch tabs.\n\nAre you sure you want to continue?')) {
+        setSportsListDirty(false);
+        setActiveTab(newTab);
+      }
+    } else if (activeTab !== 'sportsList' && isDirty && newTab === 'sportsList') {
+      // Optionally warn about unsaved settings when switching to sportsList
+      setActiveTab(newTab);
+    } else {
+      setActiveTab(newTab);
+    }
+  };
+
+
 
   const handleSettingChange = (path, value) => {
     const keys = path.split('.');
@@ -36,18 +68,21 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
   };
 
   const handleSave = () => {
-    if (saveSettings(settings)) {
-      setIsDirty(false);
-      onSettingsChange?.(settings);
+    saveSettings(settings);
+    setIsDirty(false);
+    if (onSettingsChange) {
+      onSettingsChange(settings);
     }
   };
 
   const handleReset = () => {
-    if (confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
-      const defaultSettings = resetSettings();
-      setSettings(defaultSettings);
+    if (window.confirm('Are you sure you want to reset all settings to defaults?')) {
+      resetSettings();
+      setSettings(loadSettings());
       setIsDirty(false);
-      onSettingsChange?.(defaultSettings);
+      if (onSettingsChange) {
+        onSettingsChange(loadSettings());
+      }
     }
   };
 
@@ -63,14 +98,14 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
   };
 
   const handleImportConfirm = () => {
-    if (importSettingsFromYaml(yamlContent)) {
-      const importedSettings = loadSettings();
-      setSettings(importedSettings);
-      setIsDirty(false);
+    try {
+      const imported = importSettingsFromYaml(yamlContent);
+      setSettings(imported);
+      setIsDirty(true);
       setImportExportMode(null);
       setYamlContent('');
-      onSettingsChange?.(importedSettings);
-    } else {
+    } catch (err) {
+      console.error('Import error:', err);
       alert('Failed to import settings. Please check the YAML format.');
     }
   };
@@ -94,7 +129,8 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
     { id: 'ui', label: 'User Interface', icon: '🎨' },
     { id: 'files', label: 'Files', icon: '📁' },
     { id: 'editor', label: 'Editor', icon: '📝' },
-    { id: 'performance', label: 'Performance', icon: '⚡' }
+    { id: 'performance', label: 'Performance', icon: '⚡' },
+    { id: 'sportsList', label: 'Sports List', icon: '🏅' }
   ];
 
   return (
@@ -102,7 +138,7 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>⚙️ Settings</h2>
-          <button onClick={onClose} className="modal-close">✕</button>
+          <button onClick={handleClose} className="modal-close">✕</button>
         </div>
 
         {importExportMode ? (
@@ -148,11 +184,11 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
               {tabs.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                 >
                   <span className="tab-icon">{tab.icon}</span>
-                  <span className="tab-label">{tab.label}</span>
+                  <span className="tab-label">{tab.label}{tab.id === 'sportsList' && sportsListDirty ? ' *' : ''}</span>
                 </button>
               ))}
             </div>
@@ -248,7 +284,7 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                     <label>Maximum recent files</label>
                     <input 
                       type="number"
-                      min="5"
+                      min="1"
                       max="50"
                       value={settings.files?.maxRecentFiles || 10}
                       onChange={(e) => handleSettingChange('files.maxRecentFiles', parseInt(e.target.value))}
@@ -264,25 +300,23 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                   <div className="setting-group">
                     <label>Font size</label>
                     <input 
-                      type="range"
+                      type="number"
                       min="10"
                       max="24"
                       value={settings.editor?.fontSize || 14}
                       onChange={(e) => handleSettingChange('editor.fontSize', parseInt(e.target.value))}
                     />
-                    <span className="range-value">{settings.editor?.fontSize || 14}px</span>
                   </div>
 
                   <div className="setting-group">
                     <label>Tab size</label>
-                    <select 
+                    <input 
+                      type="number"
+                      min="2"
+                      max="8"
                       value={settings.editor?.tabSize || 2}
                       onChange={(e) => handleSettingChange('editor.tabSize', parseInt(e.target.value))}
-                    >
-                      <option value={2}>2 spaces</option>
-                      <option value={4}>4 spaces</option>
-                      <option value={8}>8 spaces</option>
-                    </select>
+                    />
                   </div>
 
                   <div className="setting-group">
@@ -349,6 +383,13 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                   </div>
                 </div>
               )}
+
+              {activeTab === 'sportsList' && (
+                <SportsListEditor 
+                  settings={settings} 
+                  onDirtyChange={setSportsListDirty}
+                />
+              )}
             </div>
           </>
         )}
@@ -369,7 +410,7 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
               </div>
               
               <div className="footer-right">
-                <button onClick={onClose} className="btn-secondary">
+                <button onClick={handleClose} className="btn-secondary">
                   Cancel
                 </button>
                 <button 

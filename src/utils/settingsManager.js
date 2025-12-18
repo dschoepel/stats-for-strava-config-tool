@@ -37,6 +37,11 @@ const DEFAULT_SETTINGS = {
  * @returns {Object} Settings object
  */
 export const loadSettings = () => {
+  // Check if we're in a browser environment (client-side)
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return DEFAULT_SETTINGS;
+  }
+  
   try {
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) {
