@@ -4,6 +4,8 @@ import YamlUtility from './components/YamlUtility'
 import SettingsModal from './components/SettingsModal'
 import NextConfigFileList from './components/NextConfigFileList'
 import ConfigSectionEditor from './components/ConfigSectionEditor'
+import AthleteConfigEditor from './components/config/AthleteConfigEditor'
+import GeneralConfigEditor from './components/config/GeneralConfigEditor'
 import Help from './components/Help'
 import { loadSettings, saveSettings, getSetting } from './utils/settingsManager'
 
@@ -435,8 +437,8 @@ function App() {
                 />
               </>
             ) : currentPage === 'General' ? (
-              <ConfigSectionEditor
-                sectionName="general"
+              <GeneralConfigEditor
+                key={JSON.stringify(sectionData.general)}
                 initialData={sectionData.general || {}}
                 onSave={(data) => saveSectionData('general', data)}
                 onCancel={() => handleNavClick('Configuration')}
@@ -444,14 +446,14 @@ function App() {
                 onDirtyChange={setHasUnsavedChanges}
               />
             ) : currentPage === 'Athlete' ? (
-              <ConfigSectionEditor
-                  sectionName="athlete"
-                  initialData={sectionData.athlete || {}}
-                  onSave={(data) => saveSectionData('athlete', data)}
-                  onCancel={() => handleNavClick('Configuration')}
-                  isLoading={isLoadingSectionData}
-                  onDirtyChange={setHasUnsavedChanges}
-                />
+              <AthleteConfigEditor
+                key={JSON.stringify(sectionData.athlete)}
+                initialData={sectionData.athlete || {}}
+                onSave={(data) => saveSectionData('athlete', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
 
             ) : currentPage === 'Help & Documentation' ? (
               <Help />
