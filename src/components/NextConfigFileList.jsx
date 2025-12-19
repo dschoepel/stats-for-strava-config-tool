@@ -2,6 +2,7 @@ import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'rea
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
+import YamlEditorModal from './YamlEditorModal';
 import './ConfigFileList.css';
 
 const NextConfigFileList = forwardRef((props, ref) => {
@@ -22,6 +23,10 @@ const NextConfigFileList = forwardRef((props, ref) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalFileName, setModalFileName] = useState('');
   const [modalFileContent, setModalFileContent] = useState('');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorFileName, setEditorFileName] = useState('');
+  const [editorFileContent, setEditorFileContent] = useState('');
+  const [editorFilePath, setEditorFilePath] = useState('');
   const [lastCheck, setLastCheck] = useState(null);
   const [isSectionMappingExpanded, setIsSectionMappingExpanded] = useState(false);
 
@@ -307,6 +312,41 @@ const NextConfigFileList = forwardRef((props, ref) => {
     setModalFileContent('');
   };
 
+  const handleEditFile = async (fileInfo) => {
+    try {
+      showInfo(`Loading ${fileInfo.name} for editing...`, 2000);
+      
+      const response = await fetch(`/api/file-content?path=${encodeURIComponent(fileInfo.path)}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setEditorFileName(fileInfo.name);
+        setEditorFileContent(result.content);
+        setEditorFilePath(fileInfo.path);
+        setIsEditorOpen(true);
+        showSuccess(`${fileInfo.name} loaded in editor`);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      showError(`Failed to load file: ${error.message}`);
+    }
+  };
+
+  const handleCloseEditor = () => {
+    setIsEditorOpen(false);
+    setEditorFileName('');
+    setEditorFileContent('');
+    setEditorFilePath('');
+  };
+
+  const handleSaveFile = async (result) => {
+    showSuccess(`${editorFileName} saved successfully`);
+    // Refresh the file list to show updated file info
+    await handleRefreshFiles();
+    handleCloseEditor();
+  };
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -463,6 +503,13 @@ const NextConfigFileList = forwardRef((props, ref) => {
                   >
                     👁️ View
                   </button>
+                  <button 
+                    onClick={() => handleEditFile(file)}
+                    className="btn-file-action btn-edit"
+                    title="Edit file"
+                  >
+                    ✏️ Edit
+                  </button>
                 </div>
               </div>
             ))}
@@ -492,6 +539,15 @@ const NextConfigFileList = forwardRef((props, ref) => {
         onClose={handleCloseModal}
         fileName={modalFileName}
         fileContent={modalFileContent}
+      />
+
+      <YamlEditorModal
+        isOpen={isEditorOpen}
+        onClose={handleCloseEditor}
+        fileName={editorFileName}
+        fileContent={editorFileContent}
+        filePath={editorFilePath}
+        onSave={handleSaveFile}
       />
     </div>
   );

@@ -617,6 +617,15 @@
   box-shadow: 0 2px 8px rgba(252, 76, 2, 0.25);
 }
 
+.btn-file-action.btn-edit {
+  background: #3b82f6;
+}
+
+.btn-file-action.btn-edit:hover {
+  background: #2563eb;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
 .no-files-message {
   text-align: center;
   padding: 3rem 2rem;

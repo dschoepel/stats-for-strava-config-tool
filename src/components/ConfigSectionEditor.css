@@ -9,27 +9,28 @@
 }
 
 .editor-header {
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);
 }
 
 .editor-header h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   color: var(--text-primary);
   font-size: 1.75rem;
   font-weight: 600;
 }
 
 .editor-description {
-  margin: 0;
+  margin: 0 0 1rem 0;
   color: var(--text-secondary);
   line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 /* Info Notice */
 .info-notice {
-  margin-top: 1rem;
+  margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
@@ -920,6 +921,378 @@
   background: var(--surface-primary);
 }
 
+/* Weight History Styles */
+.weight-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.weight-history-section {
+  margin-top: 0.5rem;
+}
+
+.weight-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.weight-history-header h5 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-tooltip-trigger {
+  cursor: help;
+  font-size: 0.75rem;
+  color: white;
+  background: #3b82f6;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.info-tooltip-trigger:hover {
+  background: #2563eb;
+  transform: scale(1.1);
+}
+
+.add-weight-entry-btn {
+  background: #fc4c02;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-weight-entry-btn:hover {
+  background: #e8440a;
+  transform: translateY(-1px);
+}
+
+.weight-unit-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.weight-unit-notice .info-icon {
+  font-size: 1rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.weight-unit-notice strong {
+  color: var(--text-primary);
+}
+
+.app-container.dark-mode .weight-unit-notice {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.weight-history-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.weight-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.weight-history-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.weight-history-entry:hover {
+  border-color: #fc4c02;
+  box-shadow: 0 2px 4px rgba(252, 76, 2, 0.1);
+}
+
+.weight-date-input {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.weight-date-input:focus {
+  outline: none;
+  border-color: #fc4c02;
+  box-shadow: 0 0 0 2px rgba(252, 76, 2, 0.1);
+}
+
+.weight-value-input {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  width: 100px;
+  text-align: center;
+}
+
+.weight-value-input:focus {
+  outline: none;
+  border-color: #fc4c02;
+  box-shadow: 0 0 0 2px rgba(252, 76, 2, 0.1);
+}
+
+.weight-unit {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  min-width: 50px;
+}
+
+.remove-weight-entry-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.remove-weight-entry-btn:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* FTP History Styles */
+.ftp-history {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ftp-history-section {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ftp-sport-section {
+  padding: 1rem;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.ftp-sport-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ftp-sport-header h5 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-ftp-entry-btn {
+  background: #fc4c02;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-ftp-entry-btn:hover {
+  background: #e8440a;
+  transform: translateY(-1px);
+}
+
+.ftp-history-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.ftp-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ftp-history-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.ftp-history-entry:hover {
+  border-color: #fc4c02;
+  box-shadow: 0 2px 4px rgba(252, 76, 2, 0.1);
+}
+
+.ftp-date-input {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.ftp-date-input:focus {
+  outline: none;
+  border-color: #fc4c02;
+  box-shadow: 0 0 0 2px rgba(252, 76, 2, 0.1);
+}
+
+.ftp-value-input {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  width: 100px;
+  text-align: center;
+}
+
+.ftp-value-input:focus {
+  outline: none;
+  border-color: #fc4c02;
+  box-shadow: 0 0 0 2px rgba(252, 76, 2, 0.1);
+}
+
+.ftp-unit {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  min-width: 50px;
+}
+
+.remove-ftp-entry-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.remove-ftp-entry-btn:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* Dark mode adjustments for FTP history */
+.app-container.dark-mode .ftp-sport-section {
+  background: var(--surface-secondary);
+}
+
+.app-container.dark-mode .ftp-history-empty {
+  background: var(--surface-primary);
+}
+
+.app-container.dark-mode .ftp-history-entry {
+  background: var(--surface-primary);
+}
+
+.app-container.dark-mode .ftp-date-input {
+  background: var(--surface-secondary);
+}
+
+.app-container.dark-mode .ftp-value-input {
+  background: var(--surface-secondary);
+}
+
+/* Dark mode adjustments for weight history */
+.app-container.dark-mode .weight-history-empty {
+  background: var(--surface-secondary);
+}
+
+.app-container.dark-mode .weight-history-entry {
+  background: var(--surface-secondary);
+}
+
+.app-container.dark-mode .weight-date-input {
+  background: var(--surface-primary);
+}
+
+.app-container.dark-mode .weight-value-input {
+  background: var(--surface-primary);
+}
+
 /* Dark mode adjustments */
 .app-container.dark-mode .zones-table {
   background: var(--surface-secondary);
@@ -1037,5 +1410,56 @@
   
   .max-hr-label {
     font-size: 0.8rem;
+  }
+  
+  .weight-history-entry {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .weight-date-input {
+    min-width: 120px;
+    flex: 1;
+  }
+  
+  .weight-value-input {
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  .remove-weight-entry-btn {
+    width: 100%;
+    margin-left: 0;
+  }
+  
+  /* FTP History Responsive */
+  .ftp-sport-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .add-ftp-entry-btn {
+    width: 100%;
+  }
+  
+  .ftp-history-entry {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .ftp-date-input {
+    min-width: 120px;
+    flex: 1;
+  }
+  
+  .ftp-value-input {
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  .remove-ftp-entry-btn {
+    width: 100%;
+    margin-left: 0;
   }
 }

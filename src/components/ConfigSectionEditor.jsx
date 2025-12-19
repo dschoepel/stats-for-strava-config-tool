@@ -79,6 +79,7 @@ const ConfigSectionEditor = ({
   const [sportsList, setSportsList] = useState(initialSportsList);
   const [showSportModal, setShowSportModal] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [appearanceData, setAppearanceData] = useState(null);
   const schema = React.useMemo(() => getSchemaBySection(sectionName), [sectionName]);
 
   useEffect(() => {
@@ -141,6 +142,52 @@ const ConfigSectionEditor = ({
       loadSports();
     } else {
       console.log('Section is NOT athleteConfig, skipping sports list load');
+    }
+  }, [sectionName]);
+
+  // Load appearance data when editing athlete section to get unitSystem
+  useEffect(() => {
+    if (sectionName === 'athlete') {
+      async function loadAppearanceData() {
+        try {
+          const settings = JSON.parse(localStorage.getItem('config-tool-settings') || '{}');
+          const defaultPath = settings.defaultConfigPath || '';
+          
+          // Get list of config files from the directory
+          const configFilesResponse = await fetch(`/api/config-files?directory=${encodeURIComponent(defaultPath)}`);
+          const configFilesResult = await configFilesResponse.json();
+          
+          if (configFilesResult.success && configFilesResult.files) {
+            // Get section mapping to find appearance config file
+            const parseSectionsResponse = await fetch('/api/parse-sections', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ files: configFilesResult.files })
+            });
+            
+            const parseSectionsResult = await parseSectionsResponse.json();
+            
+            if (parseSectionsResult.success && parseSectionsResult.detailedMapping) {
+              const appearanceSection = parseSectionsResult.detailedMapping.appearance;
+              
+              if (appearanceSection && appearanceSection.filePath) {
+                // Load the appearance config file
+                const fileContentResponse = await fetch(`/api/file-content?path=${encodeURIComponent(appearanceSection.filePath)}`);
+                const fileContentResult = await fileContentResponse.json();
+                
+                if (fileContentResult.success) {
+                  const YAML = await import('yaml');
+                  const parsedData = YAML.parse(fileContentResult.content);
+                  setAppearanceData(parsedData.appearance || null);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading appearance data:', error);
+        }
+      }
+      loadAppearanceData();
     }
   }, [sectionName]);
 
@@ -226,6 +273,30 @@ const ConfigSectionEditor = ({
         const value = getNestedValue(formData, field);
         if (value === undefined || value === null || value === '') {
           newErrors[field] = `${field} is required`;
+        }
+      });
+    }
+    
+    // Validate weight history entries
+    const weightHistory = getNestedValue(formData, 'weightHistory');
+    if (weightHistory && typeof weightHistory === 'object') {
+      Object.entries(weightHistory).forEach(([date, weight]) => {
+        if (weight <= 0) {
+          newErrors['weightHistory'] = `All weight entries must be greater than zero. Entry for ${date} is ${weight}.`;
+        }
+      });
+    }
+    
+    // Validate FTP history entries
+    const ftpHistory = getNestedValue(formData, 'ftpHistory');
+    if (ftpHistory && typeof ftpHistory === 'object') {
+      Object.entries(ftpHistory).forEach(([sport, sportHistory]) => {
+        if (sportHistory && typeof sportHistory === 'object') {
+          Object.entries(sportHistory).forEach(([date, ftp]) => {
+            if (ftp <= 0) {
+              newErrors['ftpHistory'] = `All FTP entries must be greater than zero. ${sport} entry for ${date} is ${ftp}.`;
+            }
+          });
         }
       });
     }
@@ -1017,6 +1088,396 @@ const ConfigSectionEditor = ({
     );
   };
 
+  const renderWeightHistory = (fieldName, fieldSchema, fieldPath, value, hasError) => {
+    let weightHistory = value || {};
+    
+    // Get unit system from appearance settings (imperial = lbs, metric = kg)
+    // First check current form data, then check loaded appearance data
+    let unitSystem = getNestedValue(formData, 'appearance.unitSystem');
+    if (!unitSystem && appearanceData) {
+      unitSystem = appearanceData.unitSystem;
+    }
+    
+    const weightUnit = unitSystem === 'imperial' ? 'lbs' : unitSystem === 'metric' ? 'kg' : 'kg/lbs';
+    const showUnitNote = !unitSystem;
+    
+    // Initialize with default entry if empty
+    if (Object.keys(weightHistory).length === 0) {
+      weightHistory = { "1970-01-01": 0 };
+      // Update form data with default entry on next tick to avoid render issues
+      setTimeout(() => {
+        handleFieldChange(fieldPath, { "1970-01-01": 0 });
+      }, 0);
+    }
+    
+    // Helper to parse date string as local date (not UTC) to avoid timezone issues
+    const parseLocalDate = (dateString) => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+    
+    // Helper to sort weight history entries newest to oldest
+    const sortWeightHistory = (history) => {
+      return Object.entries(history)
+        .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+        .reduce((acc, [date, weight]) => {
+          acc[date] = weight;
+          return acc;
+        }, {});
+    };
+    
+    const handleAddWeightEntry = () => {
+      const today = new Date();
+      const iso = today.toISOString().slice(0, 10);
+      let newDate = iso;
+      let counter = 1;
+      
+      // Find a unique date
+      while (weightHistory[newDate]) {
+        const nextDay = new Date(today);
+        nextDay.setDate(today.getDate() - counter);
+        newDate = nextDay.toISOString().slice(0, 10);
+        counter++;
+      }
+      
+      const updated = { ...weightHistory, [newDate]: 0 };
+      handleFieldChange(fieldPath, sortWeightHistory(updated));
+    };
+    
+    const handleRemoveWeightEntry = (date) => {
+      const updated = { ...weightHistory };
+      delete updated[date];
+      handleFieldChange(fieldPath, sortWeightHistory(updated));
+    };
+    
+    const handleWeightChange = (date, weight) => {
+      const numericWeight = weight === '' ? 0 : parseFloat(weight);
+      if (isNaN(numericWeight)) return;
+      
+      // Validate weight is greater than zero
+      if (numericWeight <= 0) {
+        alert('Weight must be greater than zero.');
+        return;
+      }
+      
+      const updated = { ...weightHistory, [date]: numericWeight };
+      handleFieldChange(fieldPath, sortWeightHistory(updated));
+    };
+    
+    const handleDateChange = (oldDate, selectedDate) => {
+      if (!selectedDate) return;
+      
+      const newDate = selectedDate.toISOString().slice(0, 10);
+      if (newDate === oldDate) return;
+      
+      // Check if date is in the future
+      const today = new Date();
+      if (selectedDate > today) {
+        alert('Date cannot be in the future. Please select today\'s date or a past date.');
+        return;
+      }
+      
+      // Check if new date already exists
+      if (weightHistory[newDate]) {
+        alert('A weight entry for this date already exists.');
+        return;
+      }
+      
+      const updated = { ...weightHistory };
+      updated[newDate] = updated[oldDate];
+      delete updated[oldDate];
+      handleFieldChange(fieldPath, sortWeightHistory(updated));
+    };
+    
+    return (
+      <div key={fieldPath} className="form-field weight-history">
+        <div className="field-label-section">
+          <h4 className="field-label">{fieldSchema.title || fieldName}</h4>
+          {fieldSchema.description && (
+            <p className="field-description">{fieldSchema.description}</p>
+          )}
+        </div>
+        
+        <div className="weight-history-section">
+          <div className="weight-history-header">
+            <h5>
+              Weight Entries
+              <span 
+                className="info-tooltip-trigger" 
+                title="If you don't care about relative power, you can use &quot;1970-01-01&quot;: YOUR_CURRENT_WEIGHT as a single entry in the Weight History to set a fixed weight for all activities."
+              >
+                ?
+              </span>
+            </h5>
+            <button type="button" className="add-weight-entry-btn" onClick={handleAddWeightEntry}>
+              + Add Weight Entry
+            </button>
+          </div>
+          
+          {showUnitNote && (
+            <div className="weight-unit-notice">
+              <span className="info-icon">ℹ️</span>
+              <span>Weight unit depends on <strong>appearance.unitSystem</strong> setting (imperial = lbs, metric = kg). Configure this in the Appearance section.</span>
+            </div>
+          )}
+          
+          {Object.keys(weightHistory).length === 0 && (
+            <div className="weight-history-empty">No weight entries defined.</div>
+          )}
+          
+          <div className="weight-history-list">
+            {Object.entries(weightHistory)
+              .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+              .map(([date, weight]) => (
+                <div key={date} className="weight-history-entry">
+                  <DatePicker
+                    selected={parseLocalDate(date)}
+                    onChange={(selectedDate) => handleDateChange(date, selectedDate)}
+                    maxDate={new Date()}
+                    dateFormat="yyyy-MM-dd"
+                    className="weight-date-input"
+                    showPopperArrow={true}
+                    popperPlacement="bottom-start"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    yearDropdownItemNumber={50}
+                    withPortal
+                    popperModifiers={[
+                      {
+                        name: "offset",
+                        options: {
+                          offset: [0, 5],
+                        },
+                      },
+                    ]}
+                  />
+                  <input
+                    type="number"
+                    value={weight}
+                    onChange={(e) => handleWeightChange(date, e.target.value)}
+                    className="weight-value-input"
+                    placeholder="Weight"
+                    min="0"
+                    step="0.1"
+                  />
+                  <span className="weight-unit">{weightUnit}</span>
+                  <button 
+                    type="button" 
+                    className="remove-weight-entry-btn" 
+                    onClick={() => handleRemoveWeightEntry(date)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
+        
+        {hasError && <span className="field-error">{hasError}</span>}
+      </div>
+    );
+  };
+
+  const renderFtpHistory = (fieldName, fieldSchema, fieldPath, value, hasError) => {
+    let ftpHistory = value || {};
+    
+    // Helper to parse date string as local date (not UTC) to avoid timezone issues
+    const parseLocalDate = (dateString) => {
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+    
+    // Helper to sort FTP history entries newest to oldest
+    const sortFtpHistory = (history) => {
+      return Object.entries(history)
+        .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+        .reduce((acc, [date, ftp]) => {
+          acc[date] = ftp;
+          return acc;
+        }, {});
+    };
+    
+    const handleAddFtpEntry = (sport) => {
+      const today = new Date();
+      const iso = today.toISOString().slice(0, 10);
+      let newDate = iso;
+      let counter = 1;
+      
+      const sportHistory = ftpHistory[sport] || {};
+      
+      // Find a unique date
+      while (sportHistory[newDate]) {
+        const nextDay = new Date(today);
+        nextDay.setDate(today.getDate() - counter);
+        newDate = nextDay.toISOString().slice(0, 10);
+        counter++;
+      }
+      
+      const updatedSportHistory = { ...sportHistory, [newDate]: 0 };
+      const updated = { ...ftpHistory, [sport]: sortFtpHistory(updatedSportHistory) };
+      handleFieldChange(fieldPath, updated);
+    };
+    
+    const handleRemoveFtpEntry = (sport, date) => {
+      const sportHistory = { ...(ftpHistory[sport] || {}) };
+      delete sportHistory[date];
+      
+      const updated = { ...ftpHistory };
+      if (Object.keys(sportHistory).length === 0) {
+        delete updated[sport];
+      } else {
+        updated[sport] = sortFtpHistory(sportHistory);
+      }
+      handleFieldChange(fieldPath, updated);
+    };
+    
+    const handleFtpChange = (sport, date, ftp) => {
+      const numericFtp = ftp === '' ? 0 : parseFloat(ftp);
+      if (isNaN(numericFtp)) return;
+      
+      // Validate FTP is greater than zero
+      if (numericFtp <= 0) {
+        alert('FTP must be greater than zero.');
+        return;
+      }
+      
+      const sportHistory = { ...(ftpHistory[sport] || {}), [date]: numericFtp };
+      const updated = { ...ftpHistory, [sport]: sortFtpHistory(sportHistory) };
+      handleFieldChange(fieldPath, updated);
+    };
+    
+    const handleDateChange = (sport, oldDate, selectedDate) => {
+      if (!selectedDate) return;
+      
+      const newDate = selectedDate.toISOString().slice(0, 10);
+      if (newDate === oldDate) return;
+      
+      // Check if date is in the future
+      const today = new Date();
+      if (selectedDate > today) {
+        alert('Date cannot be in the future. Please select today\'s date or a past date.');
+        return;
+      }
+      
+      const sportHistory = ftpHistory[sport] || {};
+      
+      // Check if new date already exists
+      if (sportHistory[newDate]) {
+        alert('An FTP entry for this date already exists.');
+        return;
+      }
+      
+      const updated = { ...sportHistory };
+      updated[newDate] = updated[oldDate];
+      delete updated[oldDate];
+      const updatedFull = { ...ftpHistory, [sport]: sortFtpHistory(updated) };
+      handleFieldChange(fieldPath, updatedFull);
+    };
+    
+    const renderSportFtpHistory = (sport, sportTitle, tooltip) => {
+      const sportHistory = ftpHistory[sport] || {};
+      
+      return (
+        <div key={sport} className="ftp-sport-section">
+          <div className="ftp-sport-header">
+            <h5>
+              {sportTitle}
+              <span 
+                className="info-tooltip-trigger" 
+                title={tooltip}
+              >
+                ?
+              </span>
+            </h5>
+            <button type="button" className="add-ftp-entry-btn" onClick={() => handleAddFtpEntry(sport)}>
+              + Add {sportTitle} FTP
+            </button>
+          </div>
+          
+          {Object.keys(sportHistory).length === 0 && (
+            <div className="ftp-history-empty">No {sportTitle} FTP entries defined.</div>
+          )}
+          
+          <div className="ftp-history-list">
+            {Object.entries(sportHistory)
+              .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+              .map(([date, ftp]) => (
+                <div key={date} className="ftp-history-entry">
+                  <DatePicker
+                    selected={parseLocalDate(date)}
+                    onChange={(selectedDate) => handleDateChange(sport, date, selectedDate)}
+                    maxDate={new Date()}
+                    dateFormat="yyyy-MM-dd"
+                    className="ftp-date-input"
+                    showPopperArrow={true}
+                    popperPlacement="bottom-start"
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    yearDropdownItemNumber={50}
+                    withPortal
+                    popperModifiers={[
+                      {
+                        name: "offset",
+                        options: {
+                          offset: [0, 5],
+                        },
+                      },
+                    ]}
+                  />
+                  <input
+                    type="number"
+                    value={ftp}
+                    onChange={(e) => handleFtpChange(sport, date, e.target.value)}
+                    className="ftp-value-input"
+                    placeholder="FTP"
+                    min="0"
+                    step="1"
+                  />
+                  <span className="ftp-unit">watts</span>
+                  <button 
+                    type="button" 
+                    className="remove-ftp-entry-btn" 
+                    onClick={() => handleRemoveFtpEntry(sport, date)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
+      );
+    };
+    
+    return (
+      <div key={fieldPath} className="form-field ftp-history">
+        <div className="field-label-section">
+          <h4 className="field-label">{fieldSchema.title || fieldName}</h4>
+          {fieldSchema.description && (
+            <p className="field-description">{fieldSchema.description}</p>
+          )}
+        </div>
+        
+        <div className="ftp-history-section">
+          {renderSportFtpHistory(
+            'cycling', 
+            'Cycling', 
+            'Functional Threshold Power (FTP) is the highest average power (measured in watts) you can sustain for about one hour without fatiguing. Usually tested with a 20-minute all-out effort. Your average power for those 20 minutes is multiplied by 0.95 to estimate your FTP.'
+          )}
+          
+          {renderSportFtpHistory(
+            'running', 
+            'Running', 
+            'Running equivalent (threshold pace or critical power) is using pace at lactate threshold (the fastest pace you can sustain for ~60 minutes). Some advanced setups with running power meters (like Stryd) do calculate a "running FTP," but most runners stick to pace or heart rate zones.'
+          )}
+        </div>
+        
+        {hasError && <span className="field-error">{hasError}</span>}
+      </div>
+    );
+  };
+
   const renderField = (fieldName, fieldSchema, fieldPath = fieldName, skipDescription = false) => {
     const value = getNestedValue(formData, fieldPath);
     const hasError = errors[fieldPath];
@@ -1024,6 +1485,16 @@ const ConfigSectionEditor = ({
     // Special handling for heartRateZones field
     if (fieldName === 'heartRateZones') {
       return renderHeartRateZones(fieldName, fieldSchema, fieldPath, value, hasError);
+    }
+    
+    // Special handling for weightHistory field
+    if (fieldName === 'weightHistory') {
+      return renderWeightHistory(fieldName, fieldSchema, fieldPath, value, hasError);
+    }
+    
+    // Special handling for ftpHistory field
+    if (fieldName === 'ftpHistory') {
+      return renderFtpHistory(fieldName, fieldSchema, fieldPath, value, hasError);
     }
 
     // Handle oneOf schemas (like maxHeartRateFormula)
@@ -1177,16 +1648,17 @@ const ConfigSectionEditor = ({
     <div className="config-section-editor">
       <div className="editor-header">
         <h3>{schema.title || sectionName}</h3>
-        {schema.description && <p className="editor-description">{schema.description}</p>}
-        
-        <div className="info-notice">
-          <div className="info-notice-content">
-            <span className="info-icon">ℹ️</span>
-            <span className="info-text">
-              <strong>Note:</strong> Saving changes through this editor will preserve section headers but may remove embedded comments from YAML files. 
-              This form provides guided input with descriptions and validation.
-            </span>
-          </div>
+      </div>
+      
+      {schema.description && <p className="editor-description">{schema.description}</p>}
+      
+      <div className="info-notice">
+        <div className="info-notice-content">
+          <span className="info-icon">ℹ️</span>
+          <span className="info-text">
+            <strong>Note:</strong> Saving changes with this editor preserves section headers but may remove embedded comments from YAML files. 
+            This form's guided input with descriptions and validation minimizes the need for comments.
+          </span>
         </div>
       </div>
 

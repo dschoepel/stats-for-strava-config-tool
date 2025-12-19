@@ -1,8 +1,27 @@
-import React from 'react';
-import YamlContentViewer from './YamlContentViewer';
+import React, { useEffect, useRef, useState } from 'react';
+import MonacoYamlViewer from './MonacoYamlViewer';
 import './FileViewerModal.css';
 
 const FileViewerModal = ({ isOpen, onClose, fileName, fileContent }) => {
+  const contentRef = useRef(null);
+  const [editorHeight, setEditorHeight] = useState(600);
+
+  useEffect(() => {
+    if (isOpen && contentRef.current) {
+      const updateHeight = () => {
+        const height = contentRef.current?.clientHeight || 600;
+        setEditorHeight(height);
+      };
+      
+      // Initial height calculation
+      setTimeout(updateHeight, 0);
+      
+      // Update on window resize
+      window.addEventListener('resize', updateHeight);
+      return () => window.removeEventListener('resize', updateHeight);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
@@ -21,14 +40,14 @@ const FileViewerModal = ({ isOpen, onClose, fileName, fileContent }) => {
           </button>
         </div>
         
-        <div className="file-viewer-content">
-          <YamlContentViewer
+        <div className="file-viewer-content" ref={contentRef}>
+          <MonacoYamlViewer
             fileName={fileName}
             fileContent={fileContent}
             showFileInfo={false}
             showActions={true}
-            showSearch={true}
             className="modal-viewer"
+            height={`${editorHeight}px`}
           />
         </div>
       </div>

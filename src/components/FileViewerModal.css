@@ -76,19 +76,18 @@
   min-height: 0; /* Important for flex children to shrink */
 }
 
-/* Modal-specific styles for the shared YamlContentViewer */
-.file-viewer-content .yaml-content-viewer.modal-viewer {
-  height: 100%;
+/* Modal-specific styles for the Monaco viewer */
+.file-viewer-content .monaco-yaml-viewer.modal-viewer {
+  flex: 1;
   min-height: 0; /* Important for flex children to shrink */
 }
 
-.file-viewer-content .yaml-content-viewer.modal-viewer .file-info-bar {
+.file-viewer-content .monaco-yaml-viewer.modal-viewer .file-info-bar {
   display: none; /* Hide file info in modal since it's in the header */
 }
 
-/* Ensure the yaml-content-area in modal can scroll properly */
-.file-viewer-content .yaml-content-viewer.modal-viewer .yaml-content-area {
-  overflow: auto;
+/* Ensure the Monaco editor container fills the space properly */
+.file-viewer-content .monaco-yaml-viewer.modal-viewer .monaco-editor-container {
   flex: 1;
   min-height: 0;
 }

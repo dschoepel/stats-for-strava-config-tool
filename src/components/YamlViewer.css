@@ -783,12 +783,12 @@
   color: white;
 }
 
-/* Styles for the shared YamlContentViewer in page context */
-.yaml-viewer .yaml-content-viewer.page-viewer {
+/* Styles for the shared MonacoYamlViewer in page context */
+.yaml-viewer .monaco-yaml-viewer.page-viewer {
   flex: 1;
   min-height: 0;
 }
 
-.yaml-viewer .yaml-content-viewer.page-viewer .yaml-content-area {
+.yaml-viewer .monaco-yaml-viewer.page-viewer .monaco-editor-container {
   border-radius: 0;
 }

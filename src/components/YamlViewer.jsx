@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatFileSize } from '../utils/yamlFileHandler';
 import CombineFilesModal from './CombineFilesModal';
-import YamlContentViewer from './YamlContentViewer';
+import MonacoYamlViewer from './MonacoYamlViewer';
 import './YamlViewer.css';
 
 const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpdated }) => {
@@ -148,17 +148,17 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         </div>
       )}
 
-      <YamlContentViewer
+      <MonacoYamlViewer
         fileName={currentFile.name}
         fileContent={currentFile.content}
         fileSize={currentFile.size}
         lastModified={currentFile.lastModified}
         showFileInfo={true}
         showActions={true}
-        showSearch={true}
         onDownload={handleDownloadFile}
         onCopy={handleCopyFile}
         className="page-viewer"
+        height="100%"
       />
       
       <CombineFilesModal
