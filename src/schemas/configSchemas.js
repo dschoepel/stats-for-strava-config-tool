@@ -227,10 +227,183 @@ export const athleteSchema = {
   }
 };
 
+export const appearanceSchema = {
+  type: "object",
+  title: "Appearance Configuration",
+  description: "Visual customization and display preferences",
+  properties: {
+    locale: {
+      type: "string",
+      title: "Locale",
+      description: "Language and regional settings for the application",
+      enum: ["en_US", "fr_FR", "it_IT", "nl_BE", "de_DE", "pt_BR", "pt_PT", "sv_SE", "zh_CN"],
+      default: "en_US",
+      enumTitles: ["English (US)", "French (France)", "Italian", "Dutch (Belgium)", "German", "Portuguese (Brazil)", "Portuguese (Portugal)", "Swedish", "Chinese"]
+    },
+    unitSystem: {
+      type: "string",
+      title: "Unit System",
+      description: "Measurement system for distance, weight, and other metrics",
+      enum: ["metric", "imperial"],
+      default: "metric",
+      enumTitles: ["Metric (km, kg, °C)", "Imperial (miles, lbs, °F)"]
+    },
+    timeFormat: {
+      type: "integer",
+      title: "Time Format",
+      description: "Time display format (24-hour or 12-hour with AM/PM)",
+      enum: [24, 12],
+      default: 24,
+      enumTitles: ["24-hour (14:30)", "12-hour (2:30 PM)"]
+    },
+    dateFormat: {
+      type: "object",
+      title: "Date Format",
+      description: "Date display formats using PHP date format strings",
+      properties: {
+        short: {
+          type: "string",
+          title: "Short Date Format",
+          description: "Format for short dates (e.g., 'd-m-y' renders as 01-01-25). See https://www.php.net/manual/en/datetime.format.php",
+          default: "d-m-y",
+          examples: ["d-m-y", "m/d/y", "y-m-d"]
+        },
+        normal: {
+          type: "string",
+          title: "Normal Date Format",
+          description: "Format for full dates (e.g., 'd-m-Y' renders as 01-01-2025)",
+          default: "d-m-Y",
+          examples: ["d-m-Y", "m/d/Y", "Y-m-d", "F j, Y"]
+        }
+      },
+      required: ["short", "normal"]
+    },
+    dashboard: {
+      type: "object",
+      title: "Dashboard",
+      description: "Dashboard widget configuration",
+      properties: {
+        layout: {
+          type: ["object", "null"],
+          title: "Dashboard Layout",
+          description: "Custom dashboard widget layout. Leave null to use default layout. For configuration details, visit the documentation.",
+          default: null
+        }
+      }
+    },
+    heatmap: {
+      type: "object",
+      title: "Heatmap Settings",
+      description: "Configuration for activity heatmap visualization",
+      properties: {
+        polylineColor: {
+          type: "string",
+          title: "Polyline Color",
+          description: "Color for route lines on the heatmap. Accepts any valid CSS color (e.g., 'red', '#FF0000', 'rgb(255,0,0)')",
+          default: "#fc6719",
+          pattern: "^(#[0-9A-Fa-f]{3,6}|rgb\\(|rgba\\(|hsl\\(|hsla\\(|[a-z]+).*$",
+          examples: ["#fc6719", "red", "rgb(252, 103, 25)", "rgba(252, 103, 25, 0.8)"]
+        },
+        tileLayerUrl: {
+          oneOf: [
+            {
+              type: "string",
+              title: "Single Tile Layer",
+              description: "URL template for map tiles",
+              default: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+              examples: [
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png"
+              ]
+            },
+            {
+              type: "array",
+              title: "Multiple Tile Layers",
+              description: "Array of tile layer URLs for layered maps (e.g., satellite + labels)",
+              items: {
+                type: "string"
+              },
+              examples: [
+                [
+                  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png",
+                  "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}.png"
+                ]
+              ]
+            }
+          ]
+        },
+        enableGreyScale: {
+          type: "boolean",
+          title: "Enable Grayscale",
+          description: "Apply grayscale styling to the heatmap",
+          default: true
+        }
+      },
+      required: ["polylineColor", "tileLayerUrl", "enableGreyScale"]
+    },
+    photos: {
+      type: "object",
+      title: "Photos Settings",
+      description: "Configuration for activity photos display",
+      properties: {
+        hidePhotosForSportTypes: {
+          type: "array",
+          title: "Hide Photos For Sport Types",
+          description: "Sport types for which photos should be hidden on the photos page. See documentation for supported sport types.",
+          items: {
+            type: "string"
+          },
+          default: [],
+          examples: [["VirtualRide", "VirtualRun"]]
+        },
+        defaultEnabledFilters: {
+          type: "object",
+          title: "Default Enabled Filters",
+          description: "Filters that are enabled by default on the photos page",
+          properties: {
+            sportTypes: {
+              type: "array",
+              title: "Sport Types Filter",
+              description: "Sport types to show by default. See documentation for supported sport types.",
+              items: {
+                type: "string"
+              },
+              default: [],
+              examples: [["Ride", "Run", "Hike"]]
+            },
+            countryCode: {
+              type: ["string", "null"],
+              title: "Country Code Filter",
+              description: "Default country filter using ISO2 country code (e.g., 'US', 'GB', 'FR')",
+              default: null,
+              pattern: "^[A-Z]{2}$",
+              examples: ["US", "GB", "FR", "DE", null]
+            }
+          }
+        }
+      },
+      required: ["hidePhotosForSportTypes", "defaultEnabledFilters"]
+    },
+    sportTypesSortingOrder: {
+      type: "array",
+      title: "Sport Types Sorting Order",
+      description: "Define custom order for sport types (e.g., in dashboard tabs). Sport types not listed will use default ordering. See documentation for supported sport types.",
+      items: {
+        type: "string"
+      },
+      default: [],
+      examples: [["Ride", "Run", "Hike", "Walk", "Swim"]]
+    }
+  },
+  required: ["locale", "unitSystem", "timeFormat", "dateFormat"],
+  additionalProperties: false
+};
+
 // Helper function to get all available schemas
 export const getConfigSchemas = () => ({
   general: generalSchema,
-  athlete: athleteSchema
+  athlete: athleteSchema,
+  appearance: appearanceSchema
 });
 
 // Helper function to get schema by section name

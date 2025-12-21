@@ -1,6 +1,8 @@
 /* eslint-env node */
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
 import * as YAML from 'yaml';
 
 // Configure runtime to use Node.js
@@ -8,9 +10,9 @@ export const runtime = 'nodejs';
 
 export async function POST(request) {
   try {
-    const { path, content } = await request.json();
+    const { path: filePath, content } = await request.json();
     
-    if (!path) {
+    if (!filePath) {
       return NextResponse.json({
         success: false,
         error: 'File path is required'
@@ -24,6 +26,11 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    // Expand tilde to home directory
+    const expandedPath = filePath.startsWith('~') 
+      ? path.join(os.homedir(), filePath.slice(1))
+      : filePath;
+
     // Validate YAML syntax before saving
     try {
       YAML.parse(content);
@@ -34,16 +41,20 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    // Create directory if it doesn't exist
+    const directory = path.dirname(expandedPath);
+    await fs.mkdir(directory, { recursive: true });
+
     // Write the file
-    await fs.writeFile(path, content, 'utf8');
+    await fs.writeFile(expandedPath, content, 'utf8');
 
     // Get file stats for confirmation
-    const stats = await fs.stat(path);
+    const stats = await fs.stat(expandedPath);
 
     return NextResponse.json({
       success: true,
       message: 'File saved successfully',
-      path: path,
+      path: expandedPath,
       size: stats.size,
       lastModified: stats.mtime.toISOString()
     });

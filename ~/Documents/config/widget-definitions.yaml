@@ -1,0 +1,161 @@
+# Widget Definitions for Stats for Strava
+# Generated on 2025-12-21T00:05:32.845Z
+
+mostRecentActivities:
+  name: "mostRecentActivities"
+  displayName: "Most Recent Activities"
+  description: "Displays your most recent activities, providing a quick overview of your latest workouts."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    numberOfActivitiesToDisplay: 5
+
+introText:
+  name: "introText"
+  displayName: "Introduction Text"
+  description: "Displays custom introduction text with a summary of your workout history."
+  allowMultiple: false
+  hasConfig: false
+
+trainingGoals:
+  name: "trainingGoals"
+  displayName: "Training Goals"
+  description: "Define and track your weekly, monthly, yearly and lifetime goals. Note: Disabled by default."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    goals: "[object Object]"
+
+weeklyStats:
+  name: "weeklyStats"
+  displayName: "Weekly Statistics"
+  description: "Summary of your weekly statistics per sport type, including total distance and moving time."
+  allowMultiple: true
+  hasConfig: true
+  configTemplate: |
+    config: {'metricsDisplayOrder': ['distance', 'movingTime', 'elevation']}
+
+peakPowerOutputs:
+  name: "peakPowerOutputs"
+  displayName: "Peak Power Outputs"
+  description: "Displays your peak power outputs, allowing you to track your performance over time."
+  allowMultiple: false
+  hasConfig: false
+
+heartRateZones:
+  name: "heartRateZones"
+  displayName: "Heart Rate Zones"
+  description: "Shows your heart rate zones, helping you understand your training intensity."
+  allowMultiple: false
+  hasConfig: false
+
+activityGrid:
+  name: "activityGrid"
+  displayName: "Activity Grid"
+  description: "Overview of your activities in a GitHub-style graph."
+  allowMultiple: false
+  hasConfig: false
+
+monthlyStats:
+  name: "monthlyStats"
+  displayName: "Monthly Statistics"
+  description: "Displays your monthly statistics and lets you compare your performance with the same months in previous years."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    enableLastXYearsByDefault: 10
+    metricsDisplayOrder: 0
+
+trainingLoad:
+  name: "trainingLoad"
+  displayName: "Training Load"
+  description: "Displays your training load, helping you monitor your training stress and recovery."
+  allowMultiple: false
+  hasConfig: false
+
+weekdayStats:
+  name: "weekdayStats"
+  displayName: "Weekday Statistics"
+  description: "Breakdown of your activities by weekday to see training patterns throughout the week."
+  allowMultiple: false
+  hasConfig: false
+
+dayTimeStats:
+  name: "dayTimeStats"
+  displayName: "Day Time Statistics"
+  description: "Shows breakdown of activities by time of day to understand when you are most active."
+  allowMultiple: false
+  hasConfig: false
+
+distanceBreakdown:
+  name: "distanceBreakdown"
+  displayName: "Distance Breakdown"
+  description: "Breakdown of activities by distance and activity type to see how training distances vary."
+  allowMultiple: false
+  hasConfig: false
+
+yearlyStats:
+  name: "yearlyStats"
+  displayName: "Yearly Statistics"
+  description: "Shows yearly stats per activity type to track long-term training progress."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    enableLastXYearsByDefault: 10
+    metricsDisplayOrder: 0
+
+zwiftStats:
+  name: "zwiftStats"
+  displayName: "Zwift Statistics"
+  description: "Displays detailed stats for your Zwift activities."
+  allowMultiple: false
+  hasConfig: false
+
+gearStats:
+  name: "gearStats"
+  displayName: "Gear Statistics"
+  description: "Displays hours spent per gear."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    includeRetiredGear: true
+
+eddington:
+  name: "eddington"
+  displayName: "Eddington Number"
+  description: "Displays your Eddington number(s). Configure which numbers to display in Eddington settings under metrics configuration."
+  allowMultiple: false
+  hasConfig: false
+
+challengeConsistency:
+  name: "challengeConsistency"
+  displayName: "Challenge Consistency"
+  description: "Displays your consistency in completing challenges. Uses sensible defaults if left unchanged."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    challenges: 0
+
+mostRecentChallengesCompleted:
+  name: "mostRecentChallengesCompleted"
+  displayName: "Most Recent Challenges Completed"
+  description: "Displays your most recent challenges completed."
+  allowMultiple: true
+  hasConfig: true
+  defaultConfig:
+    numberOfChallengesToDisplay: 5
+
+ftpHistory:
+  name: "ftpHistory"
+  displayName: "FTP History"
+  description: "Shows your Functional Threshold Power (FTP) history to track cycling performance over time."
+  allowMultiple: false
+  hasConfig: false
+
+athleteWeightHistory:
+  name: "athleteWeightHistory"
+  displayName: "Athlete Weight History"
+  description: "Shows your weight history (summary of values entered in athlete config section)."
+  allowMultiple: false
+  hasConfig: false
+

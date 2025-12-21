@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { formatFileSize, validateYamlContent } from '../utils/yamlFileHandler';
+import { getSetting } from '../utils/settingsManager';
 import './MonacoYamlViewer.css';
 
 const MonacoYamlViewer = ({ 
@@ -16,6 +17,12 @@ const MonacoYamlViewer = ({
   height = '100%'
 }) => {
   const editorRef = useRef(null);
+  
+  // Get editor settings
+  const fontSize = getSetting('editor.fontSize', 14);
+  const tabSize = getSetting('editor.tabSize', 2);
+  const wordWrap = getSetting('editor.wordWrap', true) ? 'on' : 'off';
+  const showLineNumbers = getSetting('ui.showLineNumbers', true) ? 'on' : 'off';
 
   const handleEditorMount = (editor) => {
     editorRef.current = editor;
@@ -105,10 +112,11 @@ const MonacoYamlViewer = ({
             readOnly: true,
             minimap: { enabled: true },
             scrollBeyondLastLine: false,
-            fontSize: 14,
-            wordWrap: 'off',
+            fontSize: fontSize,
+            wordWrap: wordWrap,
+            tabSize: tabSize,
             automaticLayout: true,
-            lineNumbers: 'on',
+            lineNumbers: showLineNumbers,
             renderWhitespace: 'selection',
             scrollbar: {
               vertical: 'visible',

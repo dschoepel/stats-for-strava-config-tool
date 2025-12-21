@@ -12,16 +12,59 @@
   position: relative;
 }
 
-.modal-tabs {
+.modal-header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
+}
+
+.modal-header h2 {
+  margin: 5px 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.modal-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0 0.5rem 0;  
+  min-height: 60px;  
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-color) var(--bg-secondary);
+  scrollbar-gutter: stable;
+}
+
+.modal-tabs::-webkit-scrollbar {
+  height: 6px;
+  margin-top: 4px;
+}
+
+.modal-tabs::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.modal-tabs::-webkit-scrollbar-thumb {
+  background: var(--accent-color);
+  border-radius: 3px;
+}
+
+.modal-tabs::-webkit-scrollbar-thumb:hover {
+  background: #5a9ae8;
 }
 
 .tab-button {
   background: transparent;
   border: none;
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.25rem;
+  height: 60px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -29,6 +72,8 @@
   transition: all 0.2s;
   color: var(--text-secondary);
   border-bottom: 3px solid transparent;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .tab-button:hover {

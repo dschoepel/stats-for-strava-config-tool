@@ -1,13 +1,22 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './App.css'
 import YamlUtility from './components/YamlUtility'
-import SettingsModal from './components/SettingsModal'
+import SettingsDropdown from './components/SettingsDropdown'
+import UISettingsModal from './components/settings/UISettingsModal'
+import FilesSettingsModal from './components/settings/FilesSettingsModal'
+import EditorSettingsModal from './components/settings/EditorSettingsModal'
+import PerformanceSettingsModal from './components/settings/PerformanceSettingsModal'
+import ImportExportModal from './components/settings/ImportExportModal'
+import SportsListEditor from './components/SportsListEditor'
+import WidgetDefinitionsEditor from './components/WidgetDefinitionsEditor'
 import NextConfigFileList from './components/NextConfigFileList'
 import ConfigSectionEditor from './components/ConfigSectionEditor'
 import AthleteConfigEditor from './components/config/AthleteConfigEditor'
 import GeneralConfigEditor from './components/config/GeneralConfigEditor'
+import AppearanceConfigEditor from './components/config/AppearanceConfigEditor'
 import Help from './components/Help'
-import { loadSettings, saveSettings, getSetting } from './utils/settingsManager'
+import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
+import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
 
 function App() {
   // Initialize settings
@@ -18,7 +27,7 @@ function App() {
   const [breadcrumbs, setBreadcrumbs] = useState(['Configuration'])
   const [hasHydrated, setHasHydrated] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Will be set after hydration
-  const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [activeSettingsModal, setActiveSettingsModal] = useState(null)
   
   // File cache management at app level to persist across navigation
   const configListRef = useRef(null)
@@ -29,50 +38,81 @@ function App() {
   const [isLoadingSectionData, setIsLoadingSectionData] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
-  const toggleTheme = () => {
+  const toggleTheme = async () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
     // Save theme to settings
     const newSettings = { ...settings };
     newSettings.ui.theme = newTheme ? 'dark' : 'light';
     setSettings(newSettings);
-    saveSettings(newSettings);
+    await saveSettings(newSettings);
   }
 
-  const toggleSidebar = () => {
+  const toggleSidebar = async () => {
     const newCollapsed = !isSidebarCollapsed;
     setIsSidebarCollapsed(newCollapsed);
     // Save sidebar state to settings
     const newSettings = { ...settings };
+    if (!newSettings.ui) newSettings.ui = {};
     newSettings.ui.sidebarCollapsed = newCollapsed;
     setSettings(newSettings);
-    saveSettings(newSettings);
+    
+    console.log('Saving sidebar collapsed state:', newCollapsed);
+    const success = await saveSettings(newSettings);
+    if (!success) {
+      console.error('Failed to save sidebar state');
+    } else {
+      console.log('Sidebar state saved successfully');
+    }
   }
 
   // Restore state from localStorage after hydration
   useEffect(() => {
-    try {
-      const savedPage = localStorage.getItem('stats-config-current-page');
-      const savedBreadcrumbs = localStorage.getItem('stats-config-breadcrumbs');
-      
-      if (savedPage) {
-        setCurrentPage(savedPage);
+    const initializeApp = async () => {
+      try {
+        const savedPage = localStorage.getItem('stats-config-current-page');
+        const savedBreadcrumbs = localStorage.getItem('stats-config-breadcrumbs');
+        
+        if (savedPage) {
+          setCurrentPage(savedPage);
+        }
+        if (savedBreadcrumbs) {
+          setBreadcrumbs(JSON.parse(savedBreadcrumbs));
+        }
+        
+        // Load settings - try from localStorage first (faster), then validate with file
+        let loadedSettings = loadSettings();
+        
+        // Try to load from file in background
+        try {
+          const fileSettings = await loadSettingsFromFile();
+          if (fileSettings) {
+            loadedSettings = fileSettings;
+          }
+        } catch (fileError) {
+          console.log('Using localStorage settings:', fileError);
+        }
+        
+        setSettings(loadedSettings);
+        setIsDarkMode(loadedSettings.ui?.theme === 'dark');
+        setIsSidebarCollapsed(loadedSettings.ui?.sidebarCollapsed ?? false);
+        
+        console.log('Loaded settings:', loadedSettings);
+        console.log('Sidebar collapsed setting:', loadedSettings.ui?.sidebarCollapsed);
+        
+        setHasHydrated(true);
+      } catch (error) {
+        console.error('Error restoring navigation state:', error);
+        // Fall back to defaults
+        const loadedSettings = loadSettings();
+        setSettings(loadedSettings);
+        setIsDarkMode(getSetting('ui.theme', 'dark') === 'dark');
+        setIsSidebarCollapsed(getSetting('ui.sidebarCollapsed', false));
+        setHasHydrated(true);
       }
-      if (savedBreadcrumbs) {
-        setBreadcrumbs(JSON.parse(savedBreadcrumbs));
-      }
-      
-      // Initialize client-side state after hydration to prevent mismatch
-      const loadedSettings = loadSettings();
-      setSettings(loadedSettings);
-      setIsDarkMode(getSetting('ui.theme', 'dark') === 'dark');
-      setIsSidebarCollapsed(getSetting('ui.sidebarCollapsed', false));
-      
-      setHasHydrated(true);
-    } catch (error) {
-      console.error('Error restoring navigation state:', error);
-      setHasHydrated(true);
-    }
+    };
+    
+    initializeApp();
   }, []);
 
   // Save current page and breadcrumbs to localStorage
@@ -112,6 +152,23 @@ function App() {
       window.removeEventListener('settingsReset', handleSettingsResetEvent);
     };
   }, []);
+
+  // Initialize widget definitions when config files are loaded
+  useEffect(() => {
+    if (hasConfigInitialized && sectionToFileMap.size > 0) {
+      initializeWidgetDefinitions(sectionToFileMap)
+        .then(result => {
+          if (result.success) {
+            console.log('✅ Widget definitions initialization complete:', result.message);
+          } else {
+            console.error('❌ Widget definitions initialization failed:', result.message);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Widget definitions initialization error:', error);
+        });
+    }
+  }, [hasConfigInitialized, sectionToFileMap]);
 
   const handleNavClick = (page, parentPage = null, skipUnsavedCheck = false) => {
     // Warn if trying to navigate away with unsaved changes
@@ -270,9 +327,9 @@ function App() {
     }
   }
 
-  // Load section data when navigating to General or Athlete pages
+  // Load section data when navigating to section pages
   useEffect(() => {
-    if ((currentPage === 'General' || currentPage === 'Athlete') && sectionToFileMap.size > 0) {
+    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance') && sectionToFileMap.size > 0) {
       loadSectionData(currentPage)
     }
   }, [currentPage, sectionToFileMap, loadSectionData])
@@ -324,8 +381,8 @@ function App() {
         </div>
         <div className="navbar-menu">
           <a href="#home" onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}>Home</a>
-          <a href="#settings" onClick={(e) => { e.preventDefault(); setShowSettingsModal(true); }}>Settings</a>
-          <a href="#about">About</a>
+          <SettingsDropdown onSelectSetting={setActiveSettingsModal} />
+          <a href="#help" onClick={(e) => { e.preventDefault(); handleNavClick('Help & Documentation') }}>About</a>
           <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
             {isDarkMode ? '☀️' : '🌙'}
           </button>
@@ -454,7 +511,15 @@ function App() {
                 isLoading={isLoadingSectionData}
                 onDirtyChange={setHasUnsavedChanges}
               />
-
+            ) : currentPage === 'Appearance' ? (
+              <AppearanceConfigEditor
+                key={JSON.stringify(sectionData.appearance)}
+                initialData={sectionData.appearance || {}}
+                onSave={(data) => saveSectionData('appearance', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
             ) : currentPage === 'Help & Documentation' ? (
               <Help />
             ) : (
@@ -467,12 +532,56 @@ function App() {
         </main>
       </div>
       
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        onSettingsChange={handleSettingsChange}
+      {/* Individual Settings Modals */}
+      <UISettingsModal
+        isOpen={activeSettingsModal === 'ui'}
+        onClose={() => setActiveSettingsModal(null)}
       />
+      <FilesSettingsModal
+        isOpen={activeSettingsModal === 'files'}
+        onClose={() => setActiveSettingsModal(null)}
+      />
+      <EditorSettingsModal
+        isOpen={activeSettingsModal === 'editor'}
+        onClose={() => setActiveSettingsModal(null)}
+      />
+      <PerformanceSettingsModal
+        isOpen={activeSettingsModal === 'performance'}
+        onClose={() => setActiveSettingsModal(null)}
+      />
+      <ImportExportModal
+        isOpen={activeSettingsModal === 'importExport'}
+        onClose={() => setActiveSettingsModal(null)}
+      />
+      
+      {/* Sports List and Widget Definitions as full-screen modals */}
+      {activeSettingsModal === 'sportsList' && (
+        <div className="modal-overlay" onClick={() => setActiveSettingsModal(null)}>
+          <div className="setting-modal" style={{ maxWidth: '1000px', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🏅 Sports List</h2>
+              <button onClick={() => setActiveSettingsModal(null)} className="modal-close">✕</button>
+            </div>
+            <div className="modal-body">
+              <SportsListEditor settings={settings} />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {activeSettingsModal === 'widgetDefinitions' && (
+        <div className="modal-overlay" onClick={() => setActiveSettingsModal(null)}>
+          <div className="setting-modal" style={{ maxWidth: '1200px', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🧩 Widget Definitions</h2>
+              <button onClick={() => setActiveSettingsModal(null)} className="modal-close">✕</button>
+            </div>
+            <div className="modal-body">
+              <WidgetDefinitionsEditor settings={settings} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

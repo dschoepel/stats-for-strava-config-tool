@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
 import * as YAML from 'yaml';
+import { getSetting } from '../utils/settingsManager';
 import './YamlEditorModal.css';
 
 const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave }) => {
@@ -9,6 +10,12 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Get editor settings
+  const fontSize = getSetting('editor.fontSize', 14);
+  const tabSize = getSetting('editor.tabSize', 2);
+  const wordWrap = getSetting('editor.wordWrap', true) ? 'on' : 'off';
+  const showLineNumbers = getSetting('ui.showLineNumbers', true) ? 'on' : 'off';
   const [validationError, setValidationError] = useState(null);
 
   useEffect(() => {
@@ -150,13 +157,13 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
             theme="vs-dark"
             options={{
               minimap: { enabled: true },
-              fontSize: 14,
-              lineNumbers: 'on',
+              fontSize: fontSize,
+              lineNumbers: showLineNumbers,
               rulers: [80],
-              wordWrap: 'on',
+              wordWrap: wordWrap,
               scrollBeyondLastLine: false,
               automaticLayout: true,
-              tabSize: 2,
+              tabSize: tabSize,
               insertSpaces: true,
               formatOnPaste: true,
               formatOnType: true

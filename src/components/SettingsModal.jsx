@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SportsListEditor from './SportsListEditor';
+import WidgetDefinitionsEditor from './WidgetDefinitionsEditor';
 import { loadSettings, saveSettings, resetSettings, exportSettingsAsYaml, importSettingsFromYaml } from '../utils/settingsManager';
 import './SettingsModal.css';
 
@@ -8,6 +9,7 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
   const [activeTab, setActiveTab] = useState('ui');
   const [isDirty, setIsDirty] = useState(false);
   const [sportsListDirty, setSportsListDirty] = useState(false);
+  const [widgetDefinitionsDirty, setWidgetDefinitionsDirty] = useState(false);
   const [importExportMode, setImportExportMode] = useState(null); // 'import' or 'export'
   const [yamlContent, setYamlContent] = useState('');
 
@@ -18,14 +20,20 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
       setSettings(loadedSettings);
       setIsDirty(false);
       setSportsListDirty(false);
+      setWidgetDefinitionsDirty(false);
     }
   }, [isOpen]);
 
   const handleClose = () => {
-    if (isDirty || sportsListDirty) {
-      const message = sportsListDirty 
-        ? 'You have unsaved changes in the Sports List. These changes will be lost if you close without saving.'
-        : 'You have unsaved settings. These changes will be lost if you close without saving.';
+    if (isDirty || sportsListDirty || widgetDefinitionsDirty) {
+      let message;
+      if (sportsListDirty) {
+        message = 'You have unsaved changes in the Sports List. These changes will be lost if you close without saving.';
+      } else if (widgetDefinitionsDirty) {
+        message = 'You have unsaved changes in Widget Definitions. These changes will be lost if you close without saving.';
+      } else {
+        message = 'You have unsaved settings. These changes will be lost if you close without saving.';
+      }
       
       if (window.confirm(`${message}\n\nAre you sure you want to close?`)) {
         onClose();
@@ -41,9 +49,11 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
         setSportsListDirty(false);
         setActiveTab(newTab);
       }
-    } else if (activeTab !== 'sportsList' && isDirty && newTab === 'sportsList') {
-      // Optionally warn about unsaved settings when switching to sportsList
-      setActiveTab(newTab);
+    } else if (activeTab === 'widgetDefinitions' && widgetDefinitionsDirty) {
+      if (window.confirm('You have unsaved changes in Widget Definitions. These changes will be lost if you switch tabs.\n\nAre you sure you want to continue?')) {
+        setWidgetDefinitionsDirty(false);
+        setActiveTab(newTab);
+      }
     } else {
       setActiveTab(newTab);
     }
@@ -130,7 +140,8 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
     { id: 'files', label: 'Files', icon: '📁' },
     { id: 'editor', label: 'Editor', icon: '📝' },
     { id: 'performance', label: 'Performance', icon: '⚡' },
-    { id: 'sportsList', label: 'Sports List', icon: '🏅' }
+    { id: 'sportsList', label: 'Sports List', icon: '🏅' },
+    { id: 'widgetDefinitions', label: 'Widgets', icon: '🧩' }
   ];
 
   return (
@@ -188,7 +199,7 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                   className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                 >
                   <span className="tab-icon">{tab.icon}</span>
-                  <span className="tab-label">{tab.label}{tab.id === 'sportsList' && sportsListDirty ? ' *' : ''}</span>
+                  <span className="tab-label">{tab.label}{(tab.id === 'sportsList' && sportsListDirty) || (tab.id === 'widgetDefinitions' && widgetDefinitionsDirty) ? ' *' : ''}</span>
                 </button>
               ))}
             </div>
@@ -388,6 +399,13 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                 <SportsListEditor 
                   settings={settings} 
                   onDirtyChange={setSportsListDirty}
+                />
+              )}
+
+              {activeTab === 'widgetDefinitions' && (
+                <WidgetDefinitionsEditor 
+                  settings={settings} 
+                  onDirtyChange={setWidgetDefinitionsDirty}
                 />
               )}
             </div>

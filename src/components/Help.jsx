@@ -140,6 +140,106 @@ const Help = () => {
         </section>
 
         <section className="help-section">
+          <h3>🧩 Widget Definitions Editor</h3>
+          <div className="help-card">
+            <h4>Managing Dashboard Widget Definitions</h4>
+            <p>
+              The Widget Definitions Editor (accessible via Settings → Widgets tab) allows you to manage the widget templates that define what widgets are available for your dashboard.
+            </p>
+            
+            <h4>What are Widget Definitions?</h4>
+            <p>
+              Widget definitions are templates that describe:
+            </p>
+            <ul>
+              <li><strong>Widget metadata</strong> - Name, display name, and description</li>
+              <li><strong>Instance rules</strong> - Whether multiple instances of the widget can be added</li>
+              <li><strong>Configuration options</strong> - What settings the widget supports</li>
+              <li><strong>Default values</strong> - Initial configuration values for new widget instances</li>
+            </ul>
+
+            <h4>File Storage</h4>
+            <p>
+              Widget definitions are stored in <code>settings/widget-definitions.yaml</code> within your default file path. 
+              This file is automatically created when you first open the tool and is synced with any widgets already in your dashboard configuration.
+            </p>
+
+            <h4>Using the Editor</h4>
+            <ol>
+              <li><strong>Open Settings</strong> - Click the gear icon (⚙️) in the top navigation</li>
+              <li><strong>Select Widgets tab</strong> - Navigate to the Widget Definitions section</li>
+              <li><strong>View widgets</strong> - Widgets are grouped by "Can be added multiple times" and "Can only be added once"</li>
+              <li><strong>Expand details</strong> - Click the toggle arrow to see widget properties and configuration templates</li>
+              <li><strong>Add/Edit/Delete</strong> - Use the respective buttons to manage widget definitions</li>
+              <li><strong>Save changes</strong> - Click the 💾 Save button to write all changes to the file</li>
+            </ol>
+
+            <div className="warning" style={{ marginTop: '12px', padding: '12px', backgroundColor: 'rgba(255, 193, 7, 0.1)', borderLeft: '4px solid #ffc107', borderRadius: '4px' }}>
+              <p style={{ margin: 0 }}>
+                <strong>⚠️ Important:</strong> Individual widget changes are saved in memory only. 
+                You must click the main <strong>Save</strong> button to write all changes to the file.
+              </p>
+            </div>
+
+            <h4>Widget Properties</h4>
+            <dl className="troubleshooting-list">
+              <dt>Widget Name (camelCase)</dt>
+              <dd>Unique identifier in camelCase format (e.g., mostRecentActivities)</dd>
+              
+              <dt>Display Name</dt>
+              <dd>Human-readable name shown in the UI (e.g., "Most Recent Activities")</dd>
+              
+              <dt>Description</dt>
+              <dd>Brief explanation of what the widget displays or does</dd>
+              
+              <dt>Allow multiple instances</dt>
+              <dd>If checked, multiple copies of this widget can be added to the dashboard</dd>
+              
+              <dt>Has configuration options</dt>
+              <dd>If checked, the widget supports customizable settings</dd>
+              
+              <dt>Config Template (YAML)</dt>
+              <dd>Example configuration showing available options and syntax</dd>
+            </dl>
+
+            <h4>Automatic Initialization</h4>
+            <p>
+              When the app starts:
+            </p>
+            <ul>
+              <li><strong>File creation</strong> - If the widget definitions file doesn't exist, it's created with 19 default widgets</li>
+              <li><strong>Config sync</strong> - Widget default values are updated based on widgets in your dashboard configuration</li>
+              <li><strong>Validation</strong> - All widget definitions are validated for correct structure</li>
+            </ul>
+
+            <h4>Default Widgets</h4>
+            <p>The system includes these built-in widget definitions:</p>
+            <ul style={{ columnCount: 2, columnGap: '20px' }}>
+              <li>Most Recent Activities</li>
+              <li>Introduction Text</li>
+              <li>Training Goals</li>
+              <li>Weekly Statistics</li>
+              <li>Peak Power Outputs</li>
+              <li>Heart Rate Zones</li>
+              <li>Activity Grid</li>
+              <li>Monthly Statistics</li>
+              <li>Training Load</li>
+              <li>Weekday Statistics</li>
+              <li>Day Time Statistics</li>
+              <li>Distance Breakdown</li>
+              <li>Yearly Statistics</li>
+              <li>Zwift Statistics</li>
+              <li>Gear Statistics</li>
+              <li>Eddington Number</li>
+              <li>Challenge Consistency</li>
+              <li>Most Recent Challenges</li>
+              <li>FTP History</li>
+              <li>Athlete Weight History</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="help-section">
           <h3>🚀 Getting Started</h3>
           <div className="help-card">
             <ol>
@@ -168,6 +268,12 @@ const Help = () => {
               
               <dt>Configuration not loading</dt>
               <dd>Verify your YAML files have valid syntax and are in the expected directory</dd>
+              
+              <dt>Widget definitions not updating</dt>
+              <dd>Remember to click the main Save button after editing widgets - individual changes are held in memory</dd>
+              
+              <dt>Widget definition file missing</dt>
+              <dd>The file is auto-created on app startup. Check your default file path in Settings → Files</dd>
             </dl>
           </div>
         </section>

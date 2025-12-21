@@ -1,8 +1,9 @@
 // Settings utility for Stats for Strava Config Tool
-// Uses localStorage to persist settings since we're in a browser environment
+// Uses file-based storage in {defaultPath}/settings/config-tool-settings.yaml
 
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
 const DEFAULT_SETTINGS_PATH = process.env.NEXT_PUBLIC_DEFAULT_STATS_CONFIG_PATH || '~/Documents/strava-config-tool/';
+const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 
 // Default settings structure
 const DEFAULT_SETTINGS = {
@@ -33,7 +34,19 @@ const DEFAULT_SETTINGS = {
 };
 
 /**
- * Load settings from localStorage
+ * Get the settings file path
+ * @param {string} defaultPath - Optional custom default path
+ * @returns {string} Full path to settings file
+ */
+export const getSettingsFilePath = (defaultPath = null) => {
+  const basePath = defaultPath || DEFAULT_SETTINGS_PATH;
+  // Remove trailing slash if present
+  const cleanPath = basePath.replace(/\/$/, '');
+  return `${cleanPath}/settings/${SETTINGS_FILENAME}`;
+};
+
+/**
+ * Load settings from file or localStorage (fallback)
  * @returns {Object} Settings object
  */
 export const loadSettings = () => {
@@ -43,6 +56,7 @@ export const loadSettings = () => {
   }
   
   try {
+    // Try localStorage first (acts as cache)
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
@@ -50,7 +64,7 @@ export const loadSettings = () => {
       return mergeSettings(DEFAULT_SETTINGS, parsed);
     }
   } catch (error) {
-    console.error('Error loading settings:', error);
+    console.error('Error loading settings from localStorage:', error);
   }
   
   // Return defaults if loading fails or no settings exist
@@ -58,25 +72,116 @@ export const loadSettings = () => {
 };
 
 /**
- * Save settings to localStorage
- * @param {Object} settings - Settings object to save
+ * Load settings from file
+ * @returns {Promise<Object>} Settings object
  */
-export const saveSettings = (settings) => {
+export const loadSettingsFromFile = async () => {
+  try {
+    // First get the default path from localStorage or defaults
+    const currentSettings = loadSettings();
+    const defaultPath = currentSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
+    const filePath = getSettingsFilePath(defaultPath);
+    
+    const response = await fetch('/api/file-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: filePath })
+    });
+    
+    if (!response.ok) {
+      console.log('Settings file not found, using defaults');
+      return { ...DEFAULT_SETTINGS };
+    }
+    
+    const data = await response.json();
+    if (data.success && data.content) {
+      // Parse YAML content
+      const lines = data.content.split('\n');
+      const settings = parseYamlSettings(lines);
+      
+      // Merge with defaults and save to localStorage cache
+      const mergedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(mergedSettings, null, 2));
+      
+      return mergedSettings;
+    }
+  } catch (error) {
+    console.error('Error loading settings from file:', error);
+  }
+  
+  return { ...DEFAULT_SETTINGS };
+};
+
+/**
+ * Expand tilde in path via API
+ * @param {string} inputPath - Path that may contain tilde
+ * @returns {Promise<string>} Expanded path
+ */
+export const expandTildePath = async (inputPath) => {
+  if (!inputPath || !inputPath.startsWith('~')) return inputPath;
+  
+  try {
+    const response = await fetch('/api/expand-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: inputPath })
+    });
+    const data = await response.json();
+    return data.success ? data.expandedPath : inputPath;
+  } catch (error) {
+    console.error('Failed to expand path:', error);
+    return inputPath;
+  }
+};
+
+/**
+ * Save settings to file and localStorage
+ * @param {Object} settings - Settings object to save
+ * @returns {Promise<boolean>} Success status
+ */
+export const saveSettings = async (settings) => {
   try {
     // Validate settings structure
     const validatedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
     
+    // Expand tilde in defaultPath if present
+    if (validatedSettings.files?.defaultPath?.startsWith('~')) {
+      validatedSettings.files.defaultPath = await expandTildePath(validatedSettings.files.defaultPath);
+    }
+    
     // Add timestamp
     validatedSettings.lastUpdated = new Date().toISOString();
     
+    // Save to localStorage (cache)
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(validatedSettings, null, 2));
     
-    // Dispatch custom event for settings change
-    window.dispatchEvent(new CustomEvent('settingsChanged', { 
-      detail: validatedSettings 
-    }));
+    // Save to file
+    const defaultPath = validatedSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
+    const filePath = getSettingsFilePath(defaultPath);
+    const yamlContent = exportSettingsAsYaml(validatedSettings);
     
-    return true;
+    const response = await fetch('/api/save-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        path: filePath, 
+        content: yamlContent 
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Dispatch custom event for settings change
+      window.dispatchEvent(new CustomEvent('settingsChanged', { 
+        detail: validatedSettings 
+      }));
+      
+      return true;
+    } else {
+      console.error('Failed to save settings file:', result.error);
+      return false;
+    }
   } catch (error) {
     console.error('Error saving settings:', error);
     return false;
@@ -146,15 +251,26 @@ export const setSetting = (path, value) => {
 
 /**
  * Export settings as YAML string
+ * @param {Object} settingsObj - Optional settings object, otherwise loads current settings
  * @returns {string} YAML formatted settings
  */
-export const exportSettingsAsYaml = () => {
-  const settings = loadSettings();
+export const exportSettingsAsYaml = (settingsObj = null) => {
+  const settings = settingsObj || loadSettings();
   
   // Simple YAML serialization (basic implementation)
   const yamlify = (obj, indent = 0) => {
     const spaces = '  '.repeat(indent);
     let yaml = '';
+    
+    // Helper to escape strings for YAML
+    const escapeString = (str) => {
+      return str
+        .replace(/\\/g, '\\\\')  // Escape backslashes first
+        .replace(/"/g, '\\"')     // Escape double quotes
+        .replace(/\n/g, '\\n')    // Escape newlines
+        .replace(/\r/g, '\\r')    // Escape carriage returns
+        .replace(/\t/g, '\\t');   // Escape tabs
+    };
     
     for (const [key, value] of Object.entries(obj)) {
       if (value === null || value === undefined) {
@@ -164,11 +280,11 @@ export const exportSettingsAsYaml = () => {
       } else if (typeof value === 'number') {
         yaml += `${spaces}${key}: ${value}\n`;
       } else if (typeof value === 'string') {
-        yaml += `${spaces}${key}: "${value}"\n`;
+        yaml += `${spaces}${key}: "${escapeString(value)}"\n`;
       } else if (Array.isArray(value)) {
         yaml += `${spaces}${key}:\n`;
         value.forEach(item => {
-          yaml += `${spaces}  - ${typeof item === 'string' ? `"${item}"` : item}\n`;
+          yaml += `${spaces}  - ${typeof item === 'string' ? `"${escapeString(item)}"` : item}\n`;
         });
       } else if (typeof value === 'object') {
         yaml += `${spaces}${key}:\n${yamlify(value, indent + 1)}`;
@@ -179,6 +295,82 @@ export const exportSettingsAsYaml = () => {
   };
   
   return `# Stats for Strava Config Tool Settings\n# Generated on ${new Date().toISOString()}\n\n${yamlify(settings)}`;
+};
+
+/**
+ * Parse YAML settings from lines
+ * @param {Array<string>} lines - YAML lines
+ * @returns {Object} Parsed settings
+ */
+const parseYamlSettings = (lines) => {
+  const settings = {};
+  let currentSection = settings;
+  let sectionStack = [settings];
+  let lastIndent = 0;
+  
+  // Helper to unescape strings from YAML
+  const unescapeString = (str) => {
+    return str
+      .replace(/\\n/g, '\n')    // Unescape newlines
+      .replace(/\\r/g, '\r')    // Unescape carriage returns
+      .replace(/\\t/g, '\t')    // Unescape tabs
+      .replace(/\\"/g, '"')     // Unescape double quotes
+      .replace(/\\\\/g, '\\');  // Unescape backslashes (must be last)
+  };
+  
+  for (const line of lines) {
+    // Skip comments and empty lines
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    
+    // Calculate indentation
+    const indent = line.search(/\S/);
+    const trimmed = line.trim();
+    
+    // Handle indent changes
+    if (indent < lastIndent) {
+      // Pop sections until we're at the right level
+      const levelsToGo = Math.floor((lastIndent - indent) / 2);
+      for (let i = 0; i < levelsToGo; i++) {
+        sectionStack.pop();
+      }
+      currentSection = sectionStack[sectionStack.length - 1];
+    }
+    
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex === -1) continue;
+    
+    const key = trimmed.substring(0, colonIndex).trim();
+    const valueStr = trimmed.substring(colonIndex + 1).trim();
+    
+    if (!valueStr || valueStr === '') {
+      // It's a section header
+      currentSection[key] = {};
+      sectionStack.push(currentSection[key]);
+      currentSection = currentSection[key];
+    } else {
+      // It's a key-value pair
+      let parsedValue;
+      if (valueStr === 'null') {
+        parsedValue = null;
+      } else if (valueStr === 'true') {
+        parsedValue = true;
+      } else if (valueStr === 'false') {
+        parsedValue = false;
+      } else if (!isNaN(valueStr) && !isNaN(parseFloat(valueStr))) {
+        parsedValue = parseFloat(valueStr);
+      } else {
+        // Remove quotes and unescape
+        const unquoted = valueStr.replace(/^"(.*)"$/, '$1');
+        parsedValue = unescapeString(unquoted);
+      }
+      
+      currentSection[key] = parsedValue;
+    }
+    
+    lastIndent = indent;
+  }
+  
+  return settings;
 };
 
 /**
