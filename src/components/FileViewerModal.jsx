@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Box, Flex, Heading, IconButton } from '@chakra-ui/react';
+import { MdClose } from 'react-icons/md';
 import MonacoYamlViewer from './MonacoYamlViewer';
-import './FileViewerModal.css';
 
 const FileViewerModal = ({ isOpen, onClose, fileName, fileContent }) => {
   const contentRef = useRef(null);
@@ -31,16 +32,75 @@ const FileViewerModal = ({ isOpen, onClose, fileName, fileContent }) => {
   };
 
   return (
-    <div className="file-viewer-overlay" onClick={handleOverlayClick}>
-      <div className="file-viewer-modal">
-        <div className="file-viewer-header">
-          <h3 className="file-viewer-title">📄 {fileName}</h3>
-          <button className="file-viewer-close" onClick={onClose}>
-            ✕
-          </button>
-        </div>
+    <Flex
+      position="fixed"
+      top="0"
+      left="0"
+      width="100vw"
+      height="100vh"
+      bg="blackAlpha.800"
+      justify="center"
+      align="center"
+      zIndex="9999"
+      p={{ base: 0, md: 8 }}
+      onClick={handleOverlayClick}
+    >
+      <Flex
+        bg="cardBg"
+        borderWidth={{ base: 0, md: "1px" }}
+        borderColor="border"
+        borderRadius={{ base: 0, md: "xl" }}
+        maxW={{ base: "100vw", md: "90vw" }}
+        maxH={{ base: "100vh", md: "90vh" }}
+        w="100%"
+        h={{ base: "100%", md: "auto" }}
+        direction="column"
+        boxShadow="0 20px 60px rgba(0, 0, 0, 0.3)"
+        overflow="hidden"
+        shadows="xl"
+      >
+        <Flex
+          bg="#E2E8F0"
+          _dark={{ bg: "#334155" }}
+          borderBottomWidth="1px"
+          borderColor="border"
+          p={{ base: 3, sm: 4 }}
+          justify="space-between"
+          align="center"
+          flexShrink={0}
+        >
+          <Heading 
+            size={{ base: "sm", sm: "md" }} 
+            color="text" 
+            lineHeight="1.2"
+            wordBreak="break-word"
+            noOfLines={{ base: 1, sm: 2 }}
+            maxW={{ base: "calc(100vw - 100px)", sm: "auto" }}
+          >
+            📄 {fileName}
+          </Heading>
+          <IconButton
+            onClick={onClose}
+            aria-label="Close viewer"
+            variant="ghost"
+            size={{ base: "sm", sm: "md" }}
+            colorPalette="gray"
+            minW={{ base: "32px", sm: "auto" }}
+            h={{ base: "32px", sm: "auto" }}
+            p={{ base: 1, sm: 2 }}
+          >
+            <MdClose />
+          </IconButton>
+        </Flex>
         
-        <div className="file-viewer-content" ref={contentRef}>
+        <Box 
+          ref={contentRef} 
+          flex={1} 
+          overflow="hidden" 
+          display="flex" 
+          flexDirection="column" 
+          minH={0}
+        >
           <MonacoYamlViewer
             fileName={fileName}
             fileContent={fileContent}
@@ -49,9 +109,9 @@ const FileViewerModal = ({ isOpen, onClose, fileName, fileContent }) => {
             className="modal-viewer"
             height={`${editorHeight}px`}
           />
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Flex>
+    </Flex>
   );
 };
 

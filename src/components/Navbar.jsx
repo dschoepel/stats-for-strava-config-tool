@@ -36,15 +36,17 @@ export default function Navbar({
     >
       <HStack gap={4}>
         <IconButton
-          icon={<Icon as={HiMenuAlt2} />}
           onClick={toggleSidebar}
           aria-label="Toggle menu"
-          bg="transparent"
+          bg="whiteAlpha.200"
           color="white"
-          fontSize="xl"
-          _hover={{ bg: "whiteAlpha.200" }}
+          fontSize="2xl"
+          size="md"
+          _hover={{ bg: "whiteAlpha.300" }}
           display={{ base: "flex", md: "none" }}
-        />
+        >
+          <Icon as={HiMenuAlt2} />
+        </IconButton>
         <Image 
           src="/logo.svg" 
           alt="Stats for Strava" 
@@ -95,6 +97,24 @@ export default function Navbar({
           transition="all 0.3s ease"
         >
           {mounted && <Icon as={isDarkMode ? MdDarkMode : MdLightMode} boxSize={5} />}
+        </IconButton>
+      </HStack>
+
+      {/* Mobile menu - show only theme toggle and settings */}
+      <HStack gap={2} display={{ base: "flex", md: "none" }}>
+        <SettingsDropdown onSelectSetting={onSelectSetting} />
+        <IconButton
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          bg="whiteAlpha.200"
+          color="white"
+          borderRadius="full"
+          border="2px solid white"
+          w="36px"
+          h="36px"
+          _hover={{ bg: "whiteAlpha.300" }}
+        >
+          {mounted && <Icon as={isDarkMode ? MdDarkMode : MdLightMode} boxSize={4} />}
         </IconButton>
       </HStack>
     </Flex>

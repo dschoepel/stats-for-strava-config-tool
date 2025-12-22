@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  Heading,
+  Button,
+  Field,
+  Input,
+  Flex,
+  Switch,
+} from '@chakra-ui/react';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
-import './SettingModal.css';
 
 const EditorSettingsModal = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState({});
@@ -46,78 +55,156 @@ const EditorSettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="setting-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>📝 Editor Settings</h2>
-          <button onClick={handleClose} className="modal-close">✕</button>
-        </div>
+    <Box
+      position="fixed"
+      top="0"
+      left="0"
+      right="0"
+      bottom="0"
+      bg="blackAlpha.600"
+      zIndex="1000"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      onClick={handleClose}
+    >
+      <Box
+        bg="bg"
+        borderRadius="lg"
+        boxShadow="lg"
+        maxW={{ base: "95%", sm: "600px" }}
+        w="100%"
+        maxH={{ base: "90vh", sm: "80vh" }}
+        overflowY="auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <Flex
+          justify="space-between"
+          align="center"
+          p={{ base: 3, sm: 4 }}
+          borderBottomWidth="1px"
+          borderColor="border"
+        >
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
+            📝 Editor Settings
+          </Heading>
+          <Button
+            onClick={handleClose}
+            size={{ base: "xs", sm: "sm" }}
+            variant="ghost"
+            minW="auto"
+            px={{ base: 2, sm: 3 }}
+          >
+            ✕
+          </Button>
+        </Flex>
 
-        <div className="modal-body">
-          <div className="setting-group">
-            <label>Font size</label>
-            <input 
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Font Size Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Font size</Field.Label>
+            <Input
               type="number"
               min="10"
               max="24"
               value={settings.editor?.fontSize || 14}
               onChange={(e) => handleChange('editor.fontSize', parseInt(e.target.value))}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
             />
-          </div>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>Tab size</label>
-            <input 
+          {/* Tab Size Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Tab size</Field.Label>
+            <Input
               type="number"
               min="2"
               max="8"
               value={settings.editor?.tabSize || 2}
               onChange={(e) => handleChange('editor.tabSize', parseInt(e.target.value))}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
             />
-          </div>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox"
-                checked={settings.editor?.wordWrap !== false}
-                onChange={(e) => handleChange('editor.wordWrap', e.target.checked)}
-              />
-              Enable word wrap
-            </label>
-          </div>
+          {/* Word Wrap Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.editor?.wordWrap !== false}
+              onCheckedChange={(e) => handleChange('editor.wordWrap', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Enable word wrap</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox"
-                checked={settings.ui?.showLineNumbers !== false}
-                onChange={(e) => handleChange('ui.showLineNumbers', e.target.checked)}
-              />
-              Show line numbers
-            </label>
-          </div>
+          {/* Show Line Numbers Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.ui?.showLineNumbers !== false}
+              onCheckedChange={(e) => handleChange('ui.showLineNumbers', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Show line numbers</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox"
-                checked={settings.editor?.highlightSearch !== false}
-                onChange={(e) => handleChange('editor.highlightSearch', e.target.checked)}
-              />
-              Highlight search matches
-            </label>
-          </div>
-        </div>
+          {/* Highlight Search Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.editor?.highlightSearch !== false}
+              onCheckedChange={(e) => handleChange('editor.highlightSearch', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Highlight search matches</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+        </VStack>
 
-        <div className="modal-footer">
-          <button onClick={handleClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} className="btn-primary" disabled={!isDirty}>
-            💾 Save
-          </button>
-        </div>
-      </div>
-    </div>
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            colorPalette="blue"
+            disabled={!isDirty}
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            💾 Save{isDirty && ' *'}
+          </Button>
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 

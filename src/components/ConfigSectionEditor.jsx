@@ -595,7 +595,7 @@ const ConfigSectionEditor = ({
     return (
       <Box key={fieldPath} mb={6}>
         <Box mb={4}>
-          <Heading size="md" mb={1}>{fieldSchema.title || fieldName}</Heading>
+          <Heading size="md" mb={1} lineHeight="1.2" wordBreak="break-word">{fieldSchema.title || fieldName}</Heading>
           {fieldSchema.description && (
             <Text fontSize="sm" color="textMuted">{fieldSchema.description}</Text>
           )}
@@ -620,7 +620,7 @@ const ConfigSectionEditor = ({
           </NativeSelectRoot>
         </Box>
 
-        <Heading size="sm" mb={3}>Default Heart Rate Zones</Heading>
+        <Heading size="sm" mb={3} lineHeight="1.2" wordBreak="break-word">Default Heart Rate Zones</Heading>
 
         {/* Default Zone Table */}
         <Box overflowX="auto" mb={6} borderWidth="1px" borderColor="border" borderRadius="md">
@@ -701,8 +701,14 @@ const ConfigSectionEditor = ({
 
         {/* Date Ranges Section */}
         <Box mb={6}>
-          <Flex justify="space-between" align="center" mb={3}>
-            <Heading size="sm">Date Ranges</Heading>
+          <Flex 
+            direction={{ base: "column", sm: "row" }}
+            justify="space-between" 
+            align={{ base: "stretch", sm: "center" }} 
+            gap={3}
+            mb={3}
+          >
+            <Heading size="sm" lineHeight="1.2" wordBreak="break-word">Date Ranges</Heading>
             <Button onClick={handleAddDateRange} size="sm" variant="outline">
               <MdAdd /> Add Date Range
             </Button>
@@ -715,8 +721,14 @@ const ConfigSectionEditor = ({
               .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
               .map(([date, zones]) => (
               <Box key={date} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
-                <Flex justify="space-between" align="center" mb={3}>
-                  <Box className="react-datepicker-wrapper" flex="1" maxW="200px">
+                <Flex 
+                  direction={{ base: "column", sm: "row" }}
+                  justify="space-between" 
+                  align={{ base: "stretch", sm: "center" }} 
+                  gap={3}
+                  mb={3}
+                >
+                  <Box className="react-datepicker-wrapper" flex="1" maxW={{ base: "100%", sm: "200px" }}>
                     <DatePicker
                       selected={new Date(date)}
                       onChange={(selectedDate) => handleDateChange(date, selectedDate)}
@@ -826,8 +838,14 @@ const ConfigSectionEditor = ({
 
         {/* Sport Types Section */}
         <Box mb={6}>
-          <Flex justify="space-between" align="center" mb={3}>
-            <Heading size="sm">Sport Type Overrides</Heading>
+          <Flex 
+            direction={{ base: "column", sm: "row" }}
+            justify="space-between" 
+            align={{ base: "stretch", sm: "center" }} 
+            gap={3}
+            mb={3}
+          >
+            <Heading size="sm" lineHeight="1.2" wordBreak="break-word">Sport Type Overrides</Heading>
             <Button 
               onClick={() => {
                 console.log('Opening sport modal. Sports list state:', sportsList);
@@ -850,8 +868,14 @@ const ConfigSectionEditor = ({
               .sort(([sportA], [sportB]) => sportA.localeCompare(sportB))
               .map(([sportName, sportData]) => (
               <Box key={sportName} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
-                <Flex justify="space-between" align="center" mb={4}>
-                  <Heading size="sm">{sportName}</Heading>
+                <Flex 
+                  direction={{ base: "column", sm: "row" }}
+                  justify="space-between" 
+                  align={{ base: "stretch", sm: "center" }} 
+                  gap={3}
+                  mb={4}
+                >
+                  <Heading size="sm" lineHeight="1.2" wordBreak="break-word">{sportName}</Heading>
                   <Button 
                     onClick={() => handleRemoveSportType(sportName)}
                     size="sm"
@@ -864,7 +888,7 @@ const ConfigSectionEditor = ({
                 
                 {/* Default zones for this sport */}
                 <Box mb={4}>
-                  <Heading size="xs" mb={2}>Default Zones</Heading>
+                  <Heading size="xs" mb={2} lineHeight="1.2" wordBreak="break-word">Default Zones</Heading>
                   <Box overflowX="auto" borderWidth="1px" borderColor="border" borderRadius="md">
                     <Table.Root size="sm" variant="outline">
                       <Table.Header>
@@ -944,8 +968,14 @@ const ConfigSectionEditor = ({
                 
                 {/* Date ranges for this sport */}
                 <Box>
-                  <Flex justify="space-between" align="center" mb={2}>
-                    <Heading size="xs">Date Ranges for {sportName}</Heading>
+                  <Flex 
+                    direction={{ base: "column", sm: "row" }}
+                    justify="space-between" 
+                    align={{ base: "stretch", sm: "center" }} 
+                    gap={3}
+                    mb={2}
+                  >
+                    <Heading size="xs" lineHeight="1.2" wordBreak="break-word">Date Ranges for {sportName}</Heading>
                     <Button 
                       onClick={() => handleAddSportTypeDateRange(sportName)}
                       size="sm"
@@ -964,7 +994,13 @@ const ConfigSectionEditor = ({
                       .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
                       .map(([date, zones]) => (
                       <Box key={date} p={3} borderWidth="1px" borderColor="border" borderRadius="md" bg="cardBg">
-                        <Flex justify="space-between" align="center" mb={3}>
+                        <Flex 
+                          direction={{ base: "column", sm: "row" }}
+                          justify="space-between" 
+                          align={{ base: "stretch", sm: "center" }} 
+                          gap={3}
+                          mb={3}
+                        >
                           <Box className="react-datepicker-wrapper" flex="1" maxW="200px">
                             <DatePicker
                               selected={new Date(date)}
@@ -1141,7 +1177,7 @@ const ConfigSectionEditor = ({
                         }, {})
                       ).map(([category, sports]) => (
                         <Box key={category}>
-                          <Text fontWeight="600" mb={2} color="textMuted" fontSize="sm">
+                          <Text fontWeight="600" mb={2} color="textMuted" fontSize="sm" whiteSpace="normal" wordBreak="break-word" lineHeight="1.2">
                             {category}
                           </Text>
                           <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2}>
@@ -1279,9 +1315,15 @@ const ConfigSectionEditor = ({
         )}
         
         <Box p={4} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
-          <Flex justify="space-between" align="center" mb={4}>
+          <Flex 
+            direction={{ base: "column", sm: "row" }}
+            justify="space-between" 
+            align={{ base: "stretch", sm: "center" }} 
+            gap={3}
+            mb={4}
+          >
             <Flex align="center" gap={2}>
-              <Heading size="sm" color="text">Weight Entries</Heading>
+              <Heading size="sm" color="text" lineHeight="1.2" wordBreak="break-word">Weight Entries</Heading>
               <Text 
                 fontSize="sm" 
                 color="textMuted" 
@@ -1321,26 +1363,37 @@ const ConfigSectionEditor = ({
             {Object.entries(weightHistory)
               .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
               .map(([date, weight]) => (
-                <Flex key={date} align="center" gap={3} p={3} bg="panelBg" borderRadius="md">
+                <Flex 
+                  key={date} 
+                  direction={{ base: "column", sm: "row" }}
+                  align={{ base: "stretch", sm: "center" }} 
+                  gap={3} 
+                  p={3} 
+                  bg="panelBg" 
+                  borderRadius="md"
+                >
                   <Input
                     type="date"
                     value={date}
                     onChange={(e) => handleDateChange(date, new Date(e.target.value))}
                     max={new Date().toISOString().split('T')[0]}
                     bg="inputBg"
-                    width="160px"
+                    width={{ base: "100%", sm: "160px" }}
                   />
-                  <Input
-                    type="number"
-                    value={weight}
-                    onChange={(e) => handleWeightChange(date, e.target.value)}
-                    placeholder="Weight"
-                    min="0"
-                    step="0.1"
-                    bg="inputBg"
-                    width="120px"
-                  />
-                  <Text fontSize="sm" color="text" minW="50px">{weightUnit}</Text>
+                  <Flex gap={2} align="center" flex={{ base: "1", sm: "0" }}>
+                    <Input
+                      type="number"
+                      value={weight}
+                      onChange={(e) => handleWeightChange(date, e.target.value)}
+                      placeholder="Weight"
+                      min="0"
+                      step="0.1"
+                      bg="inputBg"
+                      flex="1"
+                      minW="80px"
+                    />
+                    <Text fontSize="sm" color="text" minW="50px">{weightUnit}</Text>
+                  </Flex>
                   <Button 
                     size="sm" 
                     variant="outline"
@@ -1455,9 +1508,15 @@ const ConfigSectionEditor = ({
       return (
         <Box key={sport} mb={4}>
           <Box p={4} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
-            <Flex justify="space-between" align="center" mb={4}>
+            <Flex 
+              direction={{ base: "column", sm: "row" }}
+              justify="space-between" 
+              align={{ base: "stretch", sm: "center" }} 
+              gap={3}
+              mb={4}
+            >
               <Flex align="center" gap={2}>
-                <Heading size="sm" color="text">{sportTitle}</Heading>
+                <Heading size="sm" color="text" lineHeight="1.2" wordBreak="break-word">{sportTitle}</Heading>
                 <Text 
                   fontSize="sm" 
                   color="textMuted" 
@@ -1486,26 +1545,37 @@ const ConfigSectionEditor = ({
               {Object.entries(sportHistory)
                 .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
                 .map(([date, ftp]) => (
-                  <Flex key={date} align="center" gap={3} p={3} bg="panelBg" borderRadius="md">
+                  <Flex 
+                    key={date} 
+                    direction={{ base: "column", sm: "row" }}
+                    align={{ base: "stretch", sm: "center" }} 
+                    gap={3} 
+                    p={3} 
+                    bg="panelBg" 
+                    borderRadius="md"
+                  >
                     <Input
                       type="date"
                       value={date}
                       onChange={(e) => handleDateChange(sport, date, new Date(e.target.value))}
                       max={new Date().toISOString().split('T')[0]}
                       bg="inputBg"
-                      width="160px"
+                      width={{ base: "100%", sm: "160px" }}
                     />
-                    <Input
-                      type="number"
-                      value={ftp}
-                      onChange={(e) => handleFtpChange(sport, date, e.target.value)}
-                      placeholder="FTP"
-                      min="0"
-                      step="1"
-                      bg="inputBg"
-                      width="120px"
-                    />
-                    <Text fontSize="sm" color="text" minW="50px">watts</Text>
+                    <Flex gap={2} align="center" flex={{ base: "1", sm: "0" }}>
+                      <Input
+                        type="number"
+                        value={ftp}
+                        onChange={(e) => handleFtpChange(sport, date, e.target.value)}
+                        placeholder="FTP"
+                        min="0"
+                        step="1"
+                        bg="inputBg"
+                        flex="1"
+                        minW="80px"
+                      />
+                      <Text fontSize="sm" color="text" minW="50px">watts</Text>
+                    </Flex>
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -1730,7 +1800,7 @@ const ConfigSectionEditor = ({
 
   return (
     <Box p={6}>
-      <Heading size="lg" mb={2}>{schema.title || sectionName}</Heading>
+      <Heading size="lg" mb={2} lineHeight="1.2" wordBreak="break-word">{schema.title || sectionName}</Heading>
       
       {schema.description && <Text color="textMuted" mb={4}>{schema.description}</Text>}
       

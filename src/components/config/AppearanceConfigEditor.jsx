@@ -22,6 +22,7 @@ const AppearanceConfigEditor = ({
   const [showDashboardEditor, setShowDashboardEditor] = useState(false);
   const [dashboardJustSaved, setDashboardJustSaved] = useState(false);
   const countryChangeHandlerRef = useRef(null);
+  const formDataRef = useRef(null);
   const [expandedGroups, setExpandedGroups] = useState({
     globalSettings: false,
     dateFormat: false,
@@ -147,6 +148,7 @@ const AppearanceConfigEditor = ({
                     variant="ghost"
                     size="sm"
                     bg="cardBg"
+                    color="text"
                   >
                     <Box as={expandedSportCategories[category] !== false ? MdExpandMore : MdChevronRight} mr={2} />
                     {category}
@@ -234,7 +236,8 @@ const AppearanceConfigEditor = ({
                 {sortingOrder.map((sport, index) => (
                   <Flex
                     key={sport}
-                    align="center"
+                    direction={{ base: "column", sm: "row" }}
+                    align={{ base: "stretch", sm: "center" }}
                     gap={2}
                     p={2}
                     bg="cardBg"
@@ -242,37 +245,48 @@ const AppearanceConfigEditor = ({
                     borderColor="border"
                     borderRadius="md"
                   >
-                    <Text fontSize="sm" fontWeight="500" minWidth="30px">
-                      {index + 1}.
-                    </Text>
-                    <Text flex="1" fontSize="sm">{sport}</Text>
-                    <HStack gap={1}>
+                    <Flex align="center" gap={2} flex="1">
+                      <Text fontSize="sm" fontWeight="500" minWidth="30px">
+                        {index + 1}.
+                      </Text>
+                      <Text flex="1" fontSize="sm">{sport}</Text>
+                    </Flex>
+                    <HStack gap={{ base: 0.5, sm: 1 }} justifyContent={{ base: "center", sm: "flex-end" }}>
                       <Button
                         onClick={() => handleMoveUp(index)}
                         disabled={index === 0}
-                        size="sm"
+                        size={{ base: "xs", sm: "sm" }}
                         variant="ghost"
                         title="Move up"
+                        minW={{ base: "24px", sm: "auto" }}
+                        h={{ base: "24px", sm: "auto" }}
+                        p={{ base: 1, sm: 2 }}
                       >
-                        <MdArrowUpward />
+                        <Box as={MdArrowUpward} boxSize={{ base: "14px", sm: "16px" }} />
                       </Button>
                       <Button
                         onClick={() => handleMoveDown(index)}
                         disabled={index === sortingOrder.length - 1}
-                        size="sm"
+                        size={{ base: "xs", sm: "sm" }}
                         variant="ghost"
                         title="Move down"
+                        minW={{ base: "24px", sm: "auto" }}
+                        h={{ base: "24px", sm: "auto" }}
+                        p={{ base: 1, sm: 2 }}
                       >
-                        <MdArrowDownward />
+                        <Box as={MdArrowDownward} boxSize={{ base: "14px", sm: "16px" }} />
                       </Button>
                       <Button
                         onClick={() => handleRemoveSport(sport)}
-                        size="sm"
+                        size={{ base: "xs", sm: "sm" }}
                         variant="ghost"
                         colorPalette="red"
                         title="Remove"
+                        minW={{ base: "24px", sm: "auto" }}
+                        h={{ base: "24px", sm: "auto" }}
+                        p={{ base: 1, sm: 2 }}
                       >
-                        <MdClose />
+                        <Box as={MdClose} boxSize={{ base: "14px", sm: "16px" }} />
                       </Button>
                     </HStack>
                   </Flex>
@@ -301,20 +315,34 @@ const AppearanceConfigEditor = ({
                         variant="ghost"
                         size="sm"
                         bg="cardBg"
+                        color="text"
+                        whiteSpace="normal"
+                        textAlign="left"
+                        height="auto"
+                        py={2}
+                        wordBreak="break-word"
                       >
-                        <Box as={expandedSportCategories[`sorting_${category}`] !== false ? MdExpandMore : MdChevronRight} mr={2} />
+                        <Box as={expandedSportCategories[`sorting_${category}`] !== false ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                         {category}
                       </Button>
                       {expandedSportCategories[`sorting_${category}`] !== false && (
-                        <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2} p={3}>
+                        <Grid templateColumns="repeat(auto-fill, minmax(140px, 1fr))" gap={2} p={3}>
                           {availableInCategory.map(sport => (
                             <Button
                               key={sport}
                               onClick={() => handleAddSport(sport)}
-                              size="sm"
+                              size={{ base: "xs", sm: "sm" }}
                               variant="outline"
+                              whiteSpace="normal"
+                              wordBreak="break-word"
+                              height="auto"
+                              py={{ base: 1, sm: 2 }}
+                              px={{ base: 1.5, sm: 2 }}
+                              fontSize={{ base: "xs", sm: "sm" }}
+                              lineHeight="1.3"
+                              textAlign="left"
                             >
-                              <MdAdd /> {sport}
+                              <Box as={MdAdd} boxSize={{ base: "12px", sm: "16px" }} mr={1} flexShrink={0} /> {sport}
                             </Button>
                           ))}
                         </Grid>
@@ -343,20 +371,33 @@ const AppearanceConfigEditor = ({
         customValidation={validateAppearanceFields}
       >
         {({ formData, errors, schema, handleFieldChange, getNestedValue, renderBasicField, renderObjectField }) => {
-          // Store the change handler in ref for use in modal
+          // Store the change handler and formData in refs for use in modals
           countryChangeHandlerRef.current = handleFieldChange;
+          formDataRef.current = formData;
           
           return (
             <>
               {/* Collapse/Expand All Controls */}
-              <HStack mb={4}>
-                <Button onClick={expandAll} size="sm" variant="outline">
+              <Flex mb={4} gap={2} wrap="wrap">
+                <Button 
+                  onClick={expandAll} 
+                  size={{ base: "xs", sm: "sm" }} 
+                  variant="outline"
+                  flex={{ base: "1", sm: "0" }}
+                  minW={{ base: "auto", sm: "100px" }}
+                >
                   Expand All
                 </Button>
-                <Button onClick={collapseAll} size="sm" variant="outline">
+                <Button 
+                  onClick={collapseAll} 
+                  size={{ base: "xs", sm: "sm" }} 
+                  variant="outline"
+                  flex={{ base: "1", sm: "0" }}
+                  minW={{ base: "auto", sm: "100px" }}
+                >
                   Collapse All
                 </Button>
-              </HStack>
+              </Flex>
 
           {/* Global Appearance Settings Group */}
           {schema?.properties && (
@@ -368,8 +409,14 @@ const AppearanceConfigEditor = ({
                 variant="ghost"
                 fontWeight="600"
                 bg="cardBg"
+                color="text"
+                whiteSpace="normal"
+                textAlign="left"
+                height="auto"
+                py={2}
+                wordBreak="break-word"
               >
-                <Box as={expandedGroups.globalSettings ? MdExpandMore : MdChevronRight} mr={2} />
+                <Box as={expandedGroups.globalSettings ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                 Global Appearance Settings
               </Button>
               {expandedGroups.globalSettings && (
@@ -402,8 +449,14 @@ const AppearanceConfigEditor = ({
                     variant="ghost"
                     fontWeight="600"
                     bg="cardBg"
+                    color="text"
+                    whiteSpace="normal"
+                    textAlign="left"
+                    height="auto"
+                    py={2}
+                    wordBreak="break-word"
                   >
-                    <Box as={expandedGroups.dateFormat ? MdExpandMore : MdChevronRight} mr={2} />
+                    <Box as={expandedGroups.dateFormat ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                     {fieldSchema.title}
                   </Button>
                   {expandedGroups.dateFormat && (
@@ -430,8 +483,14 @@ const AppearanceConfigEditor = ({
                     variant="ghost"
                     fontWeight="600"
                     bg="cardBg"
+                    color="text"
+                    whiteSpace="normal"
+                    textAlign="left"
+                    height="auto"
+                    py={2}
+                    wordBreak="break-word"
                   >
-                    <Box as={expandedGroups.dashboard ? MdExpandMore : MdChevronRight} mr={2} />
+                    <Box as={expandedGroups.dashboard ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                     {fieldSchema.title}
                   </Button>
                   {expandedGroups.dashboard && (
@@ -473,7 +532,11 @@ const AppearanceConfigEditor = ({
                       )}
                       <Button 
                         onClick={() => setShowDashboardEditor(true)}
-                        size="sm"
+                        size={{ base: "xs", sm: "sm" }}
+                        width={{ base: "100%", sm: "auto" }}
+                        whiteSpace="normal"
+                        height="auto"
+                        py={2}
                       >
                         📊 Edit Dashboard Layout
                       </Button>
@@ -494,8 +557,14 @@ const AppearanceConfigEditor = ({
                     variant="ghost"
                     fontWeight="600"
                     bg="cardBg"
+                    color="text"
+                    whiteSpace="normal"
+                    textAlign="left"
+                    height="auto"
+                    py={2}
+                    wordBreak="break-word"
                   >
-                    <Box as={expandedGroups.sportTypesSortingOrder ? MdExpandMore : MdChevronRight} mr={2} />
+                    <Box as={expandedGroups.sportTypesSortingOrder ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                     {fieldSchema.title}
                   </Button>
                   {expandedGroups.sportTypesSortingOrder && (
@@ -531,8 +600,14 @@ const AppearanceConfigEditor = ({
                     variant="ghost"
                     fontWeight="600"
                     bg="cardBg"
+                    color="text"
+                    whiteSpace="normal"
+                    textAlign="left"
+                    height="auto"
+                    py={2}
+                    wordBreak="break-word"
                   >
-                    <Box as={expandedGroups.heatmap ? MdExpandMore : MdChevronRight} mr={2} />
+                    <Box as={expandedGroups.heatmap ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                     {fieldSchema.title}
                   </Button>
                   {expandedGroups.heatmap && (
@@ -565,8 +640,12 @@ const AppearanceConfigEditor = ({
                         />
                         <Button
                           onClick={() => handleFieldChange('heatmap.tileLayerUrl', [tileLayerValue || ''])}
-                          size="sm"
+                          size={{ base: "xs", sm: "sm" }}
                           variant="outline"
+                          width={{ base: "100%", sm: "auto" }}
+                          whiteSpace="normal"
+                          height="auto"
+                          py={{ base: 1.5, sm: 2 }}
                         >
                           Convert to Multiple Layers
                         </Button>
@@ -591,21 +670,24 @@ const AppearanceConfigEditor = ({
                                   const newArray = tileLayerValue.filter((_, i) => i !== index);
                                   handleFieldChange('heatmap.tileLayerUrl', newArray.length === 1 ? newArray[0] : newArray);
                                 }}
-                                size="sm"
+                                size={{ base: "xs", sm: "sm" }}
                                 variant="outline"
                                 colorPalette="red"
+                                minW={{ base: "28px", sm: "auto" }}
+                                p={{ base: 1, sm: 2 }}
                               >
-                                <MdClose />
+                                <Box as={MdClose} boxSize={{ base: "14px", sm: "16px" }} />
                               </Button>
                             </Flex>
                           ))}
                         </VStack>
                         <Button
                           onClick={() => handleFieldChange('heatmap.tileLayerUrl', [...tileLayerValue, ''])}
-                          size="sm"
+                          size={{ base: "xs", sm: "sm" }}
                           variant="outline"
+                          width={{ base: "100%", sm: "auto" }}
                         >
-                          <MdAdd /> Add Layer
+                          <Box as={MdAdd} boxSize={{ base: "14px", sm: "16px" }} mr={1} /> Add Layer
                         </Button>
                       </>
                     )}
@@ -631,8 +713,14 @@ const AppearanceConfigEditor = ({
                     variant="ghost"
                     fontWeight="600"
                     bg="cardBg"
+                    color="text"
+                    whiteSpace="normal"
+                    textAlign="left"
+                    height="auto"
+                    py={2}
+                    wordBreak="break-word"
                   >
-                    <Box as={expandedGroups.photos ? MdExpandMore : MdChevronRight} mr={2} />
+                    <Box as={expandedGroups.photos ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                     {fieldSchema.title}
                   </Button>
                   {expandedGroups.photos && (
@@ -671,7 +759,7 @@ const AppearanceConfigEditor = ({
                         {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description}
                       </Text>
                     )}
-                    <Flex gap={2}>
+                    <Flex gap={2} direction={{ base: "column", sm: "row" }}>
                       <Input
                         value={getNestedValue(formData, 'photos.defaultEnabledFilters.countryCode') || ''}
                         readOnly
@@ -681,7 +769,9 @@ const AppearanceConfigEditor = ({
                       />
                       <Button
                         onClick={() => setShowCountrySelector(true)}
-                        size="md"
+                        size={{ base: "xs", sm: "md" }}
+                        width={{ base: "100%", sm: "auto" }}
+                        whiteSpace="normal"
                       >
                         Select Country
                       </Button>
@@ -724,7 +814,7 @@ const AppearanceConfigEditor = ({
 
       {showDashboardEditor && (
         <DashboardEditor
-          dashboardLayout={initialData?.dashboard?.layout || []}
+          dashboardLayout={formDataRef.current?.dashboard?.layout || []}
           onClose={() => setShowDashboardEditor(false)}
           onSave={(updatedLayout) => {
             // Update the dashboard.layout in the form data

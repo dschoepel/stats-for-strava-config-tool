@@ -96,39 +96,45 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
       gap={0}
       bg="cardBg"
       borderRadius="md"
-      border="1px solid"
+      borderWidth="1px"
       borderColor="border"
       overflow="hidden"
-      h="calc(100vh - 200px)"
+      h={{ base: "calc(100vh - 150px)", md: "calc(100vh - 200px)" }}
+      shadows="md"
     >
       <Flex
-        p={4}
-        bg="panelBg"
-        borderBottom="1px solid"
+        p={{ base: 3, sm: 4 }}
+        bg="#E2E8F0"
+        _dark={{ bg: "#334155" }}
+        borderBottomWidth="1px"
         borderColor="border"
-        align="center"
+        align={{ base: "flex-start", sm: "center" }}
         justify="space-between"
-        gap={4}
-        minH="60px"
+        gap={{ base: 2, sm: 4 }}
+        minH={{ base: "auto", sm: "60px" }}
+        direction={{ base: "column", sm: "row" }}
       >
-        <HStack gap={3}>
-          <Heading as="h3" size="md" color="text">
+        <Flex direction={{ base: "column", sm: "row" }} gap={{ base: 1, sm: 3 }} align={{ base: "flex-start", sm: "center" }}>
+          <Heading as="h3" size={{ base: "sm", sm: "md" }} color="text" lineHeight="1.2" wordBreak="break-word">
             📄 Config YAML Viewer
           </Heading>
-          <Text fontSize="sm" color="textMuted">
+          <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
             {allFiles.length} file{allFiles.length > 1 ? 's' : ''} loaded
           </Text>
-        </HStack>
-        <HStack gap={3}>
+        </Flex>
+        <Flex gap={{ base: 1, sm: 3 }} wrap="wrap" justify={{ base: "flex-start", sm: "flex-end" }}>
           <Button
             onClick={handleLoadMoreFiles}
             title="Load additional YAML files"
             leftIcon={<MdFolder />}
-            size="sm"
+            size={{ base: "xs", sm: "sm" }}
             variant="outline"
             colorPalette="gray"
             borderColor="border"
             _hover={{ bg: "primaryHover", color: "white" }}
+            fontSize={{ base: "xs", sm: "sm" }}
+            px={{ base: 2, sm: 3 }}
+            h={{ base: "28px", sm: "auto" }}
           >
             Load More
           </Button>
@@ -136,65 +142,78 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             <Button
               onClick={() => setShowCombineModal(true)}
               title="Combine multiple files into one"
-              size="sm"
+              size={{ base: "xs", sm: "sm" }}
               variant="outline"
               colorPalette="gray"
               borderColor="border"
               _hover={{ bg: "primaryHover", color: "white" }}
+              fontSize={{ base: "xs", sm: "sm" }}
+              px={{ base: 2, sm: 3 }}
+              h={{ base: "28px", sm: "auto" }}
             >
-              🔗 Combine Files
+              🔗 Combine
             </Button>
           )}
           <Button
             onClick={onClearFiles}
-            size="sm"
+            size={{ base: "xs", sm: "sm" }}
             variant="outline"
             colorPalette="gray"
             borderColor="border"
+            px={{ base: 2, sm: 3 }}
+            h={{ base: "28px", sm: "auto" }}
           >
             Clear All
           </Button>
           <IconButton
             onClick={onClose}
             aria-label="Close viewer"
-            size="sm"
+            size={{ base: "xs", sm: "sm" }}
             variant="ghost"
             colorPalette="gray"
+            minW={{ base: "28px", sm: "auto" }}
+            h={{ base: "28px", sm: "auto" }}
+            p={{ base: 1, sm: 2 }}
           >
             <MdClose />
           </IconButton>
-        </HStack>
+        </Flex>
       </Flex>
 
       <Flex
         p={2}
-        bg="panelBg"
-        borderBottom="1px solid"
+        bg="#E2E8F0"
+        _dark={{ bg: "#334155" }}
+        borderBottomWidth="1px"
         borderColor="border"
         overflowX="auto"
         gap={2}
       >
         {allFiles.map((file, index) => (
-          <HStack
+          <Flex
             key={index}
             bg={selectedFileIndex === index ? "cardBg" : "transparent"}
-            border="1px solid"
+            borderWidth="1px"
             borderColor={selectedFileIndex === index ? "primary" : "border"}
             borderRadius="md"
-            px={3}
-            py={2}
+            px={{ base: 2, sm: 3 }}
+            py={{ base: 1.5, sm: 2 }}
             cursor="pointer"
             onClick={() => setSelectedFileIndex(index)}
             position="relative"
             minW="fit-content"
             _hover={{ bg: "cardBg" }}
             transition="all 0.2s"
+            align="center"
+            gap={2}
           >
             <VStack align="start" gap={0} flex={1}>
               <Text
-                fontSize="sm"
+                fontSize={{ base: "xs", sm: "sm" }}
                 fontWeight={selectedFileIndex === index ? "semibold" : "normal"}
                 color="text"
+                lineHeight="1.3"
+                wordBreak="break-word"
               >
                 {file.name.startsWith('combined_') ? '🔗 ' : ''}{file.name}
               </Text>
@@ -212,10 +231,13 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
               size="xs"
               variant="ghost"
               colorPalette="red"
+              minW={{ base: "20px", sm: "auto" }}
+              h={{ base: "20px", sm: "auto" }}
+              p={{ base: 0.5, sm: 1 }}
             >
               <MdClose />
             </IconButton>
-          </HStack>
+          </Flex>
         ))}
       </Flex>
 

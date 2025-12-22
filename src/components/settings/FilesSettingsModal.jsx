@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  Heading,
+  Text,
+  Button,
+  Field,
+  Input,
+  Flex,
+  Switch,
+} from '@chakra-ui/react';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
-import './SettingModal.css';
 
 const FilesSettingsModal = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState({});
@@ -77,66 +87,139 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="setting-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>📁 File Settings</h2>
-          <button onClick={handleClose} className="modal-close">✕</button>
-        </div>
+    <Box
+      position="fixed"
+      top="0"
+      left="0"
+      right="0"
+      bottom="0"
+      bg="blackAlpha.600"
+      zIndex="1000"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      onClick={handleClose}
+    >
+      <Box
+        bg="bg"
+        borderRadius="lg"
+        boxShadow="lg"
+        maxW={{ base: "95%", sm: "600px" }}
+        w="100%"
+        maxH={{ base: "90vh", sm: "80vh" }}
+        overflowY="auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <Flex
+          justify="space-between"
+          align="center"
+          p={{ base: 3, sm: 4 }}
+          borderBottomWidth="1px"
+          borderColor="border"
+        >
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
+            📁 File Settings
+          </Heading>
+          <Button
+            onClick={handleClose}
+            size={{ base: "xs", sm: "sm" }}
+            variant="ghost"
+            minW="auto"
+            px={{ base: 2, sm: 3 }}
+          >
+            ✕
+          </Button>
+        </Flex>
 
-        <div className="modal-body">
-          <div className="setting-group">
-            <label>Default file path</label>
-            <input 
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Default File Path Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Default file path</Field.Label>
+            <Input
               type="text"
               value={settings.files?.defaultPath || ''}
               onChange={(e) => handleChange('files.defaultPath', e.target.value)}
               placeholder="~/Documents/strava-config-tool/"
+              bg="inputBg"
             />
-          </div>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox"
-                checked={settings.files?.autoBackup !== false}
-                onChange={(e) => handleChange('files.autoBackup', e.target.checked)}
-              />
-              Create automatic backups
-            </label>
-          </div>
+          {/* Auto Backup Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.files?.autoBackup !== false}
+              onCheckedChange={(e) => handleChange('files.autoBackup', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Create automatic backups</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>
-              <input 
-                type="checkbox"
-                checked={settings.files?.validateOnLoad !== false}
-                onChange={(e) => handleChange('files.validateOnLoad', e.target.checked)}
-              />
-              Validate YAML syntax on file load
-            </label>
-          </div>
+          {/* Validate On Load Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.files?.validateOnLoad !== false}
+              onCheckedChange={(e) => handleChange('files.validateOnLoad', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Validate YAML syntax on file load</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>Maximum recent files</label>
-            <input 
+          {/* Maximum Recent Files Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Maximum recent files</Field.Label>
+            <Input
               type="number"
               min="1"
               max="50"
               value={settings.files?.maxRecentFiles || 10}
               onChange={(e) => handleChange('files.maxRecentFiles', parseInt(e.target.value))}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
             />
-          </div>
-        </div>
+          </Field.Root>
+        </VStack>
 
-        <div className="modal-footer">
-          <button onClick={handleClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} className="btn-primary" disabled={!isDirty}>
-            💾 Save
-          </button>
-        </div>
-      </div>
-    </div>
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            colorPalette="blue"
+            disabled={!isDirty}
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            💾 Save{isDirty && ' *'}
+          </Button>
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 

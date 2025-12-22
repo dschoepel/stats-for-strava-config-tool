@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
+import {
+  Box,
+  VStack,
+  Heading,
+  Button,
+  Textarea,
+  Flex,
+} from '@chakra-ui/react';
 import { exportSettingsAsYaml, importSettingsFromYaml } from '../../utils/settingsManager';
-import './SettingModal.css';
 
 const ImportExportModal = ({ isOpen, onClose }) => {
   const [mode, setMode] = useState('export');
@@ -42,63 +49,129 @@ const ImportExportModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="setting-modal" style={{ maxWidth: '800px' }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>📦 Import/Export Settings</h2>
-          <button onClick={onClose} className="modal-close">✕</button>
-        </div>
+    <Box
+      position="fixed"
+      top="0"
+      left="0"
+      right="0"
+      bottom="0"
+      bg="blackAlpha.600"
+      zIndex="1000"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      onClick={onClose}
+    >
+      <Box
+        bg="bg"
+        borderRadius="lg"
+        boxShadow="lg"
+        maxW={{ base: "95%", sm: "800px" }}
+        w="100%"
+        maxH={{ base: "90vh", sm: "80vh" }}
+        overflowY="auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <Flex
+          justify="space-between"
+          align="center"
+          p={{ base: 3, sm: 4 }}
+          borderBottomWidth="1px"
+          borderColor="border"
+        >
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
+            📦 Import/Export Settings
+          </Heading>
+          <Button
+            onClick={onClose}
+            size={{ base: "xs", sm: "sm" }}
+            variant="ghost"
+            minW="auto"
+            px={{ base: 2, sm: 3 }}
+          >
+            ✕
+          </Button>
+        </Flex>
 
-        <div className="modal-body">
-          <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
-            <button 
-              onClick={handleExport} 
-              className={mode === 'export' ? 'btn-primary' : 'btn-secondary'}
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Mode Toggle Buttons */}
+          <Flex gap={2}>
+            <Button
+              onClick={handleExport}
+              colorPalette={mode === 'export' ? 'blue' : undefined}
+              variant={mode === 'export' ? 'solid' : 'outline'}
+              size={{ base: "sm", sm: "md" }}
+              flex="1"
             >
               📤 Export
-            </button>
-            <button 
-              onClick={handleImport} 
-              className={mode === 'import' ? 'btn-primary' : 'btn-secondary'}
+            </Button>
+            <Button
+              onClick={handleImport}
+              colorPalette={mode === 'import' ? 'blue' : undefined}
+              variant={mode === 'import' ? 'solid' : 'outline'}
+              size={{ base: "sm", sm: "md" }}
+              flex="1"
             >
               📥 Import
-            </button>
-          </div>
+            </Button>
+          </Flex>
 
-          <textarea
+          {/* YAML Content Textarea */}
+          <Textarea
             value={yamlContent}
             onChange={(e) => setYamlContent(e.target.value)}
             placeholder={mode === 'import' ? 'Paste YAML settings here...' : ''}
             readOnly={mode === 'export'}
-            style={{
-              width: '100%',
-              minHeight: '400px',
-              padding: '1rem',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)',
-              fontFamily: "'Fira Code', 'Monaco', 'Consolas', monospace",
-              fontSize: '0.9rem',
-              lineHeight: '1.5'
-            }}
+            minH="400px"
+            fontFamily="'Fira Code', 'Monaco', 'Consolas', monospace"
+            fontSize="0.9rem"
+            lineHeight="1.5"
+            bg="inputBg"
+            resize="vertical"
           />
-        </div>
+        </VStack>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn-secondary">Close</button>
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={onClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Close
+          </Button>
           {mode === 'export' ? (
-            <button onClick={downloadSettings} className="btn-primary">
+            <Button
+              onClick={downloadSettings}
+              colorPalette="blue"
+              size={{ base: "sm", sm: "md" }}
+              width={{ base: "100%", sm: "auto" }}
+            >
               💾 Download
-            </button>
+            </Button>
           ) : (
-            <button onClick={handleImportConfirm} className="btn-primary">
+            <Button
+              onClick={handleImportConfirm}
+              colorPalette="blue"
+              size={{ base: "sm", sm: "md" }}
+              width={{ base: "100%", sm: "auto" }}
+            >
               📥 Import
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 

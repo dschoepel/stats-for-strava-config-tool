@@ -10,6 +10,7 @@ import {
   NativeSelectRoot,
   NativeSelectField,
   HStack,
+  Flex,
 } from '@chakra-ui/react';
 import { Switch } from '@chakra-ui/react';
 import { getSchemaBySection } from '../../schemas/configSchemas';
@@ -301,12 +302,20 @@ const BaseConfigEditor = ({
           })}
         </VStack>
 
-        <HStack justify="flex-end" gap={3} pt={4} borderTop="1px solid" borderColor="border">
+        <Flex 
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end" 
+          gap={3} 
+          pt={4} 
+          borderTop="1px solid" 
+          borderColor="border"
+        >
           <Button
             onClick={handleCancelWithConfirm}
             isDisabled={isLoading}
             variant="outline"
             colorPalette="gray"
+            width={{ base: "100%", sm: "auto" }}
           >
             Cancel
           </Button>
@@ -320,10 +329,11 @@ const BaseConfigEditor = ({
             border={isDirty ? "3px solid" : "none"}
             borderColor={isDirty ? "primaryHover" : "transparent"}
             boxShadow={isDirty ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
+            width={{ base: "100%", sm: "auto" }}
           >
             {isLoading ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
           </Button>
-        </HStack>
+        </Flex>
       </VStack>
     </Box>
   );

@@ -399,11 +399,39 @@ export const appearanceSchema = {
   additionalProperties: false
 };
 
+export const zwiftSchema = {
+  type: "object",
+  title: "Zwift Configuration",
+  description: "Zwift integration settings for displaying your Zwift badge and stats",
+  properties: {
+    level: {
+      type: ["integer", "null"],
+      title: "Zwift Level",
+      description: "Your Zwift level (1 - 100). Will be used to render your Zwift badge. Leave empty to disable this feature",
+      minimum: 1,
+      maximum: 100,
+      default: null,
+      examples: [25, 50, 100, null]
+    },
+    racingScore: {
+      type: ["integer", "null"],
+      title: "Zwift Racing Score",
+      description: "Your Zwift racing score (0 - 1000). Will be used to add to your Zwift badge if zwift.level is filled out",
+      minimum: 0,
+      maximum: 1000,
+      default: null,
+      examples: [500, 750, 950, null]
+    }
+  },
+  additionalProperties: false
+};
+
 // Helper function to get all available schemas
 export const getConfigSchemas = () => ({
   general: generalSchema,
   athlete: athleteSchema,
-  appearance: appearanceSchema
+  appearance: appearanceSchema,
+  zwift: zwiftSchema
 });
 
 // Helper function to get schema by section name

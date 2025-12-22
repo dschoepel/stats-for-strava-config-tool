@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  Heading,
+  Button,
+  Field,
+  Input,
+  Flex,
+} from '@chakra-ui/react';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
-import './SettingModal.css';
 
 const PerformanceSettingsModal = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState({});
@@ -46,58 +54,127 @@ const PerformanceSettingsModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="setting-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>⚡ Performance Settings</h2>
-          <button onClick={handleClose} className="modal-close">✕</button>
-        </div>
+    <Box
+      position="fixed"
+      top="0"
+      left="0"
+      right="0"
+      bottom="0"
+      bg="blackAlpha.600"
+      zIndex="1000"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      onClick={handleClose}
+    >
+      <Box
+        bg="bg"
+        borderRadius="lg"
+        boxShadow="lg"
+        maxW={{ base: "95%", sm: "600px" }}
+        w="100%"
+        maxH={{ base: "90vh", sm: "80vh" }}
+        overflowY="auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <Flex
+          justify="space-between"
+          align="center"
+          p={{ base: 3, sm: 4 }}
+          borderBottomWidth="1px"
+          borderColor="border"
+        >
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
+            ⚡ Performance Settings
+          </Heading>
+          <Button
+            onClick={handleClose}
+            size={{ base: "xs", sm: "sm" }}
+            variant="ghost"
+            minW="auto"
+            px={{ base: 2, sm: 3 }}
+          >
+            ✕
+          </Button>
+        </Flex>
 
-        <div className="modal-body">
-          <div className="setting-group">
-            <label>Maximum file size (MB)</label>
-            <input 
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Maximum File Size Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Maximum file size (MB)</Field.Label>
+            <Input
               type="number"
               min="1"
               max="100"
               value={Math.round((settings.performance?.maxFileSize || 10485760) / 1024 / 1024)}
               onChange={(e) => handleChange('performance.maxFileSize', parseInt(e.target.value) * 1024 * 1024)}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
             />
-          </div>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>Search timeout (ms)</label>
-            <input 
+          {/* Search Timeout Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Search timeout (ms)</Field.Label>
+            <Input
               type="number"
               min="100"
               max="2000"
               step="100"
               value={settings.performance?.searchTimeout || 500}
               onChange={(e) => handleChange('performance.searchTimeout', parseInt(e.target.value))}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
             />
-          </div>
+          </Field.Root>
 
-          <div className="setting-group">
-            <label>Auto-save interval (seconds)</label>
-            <input 
+          {/* Auto-save Interval Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Auto-save interval (seconds)</Field.Label>
+            <Input
               type="number"
               min="10"
               max="300"
               step="10"
               value={Math.round((settings.performance?.autoSaveInterval || 30000) / 1000)}
               onChange={(e) => handleChange('performance.autoSaveInterval', parseInt(e.target.value) * 1000)}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
             />
-          </div>
-        </div>
+          </Field.Root>
+        </VStack>
 
-        <div className="modal-footer">
-          <button onClick={handleClose} className="btn-secondary">Cancel</button>
-          <button onClick={handleSave} className="btn-primary" disabled={!isDirty}>
-            💾 Save
-          </button>
-        </div>
-      </div>
-    </div>
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            colorPalette="blue"
+            disabled={!isDirty}
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            💾 Save{isDirty && ' *'}
+          </Button>
+        </Flex>
+      </Box>
+    </Box>
   );
 };
 

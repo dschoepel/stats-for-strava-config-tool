@@ -19,6 +19,7 @@ import ConfigSectionEditor from './components/ConfigSectionEditor'
 import AthleteConfigEditor from './components/config/AthleteConfigEditor'
 import GeneralConfigEditor from './components/config/GeneralConfigEditor'
 import AppearanceConfigEditor from './components/config/AppearanceConfigEditor'
+import ZwiftConfigEditor from './components/config/ZwiftConfigEditor'
 import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
@@ -103,7 +104,9 @@ function App() {
         if (loadedSettings.ui?.theme) {
           setTheme(loadedSettings.ui.theme);
         }
-        setIsSidebarCollapsed(loadedSettings.ui?.sidebarCollapsed ?? false);
+        // On mobile, start with sidebar collapsed; on desktop, use saved preference
+        const isMobile = window.innerWidth < 768;
+        setIsSidebarCollapsed(isMobile ? true : (loadedSettings.ui?.sidebarCollapsed ?? false));
         
         console.log('Loaded settings:', loadedSettings);
         console.log('Sidebar collapsed setting:', loadedSettings.ui?.sidebarCollapsed);
@@ -457,6 +460,15 @@ function App() {
                 key={JSON.stringify(sectionData.appearance)}
                 initialData={sectionData.appearance || {}}
                 onSave={(data) => saveSectionData('appearance', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
+            ) : currentPage === 'Zwift' ? (
+              <ZwiftConfigEditor
+                key={JSON.stringify(sectionData.zwift)}
+                initialData={sectionData.zwift || {}}
+                onSave={(data) => saveSectionData('zwift', data)}
                 onCancel={() => handleNavClick('Configuration')}
                 isLoading={isLoadingSectionData}
                 onDirtyChange={setHasUnsavedChanges}
