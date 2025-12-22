@@ -1,4 +1,5 @@
 import './globals.css'
+import { Providers } from '../src/components/Providers'
 
 export const metadata = {
   title: 'Stats for Strava Config Tool',
@@ -15,8 +16,10 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning={true}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning={true}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }

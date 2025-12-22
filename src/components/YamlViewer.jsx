@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton } from '@chakra-ui/react';
+import { MdClose, MdFolder } from 'react-icons/md';
 import { formatFileSize } from '../utils/yamlFileHandler';
 import CombineFilesModal from './CombineFilesModal';
 import MonacoYamlViewer from './MonacoYamlViewer';
-import './YamlViewer.css';
 
 const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpdated }) => {
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
@@ -90,76 +91,148 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
   };
 
   return (
-    <div className="yaml-viewer">
-      <div className="yaml-viewer-header">
-        <div className="header-left">
-          <h3>📄 Config YAML Viewer</h3>
-          <span className="file-count">{allFiles.length} file{allFiles.length > 1 ? 's' : ''} loaded</span>
-        </div>
-        <div className="header-actions">
-          <button 
+    <VStack
+      align="stretch"
+      gap={0}
+      bg="cardBg"
+      borderRadius="md"
+      border="1px solid"
+      borderColor="border"
+      overflow="hidden"
+      h="calc(100vh - 200px)"
+    >
+      <Flex
+        p={4}
+        bg="panelBg"
+        borderBottom="1px solid"
+        borderColor="border"
+        align="center"
+        justify="space-between"
+        gap={4}
+        minH="60px"
+      >
+        <HStack gap={3}>
+          <Heading as="h3" size="md" color="text">
+            📄 Config YAML Viewer
+          </Heading>
+          <Text fontSize="sm" color="textMuted">
+            {allFiles.length} file{allFiles.length > 1 ? 's' : ''} loaded
+          </Text>
+        </HStack>
+        <HStack gap={3}>
+          <Button
             onClick={handleLoadMoreFiles}
-            className="btn-load-more"
             title="Load additional YAML files"
+            leftIcon={<MdFolder />}
+            size="sm"
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            _hover={{ bg: "primaryHover", color: "white" }}
           >
-            📁 Load More
-          </button>
+            Load More
+          </Button>
           {allFiles.length > 1 && (
-            <button 
-              onClick={() => setShowCombineModal(true)} 
-              className="btn-combine"
+            <Button
+              onClick={() => setShowCombineModal(true)}
               title="Combine multiple files into one"
+              size="sm"
+              variant="outline"
+              colorPalette="gray"
+              borderColor="border"
+              _hover={{ bg: "primaryHover", color: "white" }}
             >
               🔗 Combine Files
-            </button>
+            </Button>
           )}
-          <button onClick={onClearFiles} className="btn-secondary">
+          <Button
+            onClick={onClearFiles}
+            size="sm"
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+          >
             Clear All
-          </button>
-          <button onClick={onClose} className="btn-close">
-            ✕
-          </button>
-        </div>
-      </div>
+          </Button>
+          <IconButton
+            onClick={onClose}
+            aria-label="Close viewer"
+            size="sm"
+            variant="ghost"
+            colorPalette="gray"
+          >
+            <MdClose />
+          </IconButton>
+        </HStack>
+      </Flex>
 
-      {allFiles.length > 1 && (
-        <div className="file-tabs">
-          {allFiles.map((file, index) => (
-            <div key={index} className="file-tab-container">
-              <button
-                className={`file-tab ${selectedFileIndex === index ? 'active' : ''} ${file.name.startsWith('combined_') ? 'combined' : ''}`}
-                onClick={() => setSelectedFileIndex(index)}
+      <Flex
+        p={2}
+        bg="panelBg"
+        borderBottom="1px solid"
+        borderColor="border"
+        overflowX="auto"
+        gap={2}
+      >
+        {allFiles.map((file, index) => (
+          <HStack
+            key={index}
+            bg={selectedFileIndex === index ? "cardBg" : "transparent"}
+            border="1px solid"
+            borderColor={selectedFileIndex === index ? "primary" : "border"}
+            borderRadius="md"
+            px={3}
+            py={2}
+            cursor="pointer"
+            onClick={() => setSelectedFileIndex(index)}
+            position="relative"
+            minW="fit-content"
+            _hover={{ bg: "cardBg" }}
+            transition="all 0.2s"
+          >
+            <VStack align="start" gap={0} flex={1}>
+              <Text
+                fontSize="sm"
+                fontWeight={selectedFileIndex === index ? "semibold" : "normal"}
+                color="text"
               >
-                <span className="tab-name">{file.name.startsWith('combined_') ? '🔗 ' : ''}{file.name}</span>
-                <span className="tab-size">({formatFileSize(file.size)})</span>
-              </button>
-              <button
-                className="remove-file-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveFile(index);
-                }}
-                title={`Remove ${file.name}`}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+                {file.name.startsWith('combined_') ? '🔗 ' : ''}{file.name}
+              </Text>
+              <Text fontSize="xs" color="textMuted">
+                ({formatFileSize(file.size)})
+              </Text>
+            </VStack>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveFile(index);
+              }}
+              aria-label={`Remove ${file.name}`}
+              title={`Remove ${file.name}`}
+              size="xs"
+              variant="ghost"
+              colorPalette="red"
+            >
+              <MdClose />
+            </IconButton>
+          </HStack>
+        ))}
+      </Flex>
 
-      <MonacoYamlViewer
-        fileName={currentFile.name}
-        fileContent={currentFile.content}
-        fileSize={currentFile.size}
-        lastModified={currentFile.lastModified}
-        showFileInfo={true}
-        showActions={true}
-        onDownload={handleDownloadFile}
-        onCopy={handleCopyFile}
-        className="page-viewer"
-        height="100%"
-      />
+      <Box flex={1} overflow="hidden">
+        <MonacoYamlViewer
+          fileName={currentFile.name}
+          fileContent={currentFile.content}
+          fileSize={currentFile.size}
+          lastModified={currentFile.lastModified}
+          showFileInfo={true}
+          showActions={true}
+          onDownload={handleDownloadFile}
+          onCopy={handleCopyFile}
+          className="page-viewer"
+          height="100%"
+        />
+      </Box>
       
       <CombineFilesModal
         files={allFiles}
@@ -167,7 +240,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         onClose={() => setShowCombineModal(false)}
         onCombine={handleCombineFiles}
       />
-    </div>
+    </VStack>
   );
 };
 

@@ -1,6 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Box,
+  VStack,
+  Heading,
+  Text,
+  Button,
+  Field,
+  Input,
+  NativeSelectRoot,
+  NativeSelectField,
+  HStack,
+} from '@chakra-ui/react';
+import { Switch } from '@chakra-ui/react';
 import { getSchemaBySection } from '../../schemas/configSchemas';
-import '../ConfigSectionEditor.css';
 
 /**
  * BaseConfigEditor - Common form logic for all config section editors
@@ -19,7 +31,7 @@ const BaseConfigEditor = ({
   const [formData, setFormData] = useState(() => initialData);
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
-  const schema = React.useMemo(() => getSchemaBySection(sectionName), [sectionName]);
+  const schema = useMemo(() => getSchemaBySection(sectionName), [sectionName]);
 
   // Warn user before leaving with unsaved changes
   useEffect(() => {
@@ -130,66 +142,66 @@ const BaseConfigEditor = ({
     const value = getNestedValue(formData, fieldPath);
     const hasError = errors[fieldPath];
     const fieldType = Array.isArray(fieldSchema.type) ? fieldSchema.type[0] : fieldSchema.type;
+    const isRequired = schema?.required?.includes(fieldName);
 
     switch (fieldType) {
       case 'string':
         if (fieldSchema.enum) {
           return (
-            <div key={fieldPath} className="form-field">
-              <label htmlFor={fieldPath} className="field-label">
+            <Field.Root key={fieldPath} invalid={!!hasError} required={isRequired}>
+              <Field.Label htmlFor={fieldPath}>
                 {fieldSchema.title || fieldName}
-                {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-              </label>
-              <select
-                id={fieldPath}
-                value={value || ''}
-                onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
-                className={`field-input select-input ${hasError ? 'error' : ''}`}
-              >
-                <option value="">Select...</option>
-                {fieldSchema.enum.map((option, idx) => (
-                  <option key={option} value={option}>
-                    {fieldSchema.enumTitles?.[idx] || option}
-                  </option>
-                ))}
-              </select>
+              </Field.Label>
+              <NativeSelectRoot>
+                <NativeSelectField
+                  id={fieldPath}
+                  value={value || ''}
+                  onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
+                  placeholder="Select..."
+                >
+                  <option value="">Select...</option>
+                  {fieldSchema.enum.map((option, idx) => (
+                    <option key={option} value={option}>
+                      {fieldSchema.enumTitles?.[idx] || option}
+                    </option>
+                  ))}
+                </NativeSelectField>
+              </NativeSelectRoot>
               {!skipDescription && fieldSchema.description && (
-                <p className="field-description">{fieldSchema.description}</p>
+                <Field.HelperText color="helperText">{fieldSchema.description}</Field.HelperText>
               )}
-              {hasError && <span className="field-error">{hasError}</span>}
-            </div>
+              {hasError && <Field.ErrorText>{hasError}</Field.ErrorText>}
+            </Field.Root>
           );
         }
         return (
-          <div key={fieldPath} className="form-field">
-            <label htmlFor={fieldPath} className="field-label">
+          <Field.Root key={fieldPath} invalid={!!hasError} required={isRequired}>
+            <Field.Label htmlFor={fieldPath}>
               {fieldSchema.title || fieldName}
-              {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-            </label>
-            <input
-              type="text"
+            </Field.Label>
+            <Input
               id={fieldPath}
+              type={fieldSchema.format === 'date' ? 'date' : 'text'}
               value={value || ''}
               onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
-              className={`field-input ${hasError ? 'error' : ''}`}
               placeholder={fieldSchema.default}
+              bg="inputBg"
             />
             {!skipDescription && fieldSchema.description && (
-              <p className="field-description">{fieldSchema.description}</p>
+              <Field.HelperText color="helperText">{fieldSchema.description}</Field.HelperText>
             )}
-            {hasError && <span className="field-error">{hasError}</span>}
-          </div>
+            {hasError && <Field.ErrorText>{hasError}</Field.ErrorText>}
+          </Field.Root>
         );
 
       case 'number':
       case 'integer':
         return (
-          <div key={fieldPath} className="form-field">
-            <label htmlFor={fieldPath} className="field-label">
+          <Field.Root key={fieldPath} invalid={!!hasError} required={isRequired}>
+            <Field.Label htmlFor={fieldPath}>
               {fieldSchema.title || fieldName}
-              {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-            </label>
-            <input
+            </Field.Label>
+            <Input
               type="number"
               id={fieldPath}
               value={value ?? ''}
@@ -197,35 +209,38 @@ const BaseConfigEditor = ({
                 const val = e.target.value === '' ? null : (fieldType === 'integer' ? parseInt(e.target.value) : parseFloat(e.target.value));
                 handleFieldChange(fieldPath, val);
               }}
-              className={`field-input ${hasError ? 'error' : ''}`}
               placeholder={fieldSchema.default?.toString()}
+              step={fieldType === 'integer' ? '1' : 'any'}
+              bg="inputBg"
             />
             {!skipDescription && fieldSchema.description && (
-              <p className="field-description">{fieldSchema.description}</p>
+              <Field.HelperText color="helperText">{fieldSchema.description}</Field.HelperText>
             )}
-            {hasError && <span className="field-error">{hasError}</span>}
-          </div>
+            {hasError && <Field.ErrorText>{hasError}</Field.ErrorText>}
+          </Field.Root>
         );
 
       case 'boolean':
         return (
-          <div key={fieldPath} className="form-field checkbox-field">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
+          <Field.Root key={fieldPath} invalid={!!hasError}>
+            <HStack justify="space-between">
+              <Field.Label htmlFor={fieldPath} mb={0}>
+                {fieldSchema.title || fieldName}
+                {isRequired && <Text as="span" color="red.500" ml={1}>*</Text>}
+              </Field.Label>
+              <Switch.Root
                 id={fieldPath}
                 checked={value || false}
-                onChange={(e) => handleFieldChange(fieldPath, e.target.checked)}
-                className="checkbox-input"
-              />
-              <span>{fieldSchema.title || fieldName}</span>
-              {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-            </label>
+                onCheckedChange={(e) => handleFieldChange(fieldPath, e.checked)}
+              >
+                <Switch.Thumb />
+              </Switch.Root>
+            </HStack>
             {!skipDescription && fieldSchema.description && (
-              <p className="field-description">{fieldSchema.description}</p>
+              <Field.HelperText color="helperText">{fieldSchema.description}</Field.HelperText>
             )}
-            {hasError && <span className="field-error">{hasError}</span>}
-          </div>
+            {hasError && <Field.ErrorText>{hasError}</Field.ErrorText>}
+          </Field.Root>
         );
 
       default:
@@ -238,61 +253,79 @@ const BaseConfigEditor = ({
     const properties = fieldSchema.properties || {};
     
     return (
-      <div key={fieldPath} className="form-field object-field">
-        <div className="field-label-section">
-          <h4 className="field-label">{fieldSchema.title || fieldName}</h4>
-          {fieldSchema.description && (
-            <p className="field-description">{fieldSchema.description}</p>
-          )}
-        </div>
-        <div className="object-fields">
-          {Object.entries(properties).map(([propName, propSchema]) => 
-            renderBasicField(propName, propSchema, `${fieldPath}.${propName}`, true)
-          )}
-        </div>
-      </div>
+      <Box key={fieldPath} p={4} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
+        <VStack align="stretch" gap={3}>
+          <Box>
+            <Heading as="h4" size="sm" color="text">
+              {fieldSchema.title || fieldName}
+            </Heading>
+            {fieldSchema.description && (
+              <Text fontSize="sm" color="textMuted" mt={1}>
+                {fieldSchema.description}
+              </Text>
+            )}
+          </Box>
+          <VStack align="stretch" gap={4}>
+            {Object.entries(properties).map(([propName, propSchema]) => 
+              renderBasicField(propName, propSchema, `${fieldPath}.${propName}`, true)
+            )}
+          </VStack>
+        </VStack>
+      </Box>
     );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="config-section-editor">
-      <div className="editor-header">
-        <h3 className="editor-title">{schema?.title || sectionName}</h3>
-        {schema?.description && (
-          <p className="editor-description">{schema.description}</p>
-        )}
-      </div>
+    <Box as="form" onSubmit={handleSubmit} p={6} bg="cardBg" borderRadius="md" boxShadow="md" border="1px solid" borderColor="border">
+      <VStack align="stretch" gap={6}>
+        <Box>
+          <Heading as="h3" size="lg" color="text">
+            {schema?.title || sectionName}
+          </Heading>
+          {schema?.description && (
+            <Text color="textMuted" mt={2}>
+              {schema.description}
+            </Text>
+          )}
+        </Box>
 
-      <div className="editor-content">
-        {children({
-          formData,
-          errors,
-          schema,
-          handleFieldChange,
-          getNestedValue,
-          renderBasicField,
-          renderObjectField
-        })}
-      </div>
+        <VStack align="stretch" gap={4}>
+          {children({
+            formData,
+            errors,
+            schema,
+            handleFieldChange,
+            getNestedValue,
+            renderBasicField,
+            renderObjectField
+          })}
+        </VStack>
 
-      <div className="editor-actions">
-        <button 
-          type="button" 
-          onClick={handleCancelWithConfirm} 
-          className="btn-cancel"
-          disabled={isLoading}
-        >
-          Cancel
-        </button>
-        <button 
-          type="submit" 
-          className="btn-save"
-          disabled={isLoading || !isDirty}
-        >
-          {isLoading ? 'Saving...' : 'Save Changes'}
-        </button>
-      </div>
-    </form>
+        <HStack justify="flex-end" gap={3} pt={4} borderTop="1px solid" borderColor="border">
+          <Button
+            onClick={handleCancelWithConfirm}
+            isDisabled={isLoading}
+            variant="outline"
+            colorPalette="gray"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            isDisabled={isLoading || !isDirty}
+            isLoading={isLoading}
+            bg="primary"
+            color="white"
+            _hover={{ bg: "primaryHover" }}
+            border={isDirty ? "3px solid" : "none"}
+            borderColor={isDirty ? "primaryHover" : "transparent"}
+            boxShadow={isDirty ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
+          >
+            {isLoading ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
+          </Button>
+        </HStack>
+      </VStack>
+    </Box>
   );
 };
 

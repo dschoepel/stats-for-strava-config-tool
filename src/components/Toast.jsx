@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import './Toast.css';
+import { useState, useEffect } from 'react';
+import { Box, Flex, Text, IconButton, Icon } from '@chakra-ui/react';
+import { CloseIcon } from '@chakra-ui/icons';
+import { MdInfo, MdCheckCircle, MdWarning, MdError } from 'react-icons/md';
 
 const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -7,7 +9,7 @@ const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onClose, 300); // Wait for fade out animation
+      setTimeout(onClose, 300);
     }, duration);
 
     return () => clearTimeout(timer);
@@ -15,43 +17,88 @@ const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
 
   const getIcon = () => {
     switch (type) {
-      case 'error': return '❌';
-      case 'warning': return '⚠️';
-      case 'success': return '✅';
+      case 'error': return MdError;
+      case 'warning': return MdWarning;
+      case 'success': return MdCheckCircle;
       case 'info':
-      default: return 'ℹ️';
+      default: return MdInfo;
     }
   };
 
+  const getColorScheme = () => {
+    switch (type) {
+      case 'error': return { bg: 'red.500', color: 'white' };
+      case 'warning': return { bg: 'orange.500', color: 'white' };
+      case 'success': return { bg: 'green.500', color: 'white' };
+      case 'info':
+      default: return { bg: 'blue.500', color: 'white' };
+    }
+  };
+
+  const colors = getColorScheme();
+  const IconComponent = getIcon();
+
   return (
-    <div className={`toast toast-${type} ${isVisible ? 'toast-visible' : 'toast-hidden'}`}>
-      <div className="toast-content">
-        <span className="toast-icon">{getIcon()}</span>
-        <span className="toast-message">{message}</span>
-        <button className="toast-close" onClick={() => {
-          setIsVisible(false);
-          setTimeout(onClose, 300);
-        }}>
-          ×
-        </button>
-      </div>
-    </div>
+    <Box
+      minW="300px"
+      maxW="500px"
+      bg={colors.bg}
+      color={colors.color}
+      borderRadius="md"
+      boxShadow="lg"
+      transform={isVisible ? 'translateX(0)' : 'translateX(100%)'}
+      opacity={isVisible ? 1 : 0}
+      transition="all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+      overflow="hidden"
+    >
+      <Flex align="flex-start" gap={2} p={3}>
+        <Icon as={IconComponent} boxSize={4} flexShrink={0} />
+        <Text flex={1} fontSize="sm" lineHeight="1.3" wordBreak="break-word">
+          {message}
+        </Text>
+        <IconButton
+          size="xs"
+          variant="ghost"
+          color="white"
+          _hover={{ bg: 'whiteAlpha.300' }}
+          onClick={() => {
+            setIsVisible(false);
+            setTimeout(onClose, 300);
+          }}
+          aria-label="Close notification"
+          flexShrink={0}
+        >
+          <CloseIcon boxSize={2.5} />
+        </IconButton>
+      </Flex>
+    </Box>
   );
 };
 
 export const ToastContainer = ({ toasts, removeToast }) => {
   return (
-    <div className="toast-container">
+    <Box
+      position="fixed"
+      bottom={5}
+      right={5}
+      zIndex={1000}
+      display="flex"
+      flexDirection="column"
+      gap={2}
+      pointerEvents="none"
+      w={{ base: 'calc(100% - 40px)', md: 'auto' }}
+    >
       {toasts.map(toast => (
-        <Toast
-          key={toast.id}
-          message={toast.message}
-          type={toast.type}
-          duration={toast.duration}
-          onClose={() => removeToast(toast.id)}
-        />
+        <Box key={toast.id} pointerEvents="auto">
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            duration={toast.duration}
+            onClose={() => removeToast(toast.id)}
+          />
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 };
 

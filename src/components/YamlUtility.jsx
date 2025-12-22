@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Box, VStack, Heading, Text, Button, Flex, HStack, IconButton, SimpleGrid, Icon } from '@chakra-ui/react';
+import { MdClose, MdSettings, MdWarning, MdRocket, MdStars, MdSearch, MdEdit, MdDownload, MdContentCopy, MdPalette, MdLock, MdInfo } from 'react-icons/md';
 import FileSelector from './FileSelector';
 import YamlViewer from './YamlViewer';
 import { processYamlFiles } from '../utils/yamlFileHandler';
-import './YamlUtility.css';
 
-const YamlUtility = () => {
+const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
   const [selectedFiles, setSelectedFiles] = useState(() => {
     try {
       const saved = localStorage.getItem('yaml-utility-files');
@@ -32,6 +33,7 @@ const YamlUtility = () => {
       return false;
     }
   });
+  const prevBreadcrumbsRef = React.useRef(breadcrumbs);
 
   // Save files to localStorage whenever they change
   React.useEffect(() => {
@@ -42,6 +44,30 @@ const YamlUtility = () => {
       console.error('Error saving files to localStorage:', err);
     }
   }, [selectedFiles, showViewer]);
+
+  // Update breadcrumbs based on viewer state
+  React.useEffect(() => {
+    if (setBreadcrumbs) {
+      if (showViewer) {
+        setBreadcrumbs(['YAML Utility', 'File Viewer']);
+      } else {
+        setBreadcrumbs(['YAML Utility']);
+      }
+    }
+  }, [showViewer, setBreadcrumbs]);
+
+  // Reset viewer when navigating back via breadcrumb
+  React.useEffect(() => {
+    if (breadcrumbs && prevBreadcrumbsRef.current) {
+      // Only reset if breadcrumbs were shortened from 2 to 1 (user clicked back)
+      if (prevBreadcrumbsRef.current.length === 2 && breadcrumbs.length === 1 && 
+          breadcrumbs[0] === 'YAML Utility' && showViewer) {
+        setShowViewer(false);
+      }
+    }
+    
+    prevBreadcrumbsRef.current = breadcrumbs;
+  }, [breadcrumbs, showViewer]);
 
   const handleFilesSelected = (files) => {
     setSelectedFiles(prevFiles => {
@@ -118,88 +144,188 @@ const YamlUtility = () => {
   };
 
   return (
-    <div className="yaml-utility">
-      <div className="utility-header">
-        <h2>⚙️ YAML Config File Utility</h2>
-        <p>
+    <Box p={6} minH="100vh" bg="bg">
+      <VStack align="stretch" gap={6} maxW="1200px" mx="auto">
+        <HStack gap={2}>
+          <Icon as={MdSettings} boxSize={6} color="primary" />
+          <Heading as="h2" size="lg" color="text">
+            YAML Config File Utility
+          </Heading>
+        </HStack>
+        <Text color="textMuted" mt={-4}>
           Upload and view your Strava configuration YAML files. This tool helps you inspect 
           config files that start with "config" and have .yaml or .yml extensions.
-        </p>
-      </div>
+        </Text>
 
-      {error && (
-        <div className="error-message">
-          <div className="error-icon">⚠️</div>
-          <div className="error-content">
-            <strong>Error:</strong> {error}
-          </div>
-          <button onClick={() => setError(null)} className="error-close">
-            ✕
-          </button>
-        </div>
-      )}
+        {error && (
+          <Flex
+            p={4}
+            bg="red.50"
+            borderRadius="md"
+            border="1px solid"
+            borderColor="red.200"
+            align="center"
+            gap={3}
+            _dark={{ bg: "red.900", borderColor: "red.700" }}
+          >
+            <Icon as={MdWarning} boxSize={5} color="red.600" _dark={{ color: "red.300" }} />
+            <Box flex={1}>
+              <Text color="red.800" _dark={{ color: "red.100" }}>
+                <Text as="span" fontWeight="bold">Error:</Text> {error}
+              </Text>
+            </Box>
+            <IconButton
+              onClick={() => setError(null)}
+              aria-label="Close error"
+              size="sm"
+              variant="ghost"
+              colorPalette="red"
+            >
+              <MdClose />
+            </IconButton>
+          </Flex>
+        )}
 
-      {!showViewer && (
-        <FileSelector 
-          onFilesSelected={handleFilesSelected}
-          onError={handleError}
-        />
-      )}
+        {!showViewer && (
+          <FileSelector 
+            onFilesSelected={handleFilesSelected}
+            onError={handleError}
+          />
+        )}
 
-      {showViewer && selectedFiles.length > 0 && (
-        <YamlViewer 
-          files={selectedFiles}
-          onClose={handleCloseViewer}
-          onClearFiles={handleClearFiles}
-          onLoadMoreFiles={handleLoadMoreFiles}
-          onFilesUpdated={setSelectedFiles}
-        />
-      )}
+        {showViewer && selectedFiles.length > 0 && (
+          <YamlViewer 
+            files={selectedFiles}
+            onClose={handleCloseViewer}
+            onClearFiles={handleClearFiles}
+            onLoadMoreFiles={handleLoadMoreFiles}
+            onFilesUpdated={setSelectedFiles}
+          />
+        )}
 
-      {selectedFiles.length === 0 && !showViewer && (
-        <div className="getting-started">
-          <div className="getting-started-content">
-            <h3>🚀 Getting Started</h3>
-            <div className="steps">
-              <div className="step">
-                <div className="step-number">1</div>
-                <div className="step-content">
-                  <h4>Select Files</h4>
-                  <p>Choose config YAML files from your local directory</p>
-                </div>
-              </div>
-              <div className="step">
-                <div className="step-number">2</div>
-                <div className="step-content">
-                  <h4>View Content</h4>
-                  <p>Inspect the YAML content with syntax validation</p>
-                </div>
-              </div>
-              <div className="step">
-                <div className="step-number">3</div>
-                <div className="step-content">
-                  <h4>Search & Export</h4>
-                  <p>Search within files and download individual configs</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="features">
-            <h4>✨ Features</h4>
-            <ul className="feature-list">
-              <li>🔍 Multi-file support with tabbed interface</li>
-              <li>📝 Real-time YAML validation</li>
-              <li>🔎 Content search functionality</li>
-              <li>💾 Download individual files</li>
-              <li>📋 Copy to clipboard</li>
-              <li>🎨 Responsive design</li>
-              <li>🔒 Secure local processing</li>
-            </ul>
-          </div>
-        </div>
-      )}
-    </div>
+        {selectedFiles.length === 0 && !showViewer && (
+          <VStack align="stretch" gap={6}>
+            <Box p={6} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
+              <VStack align="stretch" gap={4}>
+                <HStack gap={2}>
+                  <Icon as={MdRocket} boxSize={5} color="primary" />
+                  <Heading as="h3" size="md" color="text">
+                    Getting Started
+                  </Heading>
+                </HStack>
+                <VStack align="stretch" gap={4}>
+                  <Flex align="start" gap={4}>
+                    <Flex
+                      minW="40px"
+                      h="40px"
+                      align="center"
+                      justify="center"
+                      bg="primary"
+                      color="white"
+                      borderRadius="full"
+                      fontWeight="bold"
+                    >
+                      1
+                    </Flex>
+                    <Box flex={1}>
+                      <Heading as="h4" size="sm" color="text" mb={1}>
+                        Select Files
+                      </Heading>
+                      <Text color="textMuted" fontSize="sm">
+                        Choose config YAML files from your local directory
+                      </Text>
+                    </Box>
+                  </Flex>
+                  <Flex align="start" gap={4}>
+                    <Flex
+                      minW="40px"
+                      h="40px"
+                      align="center"
+                      justify="center"
+                      bg="primary"
+                      color="white"
+                      borderRadius="full"
+                      fontWeight="bold"
+                    >
+                      2
+                    </Flex>
+                    <Box flex={1}>
+                      <Heading as="h4" size="sm" color="text" mb={1}>
+                        View Content
+                      </Heading>
+                      <Text color="textMuted" fontSize="sm">
+                        Inspect the YAML content with syntax validation
+                      </Text>
+                    </Box>
+                  </Flex>
+                  <Flex align="start" gap={4}>
+                    <Flex
+                      minW="40px"
+                      h="40px"
+                      align="center"
+                      justify="center"
+                      bg="primary"
+                      color="white"
+                      borderRadius="full"
+                      fontWeight="bold"
+                    >
+                      3
+                    </Flex>
+                    <Box flex={1}>
+                      <Heading as="h4" size="sm" color="text" mb={1}>
+                        Search & Export
+                      </Heading>
+                      <Text color="textMuted" fontSize="sm">
+                        Search within files and download individual configs
+                      </Text>
+                    </Box>
+                  </Flex>
+                </VStack>
+              </VStack>
+            </Box>
+            
+            <Box p={6} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
+              <HStack gap={2} mb={4}>
+                <Icon as={MdStars} boxSize={5} color="primary" />
+                <Heading as="h4" size="sm" color="text">
+                  Features
+                </Heading>
+              </HStack>
+              <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdSearch} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Multi-file support with tabbed interface</Text>
+                </HStack>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdEdit} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Real-time YAML validation</Text>
+                </HStack>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdSearch} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Content search functionality</Text>
+                </HStack>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdDownload} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Download individual files</Text>
+                </HStack>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdContentCopy} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Copy to clipboard</Text>
+                </HStack>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdPalette} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Responsive design</Text>
+                </HStack>
+                <HStack align="start" gap={2}>
+                  <Icon as={MdLock} boxSize={4} color="primary" mt={0.5} />
+                  <Text color="textMuted" fontSize="sm">Secure local processing</Text>
+                </HStack>
+              </SimpleGrid>
+            </Box>
+          </VStack>
+        )}
+      </VStack>
+    </Box>
   );
 };
 

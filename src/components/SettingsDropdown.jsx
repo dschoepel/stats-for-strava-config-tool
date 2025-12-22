@@ -1,18 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
-import './SettingsDropdown.css';
+import { useState, useRef, useEffect } from 'react';
+import { Box, Button, VStack, HStack, Text, Icon } from '@chakra-ui/react';
+import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
+import { 
+  MdSettings, MdPalette, MdFolder, MdEdit, MdSpeed, 
+  MdSportsSoccer, MdWidgets, MdImportExport 
+} from 'react-icons/md';
 
 const SettingsDropdown = ({ onSelectSetting }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const menuItems = [
-    { id: 'ui', label: 'User Interface', icon: '🎨' },
-    { id: 'files', label: 'Files', icon: '📁' },
-    { id: 'editor', label: 'Editor', icon: '📝' },
-    { id: 'performance', label: 'Performance', icon: '⚡' },
-    { id: 'sportsList', label: 'Sports List', icon: '🏅' },
-    { id: 'widgetDefinitions', label: 'Widgets', icon: '🧩' },
-    { id: 'importExport', label: 'Import/Export', icon: '📦' }
+    { id: 'ui', label: 'User Interface', icon: MdPalette },
+    { id: 'files', label: 'Files', icon: MdFolder },
+    { id: 'editor', label: 'Editor', icon: MdEdit },
+    { id: 'performance', label: 'Performance', icon: MdSpeed },
+    { id: 'sportsList', label: 'Sports List', icon: MdSportsSoccer },
+    { id: 'widgetDefinitions', label: 'Widgets', icon: MdWidgets },
+    { id: 'importExport', label: 'Import/Export', icon: MdImportExport }
   ];
 
   useEffect(() => {
@@ -37,30 +42,60 @@ const SettingsDropdown = ({ onSelectSetting }) => {
   };
 
   return (
-    <div className="settings-dropdown" ref={dropdownRef}>
-      <button 
-        className="settings-dropdown-button"
+    <Box position="relative" ref={dropdownRef}>
+      <Button
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
+        variant="ghost"
+        color="white"
+        _hover={{ bg: "whiteAlpha.200" }}
+        fontWeight="medium"
+        gap={2}
       >
-        ⚙️ Settings {isOpen ? '▲' : '▼'}
-      </button>
+        <Icon as={MdSettings} boxSize={5} />
+        Settings
+        {isOpen ? <ChevronUpIcon boxSize={4} /> : <ChevronDownIcon boxSize={4} />}
+      </Button>
       
       {isOpen && (
-        <div className="settings-dropdown-menu">
-          {menuItems.map(item => (
-            <button
-              key={item.id}
-              className="settings-menu-item"
-              onClick={() => handleItemClick(item.id)}
-            >
-              <span className="menu-item-icon">{item.icon}</span>
-              <span className="menu-item-label">{item.label}</span>
-            </button>
-          ))}
-        </div>
+        <Box
+          position="absolute"
+          top="100%"
+          right={0}
+          mt={2}
+          bg="cardBg"
+          border="1px solid"
+          borderColor="border"
+          borderRadius="md"
+          boxShadow="lg"
+          minW="200px"
+          zIndex={1000}
+          overflow="hidden"
+        >
+          <VStack gap={0} align="stretch">
+            {menuItems.map(item => (
+              <Button
+                key={item.id}
+                onClick={() => handleItemClick(item.id)}
+                variant="ghost"
+                justifyContent="flex-start"
+                color="text"
+                _hover={{ bg: "primary", color: "white" }}
+                fontWeight="medium"
+                px={4}
+                py={3}
+                borderRadius={0}
+              >
+                <HStack gap={3} w="full">
+                  <Icon as={item.icon} boxSize={5} />
+                  <Text>{item.label}</Text>
+                </HStack>
+              </Button>
+            ))}
+          </VStack>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Button, HStack } from '@chakra-ui/react';
 import Editor from '@monaco-editor/react';
 import * as YAML from 'yaml';
 import { getSetting } from '../utils/settingsManager';
@@ -179,20 +180,30 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
             </span>
           </div>
           <div className="yaml-editor-actions">
-            <button
-              onClick={handleClose}
-              className="btn-cancel"
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="btn-save"
-              disabled={!isDirty || isSaving}
-            >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
+            <HStack gap={3}>
+              <Button
+                onClick={handleClose}
+                isDisabled={isSaving}
+                variant="outline"
+                colorPalette="gray"
+                borderColor="border"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                isDisabled={!isDirty || isSaving}
+                isLoading={isSaving}
+                bg="primary"
+                color="white"
+                _hover={{ bg: "primaryHover" }}
+                border={isDirty && !isSaving ? "3px solid" : "none"}
+                borderColor={isDirty && !isSaving ? "primaryHover" : "transparent"}
+                boxShadow={isDirty && !isSaving ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
+              >
+                {isSaving ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
+              </Button>
+            </HStack>
           </div>
         </div>
       </div>

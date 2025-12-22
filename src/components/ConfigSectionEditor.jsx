@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Button, Input, Flex, Text, VStack, HStack, Table, Heading, Grid, Portal } from '@chakra-ui/react';
+import { NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
+import { MdAdd, MdClose, MdInfo } from 'react-icons/md';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { getSchemaBySection } from '../schemas/configSchemas';
 import { readSportsList, initialSportsList } from '../utils/sportsListManager';
-import './ConfigSectionEditor.css';
 
 // Heart rate calculation functions
 const heartRateFormulas = {
@@ -81,10 +83,12 @@ const ConfigSectionEditor = ({
   const [isDirty, setIsDirty] = useState(false);
   const [appearanceData, setAppearanceData] = useState(null);
   const schema = React.useMemo(() => getSchemaBySection(sectionName), [sectionName]);
+  const isInitialMount = React.useRef(true);
 
   useEffect(() => {
     setFormData(initialData);
     setIsDirty(false);
+    isInitialMount.current = true;
   }, [initialData]);
 
   // Warn user before leaving page/closing tab with unsaved changes
@@ -237,8 +241,10 @@ const ConfigSectionEditor = ({
       return newData;
     });
     
-    // Mark as dirty when changes are made
-    setIsDirty(true);
+    // Only mark as dirty if this is not the initial mount/auto-population
+    if (!isInitialMount.current) {
+      setIsDirty(true);
+    }
     
     // Clear error for this field when user starts typing
     if (errors[fieldPath]) {
@@ -369,6 +375,14 @@ const ConfigSectionEditor = ({
     
     if (birthday && formula && mode) {
       autoPopulateZones();
+    }
+    
+    // After first render and auto-population, mark that initial mount is complete
+    if (isInitialMount.current) {
+      // Use setTimeout to ensure all auto-population is done
+      setTimeout(() => {
+        isInitialMount.current = false;
+      }, 0);
     }
   }, [formData.birthday, formData.maxHeartRateFormula, formData.heartRateZones?.mode, autoPopulateZones]);
 
@@ -579,512 +593,588 @@ const ConfigSectionEditor = ({
     });
 
     return (
-      <div key={fieldPath} className="form-field heart-rate-zones">
-        <div className="field-label-section">
-          <h4 className="field-label">{fieldSchema.title || fieldName}</h4>
+      <Box key={fieldPath} mb={6}>
+        <Box mb={4}>
+          <Heading size="md" mb={1}>{fieldSchema.title || fieldName}</Heading>
           {fieldSchema.description && (
-            <p className="field-description">{fieldSchema.description}</p>
+            <Text fontSize="sm" color="textMuted">{fieldSchema.description}</Text>
           )}
-        </div>
+        </Box>
 
         {/* Mode Selection */}
-        <div className="zone-mode-section">
-          <label htmlFor="heartRateZones.mode" className="field-label">
+        <Box mb={4}>
+          <Text fontWeight="500" mb={1}>
             Zone Mode
-            {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-          </label>
-          <select
-            id="heartRateZones.mode"
-            value={currentMode}
-            onChange={(e) => handleFieldChange('heartRateZones.mode', e.target.value)}
-            className="field-input select-input"
-          >
-            <option value="relative">Relative (%)</option>
-            <option value="absolute">Absolute (BPM)</option>
-          </select>
-        </div>
+            {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
+          </Text>
+          <NativeSelectRoot>
+            <NativeSelectField
+              id="heartRateZones.mode"
+              value={currentMode}
+              onChange={(e) => handleFieldChange('heartRateZones.mode', e.target.value)}
+              bg="inputBg"
+            >
+              <option value="relative">Relative (%)</option>
+              <option value="absolute">Absolute (BPM)</option>
+            </NativeSelectField>
+          </NativeSelectRoot>
+        </Box>
 
-        <h5>Default Heart Rate Zones</h5>
+        <Heading size="sm" mb={3}>Default Heart Rate Zones</Heading>
 
         {/* Default Zone Table */}
-        <div className="zones-table-container">
-          <table className="zones-table">
-            <thead>
-              <tr>
-                <th>Values</th>
-                <th>Zone-1</th>
-                <th>Zone-2</th>
-                <th>Zone-3</th>
-                <th>Zone-4</th>
-                <th>Zone-5</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
+        <Box overflowX="auto" mb={6} borderWidth="1px" borderColor="border" borderRadius="md">
+          <Table.Root size="sm" variant="outline">
+            <Table.Header>
+              <Table.Row bg="tableHeaderBg">
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Values</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-1</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-2</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-3</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-4</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-5</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell fontWeight="500">From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
                 {[1, 2, 3, 4, 5].map(zoneNum => (
-                  <td key={`zone${zoneNum}-from`}>
-                    <input
-                      type="number"
-                      value={currentZones[`zone${zoneNum}`]?.from || ''}
-                      onChange={(e) => handleZoneChange(zoneNum, 'from', e.target.value)}
-                      className="zone-input"
-                      min="0"
-                      max="250"
-                      placeholder="0"
-                    />
-                    <span className="zone-unit">
-                      {currentMode === 'relative' ? '%' : 'BPM'}
-                    </span>
-                  </td>
+                  <Table.Cell key={`zone${zoneNum}-from`}>
+                    <Flex align="center" gap={1}>
+                      <Input
+                        type="number"
+                        value={currentZones[`zone${zoneNum}`]?.from || ''}
+                        onChange={(e) => handleZoneChange(zoneNum, 'from', e.target.value)}
+                        size="sm"
+                        width="80px"
+                        min="0"
+                        max="250"
+                        placeholder="0"
+                        bg="inputBg"
+                      />
+                      <Text fontSize="xs" color="textMuted">
+                        {currentMode === 'relative' ? '%' : 'BPM'}
+                      </Text>
+                    </Flex>
+                  </Table.Cell>
                 ))}
-              </tr>
-              <tr>
-                <th>To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell fontWeight="500">To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
                 {[1, 2, 3, 4, 5].map(zoneNum => (
-                  <td key={`zone${zoneNum}-to`}>
+                  <Table.Cell key={`zone${zoneNum}-to`}>
                     {zoneNum === 5 ? (
-                      <div className="zone-infinity-container">
-                        <input
-                          type="text"
-                          value="∞"
-                          readOnly
-                          className="zone-input zone-infinity"
-                          title="Zone 5 'to' value is always infinity (null)"
-                        />
-                      </div>
+                      <Input
+                        type="text"
+                        value="∞"
+                        readOnly
+                        size="sm"
+                        width="80px"
+                        title="Zone 5 'to' value is always infinity (null)"
+                        cursor="not-allowed"
+                        bg="inputBg"
+                      />
                     ) : (
-                      <>
-                        <input
+                      <Flex align="center" gap={1}>
+                        <Input
                           type="number"
                           value={currentZones[`zone${zoneNum}`]?.to || ''}
                           onChange={(e) => handleZoneChange(zoneNum, 'to', e.target.value)}
-                          className="zone-input"
+                          size="sm"
+                          width="80px"
                           min="0"
                           max="250"
                           placeholder="0"
+                          bg="inputBg"
                         />
-                        <span className="zone-unit">
+                        <Text fontSize="xs" color="textMuted">
                           {currentMode === 'relative' ? '%' : 'BPM'}
-                        </span>
-                      </>
+                        </Text>
+                      </Flex>
                     )}
-                  </td>
+                  </Table.Cell>
                 ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              </Table.Row>
+            </Table.Body>
+          </Table.Root>
+        </Box>
 
         {/* Date Ranges Section */}
-        <div className="date-ranges-section">
-          <div className="date-ranges-header">
-            <h5>Date Ranges</h5>
-            <button type="button" className="add-date-range-btn" onClick={handleAddDateRange}>
-              + Add Date Range
-            </button>
-          </div>
+        <Box mb={6}>
+          <Flex justify="space-between" align="center" mb={3}>
+            <Heading size="sm">Date Ranges</Heading>
+            <Button onClick={handleAddDateRange} size="sm" variant="outline">
+              <MdAdd /> Add Date Range
+            </Button>
+          </Flex>
           {Object.keys(dateRanges).length === 0 && (
-            <div className="date-ranges-empty">No date ranges defined.</div>
+            <Text fontSize="sm" color="textMuted">No date ranges defined.</Text>
           )}
-          {Object.entries(dateRanges)
-            .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA)) // Sort by date descending
-            .map(([date, zones]) => (
-            <div key={date} className="date-range-entry">
-              <div className="date-range-header-row">
-                <DatePicker
-                  selected={new Date(date)}
-                  onChange={(selectedDate) => handleDateChange(date, selectedDate)}
-                  maxDate={new Date()}
-                  dateFormat="yyyy-MM-dd"
-                  className="date-range-input"
-                  showPopperArrow={true}
-                  popperPlacement="bottom-start"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  yearDropdownItemNumber={50}
-                  withPortal
-                  popperModifiers={[
-                    {
-                      name: "offset",
-                      options: {
-                        offset: [0, 5],
-                      },
-                    },
-                  ]}
-                />
-                <button type="button" className="remove-date-range-btn" onClick={() => handleRemoveDateRange(date)}>
-                  Remove
-                </button>
-              </div>
-              <div className="zones-table-container">
-                <table className="zones-table">
-                  <thead>
-                    <tr>
-                      <th>Values</th>
-                      <th>Zone-1</th>
-                      <th>Zone-2</th>
-                      <th>Zone-3</th>
-                      <th>Zone-4</th>
-                      <th>Zone-5</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <th>From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
-                      {[1, 2, 3, 4, 5].map(zoneNum => (
-                        <td key={`date-${date}-zone${zoneNum}-from`}>
-                          <input
-                            type="number"
-                            value={zones[`zone${zoneNum}`]?.from || ''}
-                            onChange={(e) => handleDateRangeZoneChange(date, zoneNum, 'from', e.target.value)}
-                            className="zone-input"
-                            min="0"
-                            max="250"
-                            placeholder="0"
-                          />
-                          <span className="zone-unit">
-                            {currentMode === 'relative' ? '%' : 'BPM'}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <th>To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
-                      {[1, 2, 3, 4, 5].map(zoneNum => (
-                        <td key={`date-${date}-zone${zoneNum}-to`}>
-                          {zoneNum === 5 ? (
-                            <div className="zone-infinity-container">
-                              <input
-                                type="text"
-                                value="∞"
-                                readOnly
-                                className="zone-input zone-infinity"
-                                title="Zone 5 'to' value is always infinity (null)"
-                              />
-                            </div>
-                          ) : (
-                            <>
-                              <input
+          <VStack align="stretch" gap={4}>
+            {Object.entries(dateRanges)
+              .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+              .map(([date, zones]) => (
+              <Box key={date} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
+                <Flex justify="space-between" align="center" mb={3}>
+                  <Box className="react-datepicker-wrapper" flex="1" maxW="200px">
+                    <DatePicker
+                      selected={new Date(date)}
+                      onChange={(selectedDate) => handleDateChange(date, selectedDate)}
+                      maxDate={new Date()}
+                      dateFormat="yyyy-MM-dd"
+                      className="date-range-input"
+                      showPopperArrow={true}
+                      popperPlacement="bottom-start"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      yearDropdownItemNumber={50}
+                      withPortal
+                      popperModifiers={[
+                        {
+                          name: "offset",
+                          options: {
+                            offset: [0, 5],
+                          },
+                        },
+                      ]}
+                    />
+                  </Box>
+                  <Button onClick={() => handleRemoveDateRange(date)} size="sm" variant="outline" colorPalette="red">
+                    Remove
+                  </Button>
+                </Flex>
+                <Box overflowX="auto" borderWidth="1px" borderColor="border" borderRadius="md">
+                  <Table.Root size="sm" variant="outline">
+                    <Table.Header>
+                      <Table.Row bg="tableHeaderBg">
+                        <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Values</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-1</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-2</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-3</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-4</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-5</Table.ColumnHeader>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      <Table.Row>
+                        <Table.Cell fontWeight="500">From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                        {[1, 2, 3, 4, 5].map(zoneNum => (
+                          <Table.Cell key={`date-${date}-zone${zoneNum}-from`}>
+                            <Flex align="center" gap={1}>
+                              <Input
                                 type="number"
-                                value={zones[`zone${zoneNum}`]?.to || ''}
-                                onChange={(e) => handleDateRangeZoneChange(date, zoneNum, 'to', e.target.value)}
-                                className="zone-input"
+                                value={zones[`zone${zoneNum}`]?.from || ''}
+                                onChange={(e) => handleDateRangeZoneChange(date, zoneNum, 'from', e.target.value)}
+                                size="sm"
+                                width="80px"
                                 min="0"
                                 max="250"
                                 placeholder="0"
+                                bg="inputBg"
                               />
-                              <span className="zone-unit">
+                              <Text fontSize="xs" color="textMuted">
                                 {currentMode === 'relative' ? '%' : 'BPM'}
-                              </span>
-                            </>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
+                              </Text>
+                            </Flex>
+                          </Table.Cell>
+                        ))}
+                      </Table.Row>
+                      <Table.Row>
+                        <Table.Cell fontWeight="500">To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                        {[1, 2, 3, 4, 5].map(zoneNum => (
+                          <Table.Cell key={`date-${date}-zone${zoneNum}-to`}>
+                            {zoneNum === 5 ? (
+                              <Input
+                                type="text"
+                                value="∞"
+                                readOnly
+                                size="sm"
+                                width="80px"
+                                title="Zone 5 'to' value is always infinity (null)"
+                                cursor="not-allowed"
+                                bg="inputBg"
+                              />
+                            ) : (
+                              <Flex align="center" gap={1}>
+                                <Input
+                                  type="number"
+                                  value={zones[`zone${zoneNum}`]?.to || ''}
+                                  onChange={(e) => handleDateRangeZoneChange(date, zoneNum, 'to', e.target.value)}
+                                  size="sm"
+                                  width="80px"
+                                  min="0"
+                                  max="250"
+                                  placeholder="0"
+                                  bg="inputBg"
+                                />
+                                <Text fontSize="xs" color="textMuted">
+                                  {currentMode === 'relative' ? '%' : 'BPM'}
+                                </Text>
+                              </Flex>
+                            )}
+                          </Table.Cell>
+                        ))}
+                      </Table.Row>
+                    </Table.Body>
+                  </Table.Root>
+                </Box>
+              </Box>
+            ))}
+          </VStack>
+        </Box>
 
         {/* Sport Types Section */}
-        <div className="sport-types-section">
-          <div className="sport-types-header">
-            <h5>Sport Type Overrides</h5>
-            <button 
-              type="button" 
-              className="add-sport-type-btn" 
+        <Box mb={6}>
+          <Flex justify="space-between" align="center" mb={3}>
+            <Heading size="sm">Sport Type Overrides</Heading>
+            <Button 
               onClick={() => {
                 console.log('Opening sport modal. Sports list state:', sportsList);
                 console.log('Available sports count:', availableSports.length);
                 setShowSportModal(true);
               }}
+              size="sm"
+              variant="outline"
             >
-              + Add Sport Type
-            </button>
-          </div>
+              <MdAdd /> Add Sport Type
+            </Button>
+          </Flex>
           
           {Object.keys(sportTypes).length === 0 && (
-            <div className="sport-types-empty">No sport type overrides defined.</div>
+            <Text fontSize="sm" color="textMuted">No sport type overrides defined.</Text>
           )}
           
-          {Object.entries(sportTypes)
-            .sort(([sportA], [sportB]) => sportA.localeCompare(sportB))
-            .map(([sportName, sportData]) => (
-            <div key={sportName} className="sport-type-entry">
-              <div className="sport-type-header-row">
-                <h6 className="sport-type-name">{sportName}</h6>
-                <button 
-                  type="button" 
-                  className="remove-sport-type-btn" 
-                  onClick={() => handleRemoveSportType(sportName)}
-                >
-                  Remove Sport
-                </button>
-              </div>
-              
-              {/* Default zones for this sport */}
-              <div className="sport-default-zones">
-                <h6>Default Zones</h6>
-                <div className="zones-table-container">
-                  <table className="zones-table">
-                    <thead>
-                      <tr>
-                        <th>Values</th>
-                        <th>Zone-1</th>
-                        <th>Zone-2</th>
-                        <th>Zone-3</th>
-                        <th>Zone-4</th>
-                        <th>Zone-5</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th>From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
-                        {[1, 2, 3, 4, 5].map(zoneNum => (
-                          <td key={`sport-${sportName}-zone${zoneNum}-from`}>
-                            <input
-                              type="number"
-                              value={sportData.default?.[`zone${zoneNum}`]?.from || ''}
-                              onChange={(e) => handleSportTypeZoneChange(sportName, zoneNum, 'from', e.target.value)}
-                              className="zone-input"
-                              min="0"
-                              max="250"
-                              placeholder="0"
-                            />
-                            <span className="zone-unit">
-                              {currentMode === 'relative' ? '%' : 'BPM'}
-                            </span>
-                          </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <th>To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
-                        {[1, 2, 3, 4, 5].map(zoneNum => (
-                          <td key={`sport-${sportName}-zone${zoneNum}-to`}>
-                            {zoneNum === 5 ? (
-                              <div className="zone-infinity-container">
-                                <input
+          <VStack align="stretch" gap={4}>
+            {Object.entries(sportTypes)
+              .sort(([sportA], [sportB]) => sportA.localeCompare(sportB))
+              .map(([sportName, sportData]) => (
+              <Box key={sportName} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
+                <Flex justify="space-between" align="center" mb={4}>
+                  <Heading size="sm">{sportName}</Heading>
+                  <Button 
+                    onClick={() => handleRemoveSportType(sportName)}
+                    size="sm"
+                    variant="outline"
+                    colorPalette="red"
+                  >
+                    Remove Sport
+                  </Button>
+                </Flex>
+                
+                {/* Default zones for this sport */}
+                <Box mb={4}>
+                  <Heading size="xs" mb={2}>Default Zones</Heading>
+                  <Box overflowX="auto" borderWidth="1px" borderColor="border" borderRadius="md">
+                    <Table.Root size="sm" variant="outline">
+                      <Table.Header>
+                        <Table.Row bg="tableHeaderBg">
+                          <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Values</Table.ColumnHeader>
+                          <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-1</Table.ColumnHeader>
+                          <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-2</Table.ColumnHeader>
+                          <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-3</Table.ColumnHeader>
+                          <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-4</Table.ColumnHeader>
+                          <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-5</Table.ColumnHeader>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        <Table.Row>
+                          <Table.Cell fontWeight="500">From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                          {[1, 2, 3, 4, 5].map(zoneNum => (
+                            <Table.Cell key={`sport-${sportName}-zone${zoneNum}-from`}>
+                              <Flex align="center" gap={1}>
+                                <Input
+                                  type="number"
+                                  value={sportData.default?.[`zone${zoneNum}`]?.from || ''}
+                                  onChange={(e) => handleSportTypeZoneChange(sportName, zoneNum, 'from', e.target.value)}
+                                  size="sm"
+                                  width="80px"
+                                  min="0"
+                                  max="250"
+                                  placeholder="0"
+                                  bg="inputBg"
+                                />
+                                <Text fontSize="xs" color="textMuted">
+                                  {currentMode === 'relative' ? '%' : 'BPM'}
+                                </Text>
+                              </Flex>
+                            </Table.Cell>
+                          ))}
+                        </Table.Row>
+                        <Table.Row>
+                          <Table.Cell fontWeight="500">To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                          {[1, 2, 3, 4, 5].map(zoneNum => (
+                            <Table.Cell key={`sport-${sportName}-zone${zoneNum}-to`}>
+                              {zoneNum === 5 ? (
+                                <Input
                                   type="text"
                                   value="∞"
                                   readOnly
-                                  className="zone-input zone-infinity"
+                                  size="sm"
+                                  width="80px"
                                   title="Zone 5 'to' value is always infinity (null)"
+                                  cursor="not-allowed"
+                                  bg="inputBg"
                                 />
-                              </div>
-                            ) : (
-                              <>
-                                <input
-                                  type="number"
-                                  value={sportData.default?.[`zone${zoneNum}`]?.to || ''}
-                                  onChange={(e) => handleSportTypeZoneChange(sportName, zoneNum, 'to', e.target.value)}
-                                  className="zone-input"
-                                  min="0"
-                                  max="250"
-                                  placeholder="0"
-                                />
-                                <span className="zone-unit">
-                                  {currentMode === 'relative' ? '%' : 'BPM'}
-                                </span>
-                              </>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              
-              {/* Date ranges for this sport */}
-              <div className="sport-date-ranges">
-                <div className="sport-date-ranges-header">
-                  <h6>Date Ranges for {sportName}</h6>
-                  <button 
-                    type="button" 
-                    className="add-date-range-btn btn-sm" 
-                    onClick={() => handleAddSportTypeDateRange(sportName)}
-                  >
-                    + Add Date Range
-                  </button>
-                </div>
+                              ) : (
+                                <Flex align="center" gap={1}>
+                                  <Input
+                                    type="number"
+                                    value={sportData.default?.[`zone${zoneNum}`]?.to || ''}
+                                    onChange={(e) => handleSportTypeZoneChange(sportName, zoneNum, 'to', e.target.value)}
+                                    size="sm"
+                                    width="80px"
+                                    min="0"
+                                    max="250"
+                                    placeholder="0"
+                                    bg="inputBg"
+                                  />
+                                  <Text fontSize="xs" color="textMuted">
+                                    {currentMode === 'relative' ? '%' : 'BPM'}
+                                  </Text>
+                                </Flex>
+                              )}
+                            </Table.Cell>
+                          ))}
+                        </Table.Row>
+                      </Table.Body>
+                    </Table.Root>
+                  </Box>
+                </Box>
                 
-                {(!sportData.dateRanges || Object.keys(sportData.dateRanges).length === 0) && (
-                  <div className="sport-date-ranges-empty">No date ranges for this sport.</div>
-                )}
-                
-                {sportData.dateRanges && Object.entries(sportData.dateRanges)
-                  .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
-                  .map(([date, zones]) => (
-                  <div key={date} className="sport-date-range-entry">
-                    <div className="date-range-header-row">
-                      <DatePicker
-                        selected={new Date(date)}
-                        onChange={(selectedDate) => handleSportTypeDateChange(sportName, date, selectedDate)}
-                        maxDate={new Date()}
-                        dateFormat="yyyy-MM-dd"
-                        className="date-range-input"
-                        showPopperArrow={true}
-                        popperPlacement="bottom-start"
-                        showMonthDropdown
-                        showYearDropdown
-                        dropdownMode="select"
-                        yearDropdownItemNumber={50}
-                        withPortal
-                        popperModifiers={[
-                          {
-                            name: "offset",
-                            options: {
-                              offset: [0, 5],
-                            },
-                          },
-                        ]}
-                      />
-                      <button 
-                        type="button" 
-                        className="remove-date-range-btn" 
-                        onClick={() => handleRemoveSportTypeDateRange(sportName, date)}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                    <div className="zones-table-container">
-                      <table className="zones-table">
-                        <thead>
-                          <tr>
-                            <th>Values</th>
-                            <th>Zone-1</th>
-                            <th>Zone-2</th>
-                            <th>Zone-3</th>
-                            <th>Zone-4</th>
-                            <th>Zone-5</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <th>From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
-                            {[1, 2, 3, 4, 5].map(zoneNum => (
-                              <td key={`sport-${sportName}-date-${date}-zone${zoneNum}-from`}>
-                                <input
-                                  type="number"
-                                  value={zones[`zone${zoneNum}`]?.from || ''}
-                                  onChange={(e) => handleSportTypeDateRangeZoneChange(sportName, date, zoneNum, 'from', e.target.value)}
-                                  className="zone-input"
-                                  min="0"
-                                  max="250"
-                                  placeholder="0"
-                                />
-                                <span className="zone-unit">
-                                  {currentMode === 'relative' ? '%' : 'BPM'}
-                                </span>
-                              </td>
-                            ))}
-                          </tr>
-                          <tr>
-                            <th>To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</th>
-                            {[1, 2, 3, 4, 5].map(zoneNum => (
-                              <td key={`sport-${sportName}-date-${date}-zone${zoneNum}-to`}>
-                                {zoneNum === 5 ? (
-                                  <div className="zone-infinity-container">
-                                    <input
-                                      type="text"
-                                      value="∞"
-                                      readOnly
-                                      className="zone-input zone-infinity"
-                                      title="Zone 5 'to' value is always infinity (null)"
-                                    />
-                                  </div>
-                                ) : (
-                                  <>
-                                    <input
-                                      type="number"
-                                      value={zones[`zone${zoneNum}`]?.to || ''}
-                                      onChange={(e) => handleSportTypeDateRangeZoneChange(sportName, date, zoneNum, 'to', e.target.value)}
-                                      className="zone-input"
-                                      min="0"
-                                      max="250"
-                                      placeholder="0"
-                                    />
-                                    <span className="zone-unit">
-                                      {currentMode === 'relative' ? '%' : 'BPM'}
-                                    </span>
-                                  </>
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+                {/* Date ranges for this sport */}
+                <Box>
+                  <Flex justify="space-between" align="center" mb={2}>
+                    <Heading size="xs">Date Ranges for {sportName}</Heading>
+                    <Button 
+                      onClick={() => handleAddSportTypeDateRange(sportName)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <MdAdd /> Add Date Range
+                    </Button>
+                  </Flex>
+                  
+                  {(!sportData.dateRanges || Object.keys(sportData.dateRanges).length === 0) && (
+                    <Text fontSize="sm" color="textMuted">No date ranges for this sport.</Text>
+                  )}
+                  
+                  <VStack align="stretch" gap={3}>
+                    {sportData.dateRanges && Object.entries(sportData.dateRanges)
+                      .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+                      .map(([date, zones]) => (
+                      <Box key={date} p={3} borderWidth="1px" borderColor="border" borderRadius="md" bg="cardBg">
+                        <Flex justify="space-between" align="center" mb={3}>
+                          <Box className="react-datepicker-wrapper" flex="1" maxW="200px">
+                            <DatePicker
+                              selected={new Date(date)}
+                              onChange={(selectedDate) => handleSportTypeDateChange(sportName, date, selectedDate)}
+                              maxDate={new Date()}
+                              dateFormat="yyyy-MM-dd"
+                              className="date-range-input"
+                              showPopperArrow={true}
+                              popperPlacement="bottom-start"
+                              showMonthDropdown
+                              showYearDropdown
+                              dropdownMode="select"
+                              yearDropdownItemNumber={50}
+                              withPortal
+                              popperModifiers={[
+                                {
+                                  name: "offset",
+                                  options: {
+                                    offset: [0, 5],
+                                  },
+                                },
+                              ]}
+                            />
+                          </Box>
+                          <Button 
+                            onClick={() => handleRemoveSportTypeDateRange(sportName, date)}
+                            size="sm"
+                            variant="outline"
+                            colorPalette="red"
+                          >
+                            Remove
+                          </Button>
+                        </Flex>
+                        <Box overflowX="auto" borderWidth="1px" borderColor="border" borderRadius="md">
+                          <Table.Root size="sm" variant="outline">
+                            <Table.Header>
+                              <Table.Row bg="tableHeaderBg">
+                                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Values</Table.ColumnHeader>
+                                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-1</Table.ColumnHeader>
+                                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-2</Table.ColumnHeader>
+                                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-3</Table.ColumnHeader>
+                                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-4</Table.ColumnHeader>
+                                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-5</Table.ColumnHeader>
+                              </Table.Row>
+                            </Table.Header>
+                            <Table.Body>
+                              <Table.Row>
+                                <Table.Cell fontWeight="500">From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                                {[1, 2, 3, 4, 5].map(zoneNum => (
+                                  <Table.Cell key={`sport-${sportName}-date-${date}-zone${zoneNum}-from`}>
+                                    <Flex align="center" gap={1}>
+                                      <Input
+                                        type="number"
+                                        value={zones[`zone${zoneNum}`]?.from || ''}
+                                        onChange={(e) => handleSportTypeDateRangeZoneChange(sportName, date, zoneNum, 'from', e.target.value)}
+                                        size="sm"
+                                        width="80px"
+                                        min="0"
+                                        max="250"
+                                        placeholder="0"
+                                        bg="inputBg"
+                                      />
+                                      <Text fontSize="xs" color="textMuted">
+                                        {currentMode === 'relative' ? '%' : 'BPM'}
+                                      </Text>
+                                    </Flex>
+                                  </Table.Cell>
+                                ))}
+                              </Table.Row>
+                              <Table.Row>
+                                <Table.Cell fontWeight="500">To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                                {[1, 2, 3, 4, 5].map(zoneNum => (
+                                  <Table.Cell key={`sport-${sportName}-date-${date}-zone${zoneNum}-to`}>
+                                    {zoneNum === 5 ? (
+                                      <Input
+                                        type="text"
+                                        value="∞"
+                                        readOnly
+                                        size="sm"
+                                        width="80px"
+                                        title="Zone 5 'to' value is always infinity (null)"
+                                        cursor="not-allowed"
+                                        bg="inputBg"
+                                      />
+                                    ) : (
+                                      <Flex align="center" gap={1}>
+                                        <Input
+                                          type="number"
+                                          value={zones[`zone${zoneNum}`]?.to || ''}
+                                          onChange={(e) => handleSportTypeDateRangeZoneChange(sportName, date, zoneNum, 'to', e.target.value)}
+                                          size="sm"
+                                          width="80px"
+                                          min="0"
+                                          max="250"
+                                          placeholder="0"
+                                          bg="inputBg"
+                                        />
+                                        <Text fontSize="xs" color="textMuted">
+                                          {currentMode === 'relative' ? '%' : 'BPM'}
+                                        </Text>
+                                      </Flex>
+                                    )}
+                                  </Table.Cell>
+                                ))}
+                              </Table.Row>
+                            </Table.Body>
+                          </Table.Root>
+                        </Box>
+                      </Box>
+                    ))}
+                  </VStack>
+                </Box>
+              </Box>
+            ))}
+          </VStack>
+        </Box>
 
         {/* Add Sport Type Modal */}
         {showSportModal && (
-          <div className="modal-overlay" onClick={() => setShowSportModal(false)}>
-            <div className="modal-content sport-modal" onClick={e => e.stopPropagation()}>
-              <div className="modal-header-row">
-                <h4>Select a Sport Type</h4>
-                <button 
-                  type="button" 
-                  className="modal-close-btn" 
-                  onClick={() => setShowSportModal(false)}
+          <Portal>
+            <Box
+              position="fixed"
+              top="0"
+              left="0"
+              right="0"
+              bottom="0"
+              bg="blackAlpha.600"
+              zIndex="1000"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              onClick={() => setShowSportModal(false)}
+            >
+              <Box
+                bg="bg"
+                borderRadius="lg"
+                boxShadow="lg"
+                maxW="600px"
+                w="90%"
+                maxH="80vh"
+                overflowY="auto"
+                onClick={e => e.stopPropagation()}
+              >
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  p={4}
+                  borderBottomWidth="1px"
+                  borderColor="border"
                 >
-                  ✕
-                </button>
-              </div>
-              
-              {availableSports.length === 0 ? (
-                <div className="modal-empty-state">
-                  <p>All sports from your list are already being used.</p>
-                  <p>You can add more sports in <strong>Settings → Sports List</strong>.</p>
-                </div>
-              ) : (
-                <div className="sport-modal-list">
-                  {Object.entries(
-                    availableSports.reduce((acc, { category, sport }) => {
-                      if (!acc[category]) acc[category] = [];
-                      acc[category].push(sport);
-                      return acc;
-                    }, {})
-                  ).map(([category, sports]) => (
-                    <div key={category} className="sport-modal-category">
-                      <div className="sport-modal-category-label">{category}</div>
-                      <div className="sport-modal-category-items">
-                        {sports.map(sport => (
-                          <button
-                            key={sport}
-                            type="button"
-                            className="sport-modal-item"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              console.log('Sport button clicked:', sport);
-                              handleAddSportType(sport);
-                            }}
-                          >
-                            {sport}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+                  <Heading size="md">Select a Sport Type</Heading>
+                  <Button 
+                    onClick={() => setShowSportModal(false)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <MdClose />
+                  </Button>
+                </Flex>
+                
+                <Box p={4}>
+                  {availableSports.length === 0 ? (
+                    <VStack gap={3} py={4}>
+                      <Text>All sports from your list are already being used.</Text>
+                      <Text>You can add more sports in <Text as="strong">Settings → Sports List</Text>.</Text>
+                    </VStack>
+                  ) : (
+                    <VStack align="stretch" gap={4}>
+                      {Object.entries(
+                        availableSports.reduce((acc, { category, sport }) => {
+                          if (!acc[category]) acc[category] = [];
+                          acc[category].push(sport);
+                          return acc;
+                        }, {})
+                      ).map(([category, sports]) => (
+                        <Box key={category}>
+                          <Text fontWeight="600" mb={2} color="textMuted" fontSize="sm">
+                            {category}
+                          </Text>
+                          <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2}>
+                            {sports.map(sport => (
+                              <Button
+                                key={sport}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('Sport button clicked:', sport);
+                                  handleAddSportType(sport);
+                                }}
+                                size="sm"
+                                variant="outline"
+                                justifyContent="flex-start"
+                              >
+                                {sport}
+                              </Button>
+                            ))}
+                          </Grid>
+                        </Box>
+                      ))}
+                    </VStack>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          </Portal>
         )}
 
         {hasError && <span className="field-error">{hasError}</span>}
 
-      </div>
+      </Box>
     );
   };
 
@@ -1101,20 +1191,10 @@ const ConfigSectionEditor = ({
     const weightUnit = unitSystem === 'imperial' ? 'lbs' : unitSystem === 'metric' ? 'kg' : 'kg/lbs';
     const showUnitNote = !unitSystem;
     
-    // Initialize with default entry if empty
+    // Initialize with default entry if empty (just for display, not saving to state during render)
     if (Object.keys(weightHistory).length === 0) {
       weightHistory = { "1970-01-01": 0 };
-      // Update form data with default entry on next tick to avoid render issues
-      setTimeout(() => {
-        handleFieldChange(fieldPath, { "1970-01-01": 0 });
-      }, 0);
     }
-    
-    // Helper to parse date string as local date (not UTC) to avoid timezone issues
-    const parseLocalDate = (dateString) => {
-      const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    };
     
     // Helper to sort weight history entries newest to oldest
     const sortWeightHistory = (history) => {
@@ -1190,103 +1270,97 @@ const ConfigSectionEditor = ({
     };
     
     return (
-      <div key={fieldPath} className="form-field weight-history">
-        <div className="field-label-section">
-          <h4 className="field-label">{fieldSchema.title || fieldName}</h4>
-          {fieldSchema.description && (
-            <p className="field-description">{fieldSchema.description}</p>
-          )}
-        </div>
+      <Box key={fieldPath} mb={6}>
+        <Heading size="md" mb={4} color="text">
+          {fieldSchema.title || fieldName}
+        </Heading>
+        {fieldSchema.description && (
+          <Text fontSize="sm" color="textMuted" mb={4}>{fieldSchema.description}</Text>
+        )}
         
-        <div className="weight-history-section">
-          <div className="weight-history-header">
-            <h5>
-              Weight Entries
-              <span 
-                className="info-tooltip-trigger" 
-                title="If you don't care about relative power, you can use &quot;1970-01-01&quot;: YOUR_CURRENT_WEIGHT as a single entry in the Weight History to set a fixed weight for all activities."
+        <Box p={4} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
+          <Flex justify="space-between" align="center" mb={4}>
+            <Flex align="center" gap={2}>
+              <Heading size="sm" color="text">Weight Entries</Heading>
+              <Text 
+                fontSize="sm" 
+                color="textMuted" 
+                cursor="help"
+                title={'If you don\'t care about relative power, you can use "1970-01-01": YOUR_CURRENT_WEIGHT as a single entry in the Weight History to set a fixed weight for all activities.'}
               >
-                ?
-              </span>
-            </h5>
-            <button type="button" className="add-weight-entry-btn" onClick={handleAddWeightEntry}>
+                ⓘ
+              </Text>
+            </Flex>
+            <Button 
+              size="sm" 
+              onClick={handleAddWeightEntry}
+              bg="primary"
+              color="white"
+              _hover={{ bg: "primaryHover" }}
+            >
               + Add Weight Entry
-            </button>
-          </div>
+            </Button>
+          </Flex>
           
           {showUnitNote && (
-            <div className="weight-unit-notice">
-              <span className="info-icon">ℹ️</span>
-              <span>Weight unit depends on <strong>appearance.unitSystem</strong> setting (imperial = lbs, metric = kg). Configure this in the Appearance section.</span>
-            </div>
+            <Box p={3} bg="blue.50" borderRadius="md" mb={4} fontSize="sm">
+              <Flex align="center" gap={2}>
+                <Text>ℹ️</Text>
+                <Text color="blue.800">
+                  Weight unit depends on <Text as="strong">appearance.unitSystem</Text> setting (imperial = lbs, metric = kg). Configure this in the Appearance section.
+                </Text>
+              </Flex>
+            </Box>
           )}
           
           {Object.keys(weightHistory).length === 0 && (
-            <div className="weight-history-empty">No weight entries defined.</div>
+            <Text color="textMuted" textAlign="center" py={4}>No weight entries defined.</Text>
           )}
           
-          <div className="weight-history-list">
+          <VStack align="stretch" gap={3}>
             {Object.entries(weightHistory)
               .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
               .map(([date, weight]) => (
-                <div key={date} className="weight-history-entry">
-                  <DatePicker
-                    selected={parseLocalDate(date)}
-                    onChange={(selectedDate) => handleDateChange(date, selectedDate)}
-                    maxDate={new Date()}
-                    dateFormat="yyyy-MM-dd"
-                    className="weight-date-input"
-                    showPopperArrow={true}
-                    popperPlacement="bottom-start"
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                    yearDropdownItemNumber={50}
-                    withPortal
-                    popperModifiers={[
-                      {
-                        name: "offset",
-                        options: {
-                          offset: [0, 5],
-                        },
-                      },
-                    ]}
+                <Flex key={date} align="center" gap={3} p={3} bg="panelBg" borderRadius="md">
+                  <Input
+                    type="date"
+                    value={date}
+                    onChange={(e) => handleDateChange(date, new Date(e.target.value))}
+                    max={new Date().toISOString().split('T')[0]}
+                    bg="inputBg"
+                    width="160px"
                   />
-                  <input
+                  <Input
                     type="number"
                     value={weight}
                     onChange={(e) => handleWeightChange(date, e.target.value)}
-                    className="weight-value-input"
                     placeholder="Weight"
                     min="0"
                     step="0.1"
+                    bg="inputBg"
+                    width="120px"
                   />
-                  <span className="weight-unit">{weightUnit}</span>
-                  <button 
-                    type="button" 
-                    className="remove-weight-entry-btn" 
+                  <Text fontSize="sm" color="text" minW="50px">{weightUnit}</Text>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    colorPalette="red"
                     onClick={() => handleRemoveWeightEntry(date)}
                   >
                     Remove
-                  </button>
-                </div>
+                  </Button>
+                </Flex>
               ))}
-          </div>
-        </div>
+          </VStack>
+        </Box>
         
-        {hasError && <span className="field-error">{hasError}</span>}
-      </div>
+        {hasError && <Text color="red.500" fontSize="sm" mt={2}>{hasError}</Text>}
+      </Box>
     );
   };
 
   const renderFtpHistory = (fieldName, fieldSchema, fieldPath, value, hasError) => {
     let ftpHistory = value || {};
-    
-    // Helper to parse date string as local date (not UTC) to avoid timezone issues
-    const parseLocalDate = (dateString) => {
-      const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    };
     
     // Helper to sort FTP history entries newest to oldest
     const sortFtpHistory = (history) => {
@@ -1379,87 +1453,85 @@ const ConfigSectionEditor = ({
       const sportHistory = ftpHistory[sport] || {};
       
       return (
-        <div key={sport} className="ftp-sport-section">
-          <div className="ftp-sport-header">
-            <h5>
-              {sportTitle}
-              <span 
-                className="info-tooltip-trigger" 
-                title={tooltip}
+        <Box key={sport} mb={4}>
+          <Box p={4} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border">
+            <Flex justify="space-between" align="center" mb={4}>
+              <Flex align="center" gap={2}>
+                <Heading size="sm" color="text">{sportTitle}</Heading>
+                <Text 
+                  fontSize="sm" 
+                  color="textMuted" 
+                  cursor="help"
+                  title={tooltip}
+                >
+                  ⓘ
+                </Text>
+              </Flex>
+              <Button 
+                size="sm" 
+                onClick={() => handleAddFtpEntry(sport)}
+                bg="primary"
+                color="white"
+                _hover={{ bg: "primaryHover" }}
               >
-                ?
-              </span>
-            </h5>
-            <button type="button" className="add-ftp-entry-btn" onClick={() => handleAddFtpEntry(sport)}>
-              + Add {sportTitle} FTP
-            </button>
-          </div>
-          
-          {Object.keys(sportHistory).length === 0 && (
-            <div className="ftp-history-empty">No {sportTitle} FTP entries defined.</div>
-          )}
-          
-          <div className="ftp-history-list">
-            {Object.entries(sportHistory)
-              .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
-              .map(([date, ftp]) => (
-                <div key={date} className="ftp-history-entry">
-                  <DatePicker
-                    selected={parseLocalDate(date)}
-                    onChange={(selectedDate) => handleDateChange(sport, date, selectedDate)}
-                    maxDate={new Date()}
-                    dateFormat="yyyy-MM-dd"
-                    className="ftp-date-input"
-                    showPopperArrow={true}
-                    popperPlacement="bottom-start"
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                    yearDropdownItemNumber={50}
-                    withPortal
-                    popperModifiers={[
-                      {
-                        name: "offset",
-                        options: {
-                          offset: [0, 5],
-                        },
-                      },
-                    ]}
-                  />
-                  <input
-                    type="number"
-                    value={ftp}
-                    onChange={(e) => handleFtpChange(sport, date, e.target.value)}
-                    className="ftp-value-input"
-                    placeholder="FTP"
-                    min="0"
-                    step="1"
-                  />
-                  <span className="ftp-unit">watts</span>
-                  <button 
-                    type="button" 
-                    className="remove-ftp-entry-btn" 
-                    onClick={() => handleRemoveFtpEntry(sport, date)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-          </div>
-        </div>
+                + Add {sportTitle} FTP
+              </Button>
+            </Flex>
+            
+            {Object.keys(sportHistory).length === 0 && (
+              <Text color="textMuted" textAlign="center" py={4}>No {sportTitle} FTP entries defined.</Text>
+            )}
+            
+            <VStack align="stretch" gap={3}>
+              {Object.entries(sportHistory)
+                .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+                .map(([date, ftp]) => (
+                  <Flex key={date} align="center" gap={3} p={3} bg="panelBg" borderRadius="md">
+                    <Input
+                      type="date"
+                      value={date}
+                      onChange={(e) => handleDateChange(sport, date, new Date(e.target.value))}
+                      max={new Date().toISOString().split('T')[0]}
+                      bg="inputBg"
+                      width="160px"
+                    />
+                    <Input
+                      type="number"
+                      value={ftp}
+                      onChange={(e) => handleFtpChange(sport, date, e.target.value)}
+                      placeholder="FTP"
+                      min="0"
+                      step="1"
+                      bg="inputBg"
+                      width="120px"
+                    />
+                    <Text fontSize="sm" color="text" minW="50px">watts</Text>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      colorPalette="red"
+                      onClick={() => handleRemoveFtpEntry(sport, date)}
+                    >
+                      Remove
+                    </Button>
+                  </Flex>
+                ))}
+            </VStack>
+          </Box>
+        </Box>
       );
     };
     
     return (
-      <div key={fieldPath} className="form-field ftp-history">
-        <div className="field-label-section">
-          <h4 className="field-label">{fieldSchema.title || fieldName}</h4>
-          {fieldSchema.description && (
-            <p className="field-description">{fieldSchema.description}</p>
-          )}
-        </div>
+      <Box key={fieldPath} mb={6}>
+        <Heading size="md" mb={4} color="text">
+          {fieldSchema.title || fieldName}
+        </Heading>
+        {fieldSchema.description && (
+          <Text fontSize="sm" color="textMuted" mb={4}>{fieldSchema.description}</Text>
+        )}
         
-        <div className="ftp-history-section">
+        <VStack align="stretch" gap={4}>
           {renderSportFtpHistory(
             'cycling', 
             'Cycling', 
@@ -1471,10 +1543,10 @@ const ConfigSectionEditor = ({
             'Running', 
             'Running equivalent (threshold pace or critical power) is using pace at lactate threshold (the fastest pace you can sustain for ~60 minutes). Some advanced setups with running power meters (like Stryd) do calculate a "running FTP," but most runners stick to pace or heart rate zones.'
           )}
-        </div>
+        </VStack>
         
-        {hasError && <span className="field-error">{hasError}</span>}
-      </div>
+        {hasError && <Text color="red.500" fontSize="sm" mt={2}>{hasError}</Text>}
+      </Box>
     );
   };
 
@@ -1503,29 +1575,30 @@ const ConfigSectionEditor = ({
       const stringOption = fieldSchema.oneOf.find(option => option.type === 'string' && option.enum);
       if (stringOption) {
         return (
-          <div key={fieldPath} className="form-field">
-            <label htmlFor={fieldPath} className="field-label">
+          <Box key={fieldPath} mb={4}>
+            <Text fontWeight="500" mb={1}>
               {stringOption.title || fieldName}
-              {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-            </label>
-            <select
-              id={fieldPath}
-              value={value || stringOption.default || ''}
-              onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
-              className={`field-input select-input ${hasError ? 'error' : ''}`}
-            >
-              <option value="">Select...</option>
-              {stringOption.enum.map((option, idx) => (
-                <option key={option} value={option}>
-                  {stringOption.enumTitles?.[idx] || option}
-                </option>
-              ))}
-            </select>
+              {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
+            </Text>
+            <NativeSelectRoot borderColor={hasError ? 'red.500' : 'border'}>
+              <NativeSelectField
+                id={fieldPath}
+                value={value || stringOption.default || ''}
+                onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
+              >
+                <option value="">Select...</option>
+                {stringOption.enum.map((option, idx) => (
+                  <option key={option} value={option}>
+                    {stringOption.enumTitles?.[idx] || option}
+                  </option>
+                ))}
+              </NativeSelectField>
+            </NativeSelectRoot>
             {!skipDescription && stringOption.description && (
-              <p className="field-description">{stringOption.description}</p>
+              <Text fontSize="sm" color="textMuted" mt={1}>{stringOption.description}</Text>
             )}
-            {hasError && <span className="field-error">{hasError}</span>}
-          </div>
+            {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+          </Box>
         );
       }
     }
@@ -1537,62 +1610,64 @@ const ConfigSectionEditor = ({
       case 'string':
         if (fieldSchema.enum) {
           return (
-            <div key={fieldPath} className="form-field">
-              <label htmlFor={fieldPath} className="field-label">
+            <Box key={fieldPath} mb={4}>
+              <Text fontWeight="500" mb={1}>
                 {fieldSchema.title || fieldName}
-                {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-              </label>
-              <select
-                id={fieldPath}
-                value={value || ''}
-                onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
-                className={`field-input select-input ${hasError ? 'error' : ''}`}
-              >
-                <option value="">Select...</option>
-                {fieldSchema.enum.map((option, idx) => (
-                  <option key={option} value={option}>
-                    {fieldSchema.enumTitles?.[idx] || option}
-                  </option>
-                ))}
-              </select>
+                {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
+              </Text>
+              <NativeSelectRoot borderColor={hasError ? 'red.500' : 'border'}>
+                <NativeSelectField
+                  id={fieldPath}
+                  value={value || ''}
+                  onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
+                >
+                  <option value="">Select...</option>
+                  {fieldSchema.enum.map((option, idx) => (
+                    <option key={option} value={option}>
+                      {fieldSchema.enumTitles?.[idx] || option}
+                    </option>
+                  ))}
+                </NativeSelectField>
+              </NativeSelectRoot>
               {fieldSchema.description && (
-                <p className="field-description">{fieldSchema.description}</p>
+                <Text fontSize="sm" color="textMuted" mt={1}>{fieldSchema.description}</Text>
               )}
-              {hasError && <span className="field-error">{hasError}</span>}
-            </div>
+              {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+            </Box>
           );
         }
         
         return (
-          <div key={fieldPath} className="form-field">
-            <label htmlFor={fieldPath} className="field-label">
+          <Box key={fieldPath} mb={4}>
+            <Text fontWeight="500" mb={1}>
               {fieldSchema.title || fieldName}
-              {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-            </label>
-            <input
+              {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
+            </Text>
+            <Input
               id={fieldPath}
               type={fieldSchema.format === 'date' ? 'date' : fieldSchema.format === 'uri' ? 'url' : 'text'}
               value={value || ''}
               onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
               placeholder={fieldSchema.examples?.[0] || ''}
-              className={`field-input text-input ${hasError ? 'error' : ''}`}
+              borderColor={hasError ? 'red.500' : 'border'}
+              bg="inputBg"
             />
             {fieldSchema.description && (
-              <p className="field-description">{fieldSchema.description}</p>
+              <Text fontSize="sm" color="textMuted" mt={1}>{fieldSchema.description}</Text>
             )}
-            {hasError && <span className="field-error">{hasError}</span>}
-          </div>
+            {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+          </Box>
         );
 
       case 'number':
       case 'integer':
         return (
-          <div key={fieldPath} className="form-field">
-            <label htmlFor={fieldPath} className="field-label">
+          <Box key={fieldPath} mb={4}>
+            <Text fontWeight="500" mb={1}>
               {fieldSchema.title || fieldName}
-              {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-            </label>
-            <input
+              {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
+            </Text>
+            <Input
               id={fieldPath}
               type="number"
               value={value || ''}
@@ -1600,70 +1675,83 @@ const ConfigSectionEditor = ({
               min={fieldSchema.minimum}
               max={fieldSchema.maximum}
               step={fieldSchema.type === 'integer' ? 1 : 0.1}
-              className={`field-input number-input ${hasError ? 'error' : ''}`}
+              borderColor={hasError ? 'red.500' : 'border'}
+              bg="inputBg"
             />
             {fieldSchema.description && (
-              <p className="field-description">{fieldSchema.description}</p>
+              <Text fontSize="sm" color="textMuted" mt={1}>{fieldSchema.description}</Text>
             )}
-            {hasError && <span className="field-error">{hasError}</span>}
-          </div>
+            {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+          </Box>
         );
 
       case 'object':
         return (
-          <div key={fieldPath} className="form-section">
-            <h4 className="section-title">{fieldSchema.title || fieldName}</h4>
+          <Box key={fieldPath} mb={6}>
+            <Heading size="md" mb={2}>{fieldSchema.title || fieldName}</Heading>
             {fieldSchema.description && (
-              <p className="section-description">{fieldSchema.description}</p>
+              <Text fontSize="sm" color="textMuted" mb={3}>{fieldSchema.description}</Text>
             )}
-            <div className="section-fields">
+            <VStack align="stretch" gap={4} pl={4} borderLeftWidth="2px" borderLeftColor="border">
               {Object.entries(fieldSchema.properties || {}).map(([subFieldName, subFieldSchema]) =>
                 renderField(subFieldName, subFieldSchema, `${fieldPath}.${subFieldName}`)
               )}
-            </div>
-          </div>
+            </VStack>
+          </Box>
         );
 
       default:
         return (
-          <div key={fieldPath} className="form-field">
-            <label className="field-label">{fieldSchema.title || fieldName}</label>
-            <p className="field-note">Unsupported field type: {fieldType} (original: {JSON.stringify(fieldSchema.type)})</p>
-          </div>
+          <Box key={fieldPath} mb={4}>
+            <Text fontWeight="500" mb={1}>{fieldSchema.title || fieldName}</Text>
+            <Text fontSize="sm" color="textMuted">Unsupported field type: {fieldType} (original: {JSON.stringify(fieldSchema.type)})</Text>
+          </Box>
         );
     }
   };
 
   if (!schema) {
     return (
-      <div className="config-section-editor">
-        <div className="editor-error">
-          <p>❌ Schema not found for section: {sectionName}</p>
-        </div>
-      </div>
+      <Box p={6}>
+        <Flex
+          align="center"
+          gap={2}
+          p={4}
+          bg="red.50"
+          _dark={{ bg: 'red.900/30' }}
+          borderRadius="md"
+        >
+          <Text fontSize="lg">❌</Text>
+          <Text>Schema not found for section: {sectionName}</Text>
+        </Flex>
+      </Box>
     );
   }
 
   return (
-    <div className="config-section-editor">
-      <div className="editor-header">
-        <h3>{schema.title || sectionName}</h3>
-      </div>
+    <Box p={6}>
+      <Heading size="lg" mb={2}>{schema.title || sectionName}</Heading>
       
-      {schema.description && <p className="editor-description">{schema.description}</p>}
+      {schema.description && <Text color="textMuted" mb={4}>{schema.description}</Text>}
       
-      <div className="info-notice">
-        <div className="info-notice-content">
-          <span className="info-icon">ℹ️</span>
-          <span className="info-text">
-            <strong>Note:</strong> Saving changes with this editor preserves section headers but may remove embedded comments from YAML files. 
-            This form's guided input with descriptions and validation minimizes the need for comments.
-          </span>
-        </div>
-      </div>
+      <Flex
+        align="flex-start"
+        gap={2}
+        p={3}
+        bg="blue.50"
+        _dark={{ bg: 'blue.900/30' }}
+        borderRadius="md"
+        mb={6}
+      >
+        <Box as={MdInfo} fontSize="xl" color="blue.500" mt={0.5} />
+        <Text fontSize="sm">
+          <Text as="strong">Note:</Text> Saving changes with this editor preserves section headers but may remove embedded comments from YAML files. 
+          This form's guided input with descriptions and validation minimizes the need for comments.
+        </Text>
+      </Flex>
 
-      <form onSubmit={handleSubmit} className="editor-form">
-        <div className="form-fields">
+      <Box as="form" onSubmit={handleSubmit}>
+        <VStack align="stretch" gap={4}>
           {Object.entries(schema.properties || {}).map(([fieldName, fieldSchema]) => {
             // Special layout for maxHeartRateFormula with calculated HR display
             if (fieldName === 'maxHeartRateFormula') {
@@ -1677,59 +1765,65 @@ const ConfigSectionEditor = ({
               const stringOption = fieldSchema.oneOf?.find(option => option.type === 'string' && option.enum);
               
               return (
-                <div key={fieldName} className="form-field">
-                  <label htmlFor={fieldName} className="field-label">
+                <Box key={fieldName} mb={4}>
+                  <Text fontWeight="500" mb={1}>
                     {stringOption?.title || fieldName}
-                    {schema?.required?.includes(fieldName) && <span className="required">*</span>}
-                  </label>
-                  <div className="hr-formula-input-row">
-                    <select
-                      id={fieldName}
-                      value={value || stringOption?.default || ''}
-                      onChange={(e) => handleFieldChange(fieldName, e.target.value)}
-                      className={`field-input select-input ${hasError ? 'error' : ''}`}
-                    >
-                      <option value="">Select...</option>
-                      {stringOption?.enum.map((option, idx) => (
-                        <option key={option} value={option}>
-                          {stringOption.enumTitles?.[idx] || option}
-                        </option>
-                      ))}
-                    </select>
+                    {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
+                  </Text>
+                  <Flex gap={3} align="center">
+                    <NativeSelectRoot flex="1" borderColor={hasError ? 'red.500' : 'border'}>
+                      <NativeSelectField
+                        id={fieldName}
+                        value={value || stringOption?.default || ''}
+                        onChange={(e) => handleFieldChange(fieldName, e.target.value)}
+                        bg="inputBg"
+                      >
+                        <option value="">Select...</option>
+                        {stringOption?.enum.map((option, idx) => (
+                          <option key={option} value={option}>
+                            {stringOption.enumTitles?.[idx] || option}
+                          </option>
+                        ))}
+                      </NativeSelectField>
+                    </NativeSelectRoot>
                     {maxHR && (
-                      <div className="max-hr-info-inline">
-                        <span className="max-hr-label">Calculated Max Heart Rate: <strong>{maxHR} BPM</strong></span>
-                      </div>
+                      <Text fontSize="sm" color="textMuted" whiteSpace="nowrap">
+                        Calculated Max Heart Rate: <Text as="strong">{maxHR} BPM</Text>
+                      </Text>
                     )}
-                  </div>
-                  {hasError && <span className="field-error">{hasError}</span>}
-                </div>
+                  </Flex>
+                  {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+                </Box>
               );
             }
             
             return renderField(fieldName, fieldSchema);
           })}
-        </div>
+        </VStack>
 
-        <div className="editor-actions">
-          <button 
-            type="button" 
+        <HStack justify="flex-end" gap={3} pt={4}>
+          <Button 
             onClick={handleCancelWithConfirm}
-            className="btn-cancel"
+            variant="outline"
             disabled={isLoading}
           >
             Cancel
-          </button>
-          <button 
+          </Button>
+          <Button 
             type="submit" 
-            className="btn-save"
             disabled={isLoading}
+            bg="primary"
+            color="white"
+            _hover={{ bg: "primaryHover" }}
+            border={!isLoading ? "3px solid" : "none"}
+            borderColor={!isLoading ? "primaryHover" : "transparent"}
+            boxShadow={!isLoading ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
           >
-            {isLoading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
-    </div>
+            {isLoading ? 'Saving...' : `Save Changes${!isLoading ? ' *' : ''}`}
+          </Button>
+        </HStack>
+      </Box>
+    </Box>
   );
 };
 

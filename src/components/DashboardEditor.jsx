@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Button, HStack } from '@chakra-ui/react';
 import { readWidgetDefinitions } from '../utils/widgetDefinitionsManager';
 import './DashboardEditor.css';
 
@@ -585,19 +586,28 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
             </div>
 
             <div className="modal-actions">
-              <button 
-                className="btn-secondary" 
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleSave}
-                disabled={!isDirty}
-              >
-                💾 Save Changes
-              </button>
+              <HStack gap={3} justify="flex-end" width="full">
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  colorPalette="gray"
+                  borderColor="border"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  isDisabled={!isDirty}
+                  bg="primary"
+                  color="white"
+                  _hover={{ bg: "primaryHover" }}
+                  border={isDirty ? "3px solid" : "none"}
+                  borderColor={isDirty ? "primaryHover" : "transparent"}
+                  boxShadow={isDirty ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
+                >
+                  💾 Save Changes{isDirty ? ' *' : ''}
+                </Button>
+              </HStack>
             </div>
           </>
         )}

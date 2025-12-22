@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code } from '@chakra-ui/react';
+import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
 import CountrySelector from '../config-fields/CountrySelector';
@@ -122,52 +124,63 @@ const AppearanceConfigEditor = ({
     };
 
     return (
-      <div key={fieldPath} className="form-field">
-        <label className="field-label">
+      <Box key={fieldPath} mb={4}>
+        <Text fontWeight="500" mb={1}>
           {fieldSchema.title || fieldName}
-        </label>
+        </Text>
         {fieldSchema.description && (
-          <p className="field-description">{fieldSchema.description}</p>
+          <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
         )}
-        <div className="sport-type-multiselect">
+        <Box>
           {Object.keys(sportsList).length === 0 ? (
-            <p className="sport-list-empty">
+            <Text fontSize="sm" color="textMuted">
               No sports configured. Add sports in Settings → Sports List.
-            </p>
+            </Text>
           ) : (
-            <div className="sport-categories">
+            <VStack align="stretch" gap={2}>
               {Object.entries(sportsList).map(([category, sports]) => (
-                <div key={category} className="sport-category">
-                  <h5 
-                    className="sport-category-header collapsible"
+                <Box key={category} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                  <Button
                     onClick={() => toggleSportCategory(category)}
+                    width="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    size="sm"
+                    bg="cardBg"
                   >
-                    <span className="group-toggle-icon">
-                      {expandedSportCategories[category] !== false ? '▼' : '▶'}
-                    </span>
+                    <Box as={expandedSportCategories[category] !== false ? MdExpandMore : MdChevronRight} mr={2} />
                     {category}
-                  </h5>
+                  </Button>
                   {expandedSportCategories[category] !== false && (
-                    <div className="sport-type-grid">
+                    <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2} p={3}>
                       {sports.map(sport => (
-                        <label key={sport} className="sport-type-checkbox">
+                        <Flex
+                          key={sport}
+                          as="label"
+                          align="center"
+                          cursor="pointer"
+                          _hover={{ bg: 'bg' }}
+                          p={1}
+                          borderRadius="sm"
+                        >
                           <input
                             type="checkbox"
                             checked={selectedSports.includes(sport)}
                             onChange={() => handleSportToggle(sport)}
+                            style={{ marginRight: '8px' }}
                           />
-                          <span>{sport}</span>
-                        </label>
+                          <Text fontSize="sm">{sport}</Text>
+                        </Flex>
                       ))}
-                    </div>
+                    </Grid>
                   )}
-                </div>
+                </Box>
               ))}
-            </div>
+            </VStack>
           )}
-        </div>
-        {hasError && <span className="field-error">{hasError}</span>}
-      </div>
+        </Box>
+        {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+      </Box>
     );
   };
 
@@ -205,100 +218,116 @@ const AppearanceConfigEditor = ({
     const availableSports = allSports.filter(sport => !sortingOrder.includes(sport));
 
     return (
-      <div key={fieldPath} className="form-field">
-        <label className="field-label">
+      <Box key={fieldPath} mb={4}>
+        <Text fontWeight="500" mb={1}>
           {fieldSchema.title || fieldName}
-        </label>
+        </Text>
         {fieldSchema.description && (
-          <p className="field-description">{fieldSchema.description}</p>
+          <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
         )}
         
-        <div className="sport-sorting-container">
+        <VStack align="stretch" gap={4}>
           {sortingOrder.length > 0 && (
-            <div className="sorted-sports-list">
-              <h6>Current Sort Order:</h6>
-              {sortingOrder.map((sport, index) => (
-                <div key={sport} className="sorted-sport-item">
-                  <span className="sport-order-number">{index + 1}.</span>
-                  <span className="sport-name">{sport}</span>
-                  <div className="sport-actions">
-                    <button
-                      type="button"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0}
-                      className="move-btn"
-                      title="Move up"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === sortingOrder.length - 1}
-                      className="move-btn"
-                      title="Move down"
-                    >
-                      ▼
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSport(sport)}
-                      className="remove-btn"
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Box>
+              <Text fontWeight="500" fontSize="sm" mb={2}>Current Sort Order:</Text>
+              <VStack align="stretch" gap={1}>
+                {sortingOrder.map((sport, index) => (
+                  <Flex
+                    key={sport}
+                    align="center"
+                    gap={2}
+                    p={2}
+                    bg="cardBg"
+                    borderWidth="1px"
+                    borderColor="border"
+                    borderRadius="md"
+                  >
+                    <Text fontSize="sm" fontWeight="500" minWidth="30px">
+                      {index + 1}.
+                    </Text>
+                    <Text flex="1" fontSize="sm">{sport}</Text>
+                    <HStack gap={1}>
+                      <Button
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0}
+                        size="sm"
+                        variant="ghost"
+                        title="Move up"
+                      >
+                        <MdArrowUpward />
+                      </Button>
+                      <Button
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === sortingOrder.length - 1}
+                        size="sm"
+                        variant="ghost"
+                        title="Move down"
+                      >
+                        <MdArrowDownward />
+                      </Button>
+                      <Button
+                        onClick={() => handleRemoveSport(sport)}
+                        size="sm"
+                        variant="ghost"
+                        colorPalette="red"
+                        title="Remove"
+                      >
+                        <MdClose />
+                      </Button>
+                    </HStack>
+                  </Flex>
+                ))}
+              </VStack>
+            </Box>
           )}
 
           {availableSports.length > 0 && (
-            <div className="available-sports">
-              <h6>Add Sport to Order:</h6>
-              <div className="sport-categories">
+            <Box>
+              <Text fontWeight="500" fontSize="sm" mb={2}>Add Sport to Order:</Text>
+              <VStack align="stretch" gap={2}>
                 {Object.entries(sportsList).map(([category, categoryArray]) => {
                   const availableInCategory = categoryArray.filter(sport => !sortingOrder.includes(sport));
                   if (availableInCategory.length === 0) return null;
                   
                   return (
-                    <div key={category} className="sport-category">
-                      <h5 
-                        className="sport-category-header collapsible"
+                    <Box key={category} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                      <Button
                         onClick={() => setExpandedSportCategories(prev => ({
                           ...prev,
                           [`sorting_${category}`]: !prev[`sorting_${category}`]
                         }))}
+                        width="100%"
+                        justifyContent="flex-start"
+                        variant="ghost"
+                        size="sm"
+                        bg="cardBg"
                       >
-                        <span className="group-toggle-icon">
-                          {expandedSportCategories[`sorting_${category}`] !== false ? '▼' : '▶'}
-                        </span>
+                        <Box as={expandedSportCategories[`sorting_${category}`] !== false ? MdExpandMore : MdChevronRight} mr={2} />
                         {category}
-                      </h5>
+                      </Button>
                       {expandedSportCategories[`sorting_${category}`] !== false && (
-                        <div className="sport-type-grid">
+                        <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2} p={3}>
                           {availableInCategory.map(sport => (
-                            <button
+                            <Button
                               key={sport}
-                              type="button"
                               onClick={() => handleAddSport(sport)}
-                              className="add-sport-btn"
+                              size="sm"
+                              variant="outline"
                             >
-                              + {sport}
-                            </button>
+                              <MdAdd /> {sport}
+                            </Button>
                           ))}
-                        </div>
+                        </Grid>
                       )}
-                    </div>
+                    </Box>
                   );
                 })}
-              </div>
-            </div>
+              </VStack>
+            </Box>
           )}
-        </div>
-        {hasError && <span className="field-error">{hasError}</span>}
-      </div>
+        </VStack>
+        {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
+      </Box>
     );
   };
 
@@ -320,33 +349,37 @@ const AppearanceConfigEditor = ({
           return (
             <>
               {/* Collapse/Expand All Controls */}
-              <div className="group-controls">
-                <button type="button" onClick={expandAll} className="group-control-btn">
+              <HStack mb={4}>
+                <Button onClick={expandAll} size="sm" variant="outline">
                   Expand All
-                </button>
-                <button type="button" onClick={collapseAll} className="group-control-btn">
+                </Button>
+                <Button onClick={collapseAll} size="sm" variant="outline">
                   Collapse All
-                </button>
-              </div>
+                </Button>
+              </HStack>
 
           {/* Global Appearance Settings Group */}
           {schema?.properties && (
-            <div className="form-field-group">
-              <h4 
-                className="field-group-title collapsible" 
+            <Box mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+              <Button
                 onClick={() => toggleGroup('globalSettings')}
+                width="100%"
+                justifyContent="flex-start"
+                variant="ghost"
+                fontWeight="600"
+                bg="cardBg"
               >
-                <span className="group-toggle-icon">{expandedGroups.globalSettings ? '▼' : '▶'}</span>
+                <Box as={expandedGroups.globalSettings ? MdExpandMore : MdChevronRight} mr={2} />
                 Global Appearance Settings
-              </h4>
+              </Button>
               {expandedGroups.globalSettings && (
-                <div className="field-group-content">
+                <Box p={4}>
                   {schema.properties.locale && renderBasicField('locale', schema.properties.locale)}
                   {schema.properties.unitSystem && renderBasicField('unitSystem', schema.properties.unitSystem)}
                   {schema.properties.timeFormat && renderBasicField('timeFormat', schema.properties.timeFormat)}
-                </div>
+                </Box>
               )}
-            </div>
+            </Box>
           )}
 
           {schema?.properties && Object.entries(schema.properties).map(([fieldName, fieldSchema]) => {
@@ -361,89 +394,114 @@ const AppearanceConfigEditor = ({
             // Special handling for dateFormat - wrap in visual group
             if (fieldName === 'dateFormat') {
               return (
-                <div key={fieldName} className="form-field-group">
-                  <h4 
-                    className="field-group-title collapsible" 
+                <Box key={fieldName} mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                  <Button
                     onClick={() => toggleGroup('dateFormat')}
+                    width="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    fontWeight="600"
+                    bg="cardBg"
                   >
-                    <span className="group-toggle-icon">{expandedGroups.dateFormat ? '▼' : '▶'}</span>
+                    <Box as={expandedGroups.dateFormat ? MdExpandMore : MdChevronRight} mr={2} />
                     {fieldSchema.title}
-                  </h4>
+                  </Button>
                   {expandedGroups.dateFormat && (
-                    <div className="field-group-content">
+                    <Box p={4}>
                       {fieldSchema.description && (
-                        <p className="field-description">{fieldSchema.description}</p>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
                       )}
                       {renderBasicField('dateFormat.short', fieldSchema.properties.short)}
                       {renderBasicField('dateFormat.normal', fieldSchema.properties.normal)}
-                    </div>
+                    </Box>
                   )}
-                </div>
+                </Box>
               );
             }
 
             // Special handling for dashboard - wrap in visual group
             if (fieldName === 'dashboard') {
               return (
-                <div key={fieldName} className="form-field-group">
-                  <h4 
-                    className="field-group-title collapsible" 
+                <Box key={fieldName} mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                  <Button
                     onClick={() => toggleGroup('dashboard')}
+                    width="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    fontWeight="600"
+                    bg="cardBg"
                   >
-                    <span className="group-toggle-icon">{expandedGroups.dashboard ? '▼' : '▶'}</span>
+                    <Box as={expandedGroups.dashboard ? MdExpandMore : MdChevronRight} mr={2} />
                     {fieldSchema.title}
-                  </h4>
+                  </Button>
                   {expandedGroups.dashboard && (
-                    <div className="field-group-content">
+                    <Box p={4}>
                       {fieldSchema.description && (
-                        <p className="field-description">{fieldSchema.description}</p>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
                       )}
-                      <div className="info-notice">
-                        <span className="info-icon">ℹ️</span>
-                        <span>
+                      <Flex
+                        align="flex-start"
+                        gap={2}
+                        p={3}
+                        bg="blue.50"
+                        _dark={{ bg: 'blue.900/30' }}
+                        borderRadius="md"
+                        mb={3}
+                      >
+                        <Text fontSize="lg">ℹ️</Text>
+                        <Text fontSize="sm">
                           Dashboard layout is a complex nested structure. 
                           Use the Dashboard Editor below to view and manage your widgets.
-                          Leave as <code>null</code> to use the default layout.
-                        </span>
-                      </div>
+                          Leave as <Code fontSize="sm">null</Code> to use the default layout.
+                        </Text>
+                      </Flex>
                       {dashboardJustSaved && (
-                        <div className="warning-notice" style={{ marginTop: '12px' }}>
-                          <span className="info-icon">⚠️</span>
-                          <span>
-                            Dashboard changes saved to form. <strong>Click the main Save button below to persist these changes to your config file.</strong>
-                          </span>
-                        </div>
-                      )}
-                      <div style={{ marginTop: '12px' }}>
-                        <button 
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() => setShowDashboardEditor(true)}
+                        <Flex
+                          align="flex-start"
+                          gap={2}
+                          p={3}
+                          bg="orange.50"
+                          _dark={{ bg: 'orange.900/30' }}
+                          borderRadius="md"
+                          mb={3}
                         >
-                          📊 Edit Dashboard Layout
-                        </button>
-                      </div>
-                    </div>
+                          <Text fontSize="lg">⚠️</Text>
+                          <Text fontSize="sm">
+                            Dashboard changes saved to form. <Text as="strong">Click the main Save button below to persist these changes to your config file.</Text>
+                          </Text>
+                        </Flex>
+                      )}
+                      <Button 
+                        onClick={() => setShowDashboardEditor(true)}
+                        size="sm"
+                      >
+                        📊 Edit Dashboard Layout
+                      </Button>
+                    </Box>
                   )}
-                </div>
+                </Box>
               );
             }
 
             // Special handling for sport type sorting - wrap in visual group
             if (fieldName === 'sportTypesSortingOrder') {
               return (
-                <div key={fieldName} className="form-field-group">
-                  <h4 
-                    className="field-group-title collapsible" 
+                <Box key={fieldName} mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                  <Button
                     onClick={() => toggleGroup('sportTypesSortingOrder')}
+                    width="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    fontWeight="600"
+                    bg="cardBg"
                   >
-                    <span className="group-toggle-icon">{expandedGroups.sportTypesSortingOrder ? '▼' : '▶'}</span>
+                    <Box as={expandedGroups.sportTypesSortingOrder ? MdExpandMore : MdChevronRight} mr={2} />
                     {fieldSchema.title}
-                  </h4>
+                  </Button>
                   {expandedGroups.sportTypesSortingOrder && (
-                    <div className="field-group-content">
+                    <Box p={4}>
                       {fieldSchema.description && (
-                        <p className="field-description">{fieldSchema.description}</p>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
                       )}
                       {renderSportTypeSortingOrder(
                         fieldName, 
@@ -453,9 +511,9 @@ const AppearanceConfigEditor = ({
                         handleFieldChange, 
                         hasError
                       )}
-                    </div>
+                    </Box>
                   )}
-                </div>
+                </Box>
               );
             }
 
@@ -465,112 +523,122 @@ const AppearanceConfigEditor = ({
               const isArray = Array.isArray(tileLayerValue);
               
               return (
-                <div key={fieldName} className="form-field-group">
-                  <h4 
-                    className="field-group-title collapsible" 
+                <Box key={fieldName} mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                  <Button
                     onClick={() => toggleGroup('heatmap')}
+                    width="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    fontWeight="600"
+                    bg="cardBg"
                   >
-                    <span className="group-toggle-icon">{expandedGroups.heatmap ? '▼' : '▶'}</span>
+                    <Box as={expandedGroups.heatmap ? MdExpandMore : MdChevronRight} mr={2} />
                     {fieldSchema.title}
-                  </h4>
+                  </Button>
                   {expandedGroups.heatmap && (
-                    <div className="field-group-content">
+                    <Box p={4}>
                       {fieldSchema.description && (
-                        <p className="field-description">{fieldSchema.description}</p>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
                       )}
                       
                       {/* polylineColor */}
                       {renderBasicField('heatmap.polylineColor', fieldSchema.properties.polylineColor)}
                   
                   {/* tileLayerUrl - special handling for oneOf (string or array) */}
-                  <div className="form-field">
-                    <label htmlFor="heatmap.tileLayerUrl" className="field-label">
+                  <Box mb={4}>
+                    <Text fontWeight="500" mb={1} htmlFor="heatmap.tileLayerUrl">
                       {fieldSchema.properties.tileLayerUrl.oneOf[0].title || 'Tile Layer URL'}
-                    </label>
-                    <p className="field-description">
+                    </Text>
+                    <Text fontSize="sm" color="textMuted" mb={2}>
                       URL template for map tiles. Can be a single URL or multiple URLs for layered maps.
-                    </p>
+                    </Text>
                     
                     {!isArray ? (
                       <>
-                        <input
-                          type="text"
+                        <Input
                           id="heatmap.tileLayerUrl"
                           value={tileLayerValue || ''}
                           onChange={(e) => handleFieldChange('heatmap.tileLayerUrl', e.target.value)}
-                          className={`field-input ${errors['heatmap.tileLayerUrl'] ? 'error' : ''}`}
+                          borderColor={errors['heatmap.tileLayerUrl'] ? 'red.500' : 'border'}
                           placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          mb={2}
                         />
-                        <button
-                          type="button"
+                        <Button
                           onClick={() => handleFieldChange('heatmap.tileLayerUrl', [tileLayerValue || ''])}
-                          className="convert-to-array-btn"
+                          size="sm"
+                          variant="outline"
                         >
                           Convert to Multiple Layers
-                        </button>
+                        </Button>
                       </>
                     ) : (
                       <>
-                        {tileLayerValue.map((url, index) => (
-                          <div key={index} className="array-item">
-                            <input
-                              type="text"
-                              value={url}
-                              onChange={(e) => {
-                                const newArray = [...tileLayerValue];
-                                newArray[index] = e.target.value;
-                                handleFieldChange('heatmap.tileLayerUrl', newArray);
-                              }}
-                              className="field-input"
-                              placeholder={`Layer ${index + 1} URL`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newArray = tileLayerValue.filter((_, i) => i !== index);
-                                handleFieldChange('heatmap.tileLayerUrl', newArray.length === 1 ? newArray[0] : newArray);
-                              }}
-                              className="remove-array-item-btn"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
+                        <VStack align="stretch" gap={2} mb={2}>
+                          {tileLayerValue.map((url, index) => (
+                            <Flex key={index} gap={2}>
+                              <Input
+                                value={url}
+                                onChange={(e) => {
+                                  const newArray = [...tileLayerValue];
+                                  newArray[index] = e.target.value;
+                                  handleFieldChange('heatmap.tileLayerUrl', newArray);
+                                }}
+                                placeholder={`Layer ${index + 1} URL`}
+                                flex="1"
+                              />
+                              <Button
+                                onClick={() => {
+                                  const newArray = tileLayerValue.filter((_, i) => i !== index);
+                                  handleFieldChange('heatmap.tileLayerUrl', newArray.length === 1 ? newArray[0] : newArray);
+                                }}
+                                size="sm"
+                                variant="outline"
+                                colorPalette="red"
+                              >
+                                <MdClose />
+                              </Button>
+                            </Flex>
+                          ))}
+                        </VStack>
+                        <Button
                           onClick={() => handleFieldChange('heatmap.tileLayerUrl', [...tileLayerValue, ''])}
-                          className="add-array-item-btn"
+                          size="sm"
+                          variant="outline"
                         >
-                          + Add Layer
-                        </button>
+                          <MdAdd /> Add Layer
+                        </Button>
                       </>
                     )}
-                    {errors['heatmap.tileLayerUrl'] && <span className="field-error">{errors['heatmap.tileLayerUrl']}</span>}
-                  </div>
+                    {errors['heatmap.tileLayerUrl'] && <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.tileLayerUrl']}</Text>}
+                  </Box>
                   
                   {/* enableGreyScale */}
                   {renderBasicField('heatmap.enableGreyScale', fieldSchema.properties.enableGreyScale)}
-                    </div>
+                    </Box>
                   )}
-                </div>
+                </Box>
               );
             }
 
             // Handle nested sport type arrays in photos
             if (fieldName === 'photos') {
               return (
-                <div key={fieldName} className="form-field-group">
-                  <h4 
-                    className="field-group-title collapsible" 
+                <Box key={fieldName} mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
+                  <Button
                     onClick={() => toggleGroup('photos')}
+                    width="100%"
+                    justifyContent="flex-start"
+                    variant="ghost"
+                    fontWeight="600"
+                    bg="cardBg"
                   >
-                    <span className="group-toggle-icon">{expandedGroups.photos ? '▼' : '▶'}</span>
+                    <Box as={expandedGroups.photos ? MdExpandMore : MdChevronRight} mr={2} />
                     {fieldSchema.title}
-                  </h4>
+                  </Button>
                   {expandedGroups.photos && (
-                    <div className="field-group-content">
+                    <Box p={4}>
                       {fieldSchema.description && (
-                        <p className="field-description">{fieldSchema.description}</p>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
                       )}
                   
                   {/* hidePhotosForSportTypes */}
@@ -594,39 +662,37 @@ const AppearanceConfigEditor = ({
                   )}
 
                   {/* defaultEnabledFilters.countryCode */}
-                  <div className="config-field">
-                    <label className="field-label">
+                  <Box mb={4}>
+                    <Text fontWeight="500" mb={1}>
                       Country Code
-                      {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description && (
-                        <span className="field-description">
-                          {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description}
-                        </span>
-                      )}
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        className="field-input"
+                    </Text>
+                    {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description && (
+                      <Text fontSize="sm" color="textMuted" mb={2}>
+                        {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description}
+                      </Text>
+                    )}
+                    <Flex gap={2}>
+                      <Input
                         value={getNestedValue(formData, 'photos.defaultEnabledFilters.countryCode') || ''}
                         readOnly
                         placeholder="Click button to select country"
-                        style={{ flex: 1 }}
+                        flex="1"
+                        borderColor={errors['photos.defaultEnabledFilters.countryCode'] ? 'red.500' : 'border'}
                       />
-                      <button
-                        type="button"
-                        className="field-button"
+                      <Button
                         onClick={() => setShowCountrySelector(true)}
+                        size="md"
                       >
                         Select Country
-                      </button>
-                    </div>
+                      </Button>
+                    </Flex>
                     {errors['photos.defaultEnabledFilters.countryCode'] && (
-                      <div className="field-error">{errors['photos.defaultEnabledFilters.countryCode']}</div>
+                      <Text color="red.500" fontSize="sm" mt={1}>{errors['photos.defaultEnabledFilters.countryCode']}</Text>
                     )}
-                  </div>
-                    </div>
+                  </Box>
+                    </Box>
                   )}
-                </div>
+                </Box>
               );
             }
 

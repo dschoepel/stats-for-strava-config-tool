@@ -1,6 +1,4 @@
-import React from 'react';
 import BaseConfigEditor from './BaseConfigEditor';
-import '../ConfigSectionEditor.css';
 
 /**
  * GeneralConfigEditor - Handles general configuration fields

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Textarea, Icon, IconButton, Code, Field } from '@chakra-ui/react';
+import { Checkbox } from '@chakra-ui/react';
+import { MdExpandMore, MdChevronRight, MdAdd, MdDelete, MdEdit, MdSave, MdRefresh } from 'react-icons/md';
 import { 
   readWidgetDefinitions, 
   writeWidgetDefinitions, 
   initialWidgetDefinitions
 } from '../utils/widgetDefinitionsManager';
 import { getSetting } from '../utils/settingsManager';
-import './WidgetDefinitionsEditor.css';
 
 export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState(initialWidgetDefinitions);
@@ -215,349 +217,637 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const allowOnceWidgets = Object.values(widgetDefinitions).filter(w => !w.allowMultiple);
 
   return (
-    <div className="widget-definitions-editor">
-      <div className="widget-info">
-        <p>
-          📄 Widget definitions are saved to: <code>{getSetting('files.defaultPath', '~/Documents/strava-config-tool/')}settings/widget-definitions.yaml</code>
-        </p>
-        <p style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-muted, #888)' }}>
-          💡 <strong>Note:</strong> Changes to individual widgets are saved in memory. Click the <strong>Save</strong> button below to write all changes to the file.
-        </p>
-      </div>
+    <Box p={5} bg="cardBg" border="1px solid" borderColor="border" borderRadius="md" w="100%" h="100%">
+      <VStack align="stretch" gap={4} mb={5}>
+        <Box p={3} bg="panelBg" borderRadius="md" border="1px solid" borderColor="border">
+          <Text fontSize="sm" color="text" mb={2}>
+            📄 Widget definitions are saved to: <Code bg="inputBg" px={2} py={1} borderRadius="sm">{getSetting('files.defaultPath', '~/Documents/strava-config-tool/')}settings/widget-definitions.yaml</Code>
+          </Text>
+          <Text fontSize="sm" color="textMuted">
+            💡 <Text as="strong" color="text">Note:</Text> Changes to individual widgets are saved in memory. Click the <Text as="strong" color="text">Save</Text> button below to write all changes to the file.
+          </Text>
+        </Box>
+      </VStack>
       
-      <div className="editor-header">
-        <h3>Widget Definitions</h3>
-        <div className="header-actions">
-          <button 
-            className="btn-secondary btn-sm"
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={5}
+        pb={4}
+        borderBottom="2px solid"
+        borderColor="border"
+      >
+        <Heading as="h3" size="lg" color="text">
+          Widget Definitions
+        </Heading>
+        <HStack gap={3}>
+          <Button
             onClick={collapseAll}
             title="Collapse all widgets"
+            size="sm"
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            leftIcon={<Icon><MdChevronRight /></Icon>}
           >
-            ▸ Collapse
-          </button>
-          <button 
-            className="btn-secondary btn-sm"
+            Collapse
+          </Button>
+          <Button
             onClick={expandAll}
             title="Expand all widgets"
+            size="sm"
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            leftIcon={<Icon><MdExpandMore /></Icon>}
           >
-            ▾ Expand
-          </button>
-          <button 
-            className="btn-secondary"
+            Expand
+          </Button>
+          <Button
             onClick={handleReset}
             title="Reset to default widget definitions"
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            leftIcon={<Icon><MdRefresh /></Icon>}
           >
-            ↺ Reset
-          </button>
-          <button 
-            className="btn-secondary"
+            Reset
+          </Button>
+          <Button
             onClick={openAddModal}
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            leftIcon={<Icon><MdAdd /></Icon>}
           >
-            + Widget
-          </button>
-          <button 
-            className="btn-primary" 
+            Widget
+          </Button>
+          <Button
             onClick={handleSave}
-            disabled={!isDirty}
+            isDisabled={!isDirty}
             title={isDirty ? 'Save changes to widget definitions' : 'No changes to save'}
+            bg="primary"
+            color="white"
+            _hover={{ bg: "primaryHover" }}
+            border={isDirty ? "3px solid" : "none"}
+            borderColor="primaryHover"
+            boxShadow={isDirty ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
+            leftIcon={<Icon><MdSave /></Icon>}
           >
-            💾 Save{isDirty ? ' *' : ''}
-          </button>
-        </div>
-      </div>
+            Save Changes{isDirty ? ' *' : ''}
+          </Button>
+        </HStack>
+      </Flex>
 
       {message && (
-        <div className={`message ${messageType}`}>
+        <Box
+          p={3}
+          mb={4}
+          borderRadius="md"
+          fontWeight="medium"
+          bg={messageType === 'success' ? { base: "#d4edda", _dark: "#1e4620" } : { base: "#f8d7da", _dark: "#5a1a1a" }}
+          color={messageType === 'success' ? { base: "#155724", _dark: "#86efac" } : { base: "#721c24", _dark: "#fca5a5" }}
+          border="1px solid"
+          borderColor={messageType === 'success' ? { base: "#c3e6cb", _dark: "#166534" } : { base: "#f5c6cb", _dark: "#991b1b" }}
+        >
           {message}
-        </div>
+        </Box>
       )}
 
-      <div className="widget-info">
-        <p>
+      <Box p={3} bg="panelBg" borderRadius="md" border="1px solid" borderColor="border" mb={5}>
+        <Text fontSize="sm" color="text">
           Widget definitions determine what widgets are available in the Dashboard editor. 
           Custom widgets can be added for future-proofing.
-        </p>
-      </div>
+        </Text>
+      </Box>
 
       {/* Widgets that allow multiple instances */}
-      <div className="widget-section">
-        <h4>Widgets that can be added multiple times ({allowMultipleWidgets.length})</h4>
-        <div className="widgets-list">
-          {allowMultipleWidgets.map(widget => (
-            <div key={widget.name} className="widget-item">
-              <div className="widget-header">
-                <button 
-                  className="widget-toggle"
-                  onClick={() => toggleWidget(widget.name)}
+      <VStack align="stretch" gap={5}>
+        <Box>
+          <Heading as="h4" size="md" color="text" mb={3}>
+            Widgets that can be added multiple times ({allowMultipleWidgets.length})
+          </Heading>
+          <VStack gap={2} align="stretch">
+            {allowMultipleWidgets.map(widget => (
+              <Box
+                key={widget.name}
+                border="1px solid"
+                borderColor="border"
+                borderRadius="md"
+                overflow="hidden"
+                bg="cardBg"
+              >
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  bg="panelBg"
                 >
-                  <span className="toggle-icon">
-                    {expandedWidgets[widget.name] ? '▾' : '▸'}
-                  </span>
-                  <span className="widget-name">{widget.displayName}</span>
-                  <span className="widget-badge">{widget.hasConfig ? 'Config' : 'No Config'}</span>
-                </button>
-                <div className="widget-actions">
-                  <button
-                    className="btn-icon"
-                    onClick={() => openEditModal(widget)}
-                    title="Edit widget definition"
+                  <Button
+                    onClick={() => toggleWidget(widget.name)}
+                    variant="ghost"
+                    flex={1}
+                    justifyContent="flex-start"
+                    px={4}
+                    py={3}
+                    borderRadius={0}
+                    _hover={{ bg: { base: "#e9ecef", _dark: "#334155" } }}
                   >
-                    ✎
-                  </button>
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={() => handleDeleteWidget(widget.name)}
-                    title="Delete widget definition"
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
+                    <HStack gap={3} flex={1}>
+                      <Icon fontSize="xl">
+                        {expandedWidgets[widget.name] ? <MdExpandMore /> : <MdChevronRight />}
+                      </Icon>
+                      <Text fontWeight="semibold" fontSize="md" color="text">
+                        {widget.displayName}
+                      </Text>
+                      <Box
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                        bg={widget.hasConfig ? "primary" : "panelBg"}
+                        color={widget.hasConfig ? "white" : "textMuted"}
+                        fontSize="xs"
+                        fontWeight="medium"
+                      >
+                        {widget.hasConfig ? 'Config' : 'No Config'}
+                      </Box>
+                    </HStack>
+                  </Button>
+                  <HStack gap={1} px={2}>
+                    <IconButton
+                      onClick={() => openEditModal(widget)}
+                      title="Edit widget definition"
+                      aria-label="Edit widget"
+                      size="sm"
+                      variant="ghost"
+                      colorPalette="gray"
+                    >
+                      <Icon><MdEdit /></Icon>
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteWidget(widget.name)}
+                      title="Delete widget definition"
+                      aria-label="Delete widget"
+                      size="sm"
+                      variant="ghost"
+                      colorPalette="red"
+                    >
+                      <Icon><MdDelete /></Icon>
+                    </IconButton>
+                  </HStack>
+                </Flex>
 
-              {expandedWidgets[widget.name] && (
-                <div className="widget-details">
-                  <div className="detail-row">
-                    <strong>Name:</strong> <code>{widget.name}</code>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Description:</strong> {widget.description}
-                  </div>
-                  {widget.hasConfig && widget.configTemplate && (
-                    <div className="detail-row">
-                      <strong>Config Template:</strong>
-                      <pre className="config-template">{widget.configTemplate}</pre>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                {expandedWidgets[widget.name] && (
+                  <Box px={4} py={3} bg={{ base: "#f8f9fa", _dark: "#0f172a" }}>
+                    <VStack align="stretch" gap={2}>
+                      <HStack>
+                        <Text fontWeight="bold" color="text">Name:</Text>
+                        <Code bg="inputBg" px={2} py={1} borderRadius="sm">{widget.name}</Code>
+                      </HStack>
+                      <HStack align="flex-start">
+                        <Text fontWeight="bold" color="text">Description:</Text>
+                        <Text color="text">{widget.description}</Text>
+                      </HStack>
+                      {widget.hasConfig && widget.configTemplate && (
+                        <Box>
+                          <Text fontWeight="bold" color="text" mb={2}>Config Template:</Text>
+                          <Box
+                            as="pre"
+                            bg="inputBg"
+                            p={3}
+                            borderRadius="md"
+                            border="1px solid"
+                            borderColor="border"
+                            fontSize="sm"
+                            overflowX="auto"
+                            color="text"
+                          >
+                            {widget.configTemplate}
+                          </Box>
+                        </Box>
+                      )}
+                    </VStack>
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </VStack>
+        </Box>
 
-      {/* Widgets that allow only one instance */}
-      <div className="widget-section">
-        <h4>Widgets that can be added once only ({allowOnceWidgets.length})</h4>
-        <div className="widgets-list">
-          {allowOnceWidgets.map(widget => (
-            <div key={widget.name} className="widget-item">
-              <div className="widget-header">
-                <button 
-                  className="widget-toggle"
-                  onClick={() => toggleWidget(widget.name)}
+        {/* Widgets that allow only one instance */}
+        <Box>
+          <Heading as="h4" size="md" color="text" mb={3}>
+            Widgets that can be added once only ({allowOnceWidgets.length})
+          </Heading>
+          <VStack gap={2} align="stretch">
+            {allowOnceWidgets.map(widget => (
+              <Box
+                key={widget.name}
+                border="1px solid"
+                borderColor="border"
+                borderRadius="md"
+                overflow="hidden"
+                bg="cardBg"
+              >
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  bg="panelBg"
                 >
-                  <span className="toggle-icon">
-                    {expandedWidgets[widget.name] ? '▾' : '▸'}
-                  </span>
-                  <span className="widget-name">{widget.displayName}</span>
-                  <span className="widget-badge">{widget.hasConfig ? 'Config' : 'No Config'}</span>
-                </button>
-                <div className="widget-actions">
-                  <button
-                    className="btn-icon"
-                    onClick={() => openEditModal(widget)}
-                    title="Edit widget definition"
+                  <Button
+                    onClick={() => toggleWidget(widget.name)}
+                    variant="ghost"
+                    flex={1}
+                    justifyContent="flex-start"
+                    px={4}
+                    py={3}
+                    borderRadius={0}
+                    _hover={{ bg: { base: "#e9ecef", _dark: "#334155" } }}
                   >
-                    ✎
-                  </button>
-                  <button
-                    className="btn-icon btn-danger"
-                    onClick={() => handleDeleteWidget(widget.name)}
-                    title="Delete widget definition"
-                  >
-                    🗑
-                  </button>
-                </div>
-              </div>
+                    <HStack gap={3} flex={1}>
+                      <Icon fontSize="xl">
+                        {expandedWidgets[widget.name] ? <MdExpandMore /> : <MdChevronRight />}
+                      </Icon>
+                      <Text fontWeight="semibold" fontSize="md" color="text">
+                        {widget.displayName}
+                      </Text>
+                      <Box
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                        bg={widget.hasConfig ? "primary" : "panelBg"}
+                        color={widget.hasConfig ? "white" : "textMuted"}
+                        fontSize="xs"
+                        fontWeight="medium"
+                      >
+                        {widget.hasConfig ? 'Config' : 'No Config'}
+                      </Box>
+                    </HStack>
+                  </Button>
+                  <HStack gap={1} px={2}>
+                    <IconButton
+                      onClick={() => openEditModal(widget)}
+                      title="Edit widget definition"
+                      aria-label="Edit widget"
+                      size="sm"
+                      variant="ghost"
+                      colorPalette="gray"
+                    >
+                      <Icon><MdEdit /></Icon>
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDeleteWidget(widget.name)}
+                      title="Delete widget definition"
+                      aria-label="Delete widget"
+                      size="sm"
+                      variant="ghost"
+                      colorPalette="red"
+                    >
+                      <Icon><MdDelete /></Icon>
+                    </IconButton>
+                  </HStack>
+                </Flex>
 
-              {expandedWidgets[widget.name] && (
-                <div className="widget-details">
-                  <div className="detail-row">
-                    <strong>Name:</strong> <code>{widget.name}</code>
-                  </div>
-                  <div className="detail-row">
-                    <strong>Description:</strong> {widget.description}
-                  </div>
-                  {widget.hasConfig && widget.configTemplate && (
-                    <div className="detail-row">
-                      <strong>Config Template:</strong>
-                      <pre className="config-template">{widget.configTemplate}</pre>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                {expandedWidgets[widget.name] && (
+                  <Box px={4} py={3} bg={{ base: "#f8f9fa", _dark: "#0f172a" }}>
+                    <VStack align="stretch" gap={2}>
+                      <HStack>
+                        <Text fontWeight="bold" color="text">Name:</Text>
+                        <Code bg="inputBg" px={2} py={1} borderRadius="sm">{widget.name}</Code>
+                      </HStack>
+                      <HStack align="flex-start">
+                        <Text fontWeight="bold" color="text">Description:</Text>
+                        <Text color="text">{widget.description}</Text>
+                      </HStack>
+                      {widget.hasConfig && widget.configTemplate && (
+                        <Box>
+                          <Text fontWeight="bold" color="text" mb={2}>Config Template:</Text>
+                          <Box
+                            as="pre"
+                            bg="inputBg"
+                            p={3}
+                            borderRadius="md"
+                            border="1px solid"
+                            borderColor="border"
+                            fontSize="sm"
+                            overflowX="auto"
+                            color="text"
+                          >
+                            {widget.configTemplate}
+                          </Box>
+                        </Box>
+                      )}
+                    </VStack>
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </VStack>
+        </Box>
+      </VStack>
 
       {/* Add Widget Modal */}
       {showAddWidgetModal && (
-        <div className="modal-overlay" onClick={() => { setShowAddWidgetModal(false); resetForm(); }}>
-          <div className="modal-content widget-modal" onClick={e => e.stopPropagation()}>
-            <h4>Add Custom Widget</h4>
-            {modalError && <div className="modal-error">{modalError}</div>}
-            
-            <div className="form-field">
-              <label>Widget Name (camelCase)*</label>
-              <input
-                type="text"
-                placeholder="myCustomWidget"
-                value={formData.name}
-                onChange={e => handleFormChange('name', e.target.value)}
-              />
-            </div>
-            
-            <div className="form-field">
-              <label>Display Name*</label>
-              <input
-                type="text"
-                placeholder="My Custom Widget"
-                value={formData.displayName}
-                onChange={e => handleFormChange('displayName', e.target.value)}
-              />
-            </div>
-            
-            <div className="form-field">
-              <label>Description</label>
-              <textarea
-                placeholder="What does this widget do?"
-                value={formData.description}
-                onChange={e => handleFormChange('description', e.target.value)}
-                rows="3"
-              />
-            </div>
-            
-            <div className="form-field checkbox-field">
-              <label>
-                <input
-                  type="checkbox"
+        <Flex
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(0, 0, 0, 0.7)"
+          align="center"
+          justify="center"
+          zIndex={1000}
+          onClick={() => { setShowAddWidgetModal(false); resetForm(); }}
+        >
+          <Flex
+            direction="column"
+            bg="cardBg"
+            border="2px solid"
+            borderColor="border"
+            borderRadius="lg"
+            boxShadow="xl"
+            w="90%"
+            maxW="600px"
+            maxH="90vh"
+            overflow="hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <Flex
+              justify="space-between"
+              align="center"
+              px={6}
+              py={4}
+              bg="panelBg"
+              borderBottom="1px solid"
+              borderColor="border"
+            >
+              <Heading as="h4" size="lg" color="text">
+                Add Custom Widget
+              </Heading>
+            </Flex>
+
+            <Box px={6} py={4} overflowY="auto" bg="cardBg">
+              {modalError && (
+                <Box
+                  mb={4}
+                  p={3}
+                  borderRadius="md"
+                  bg={{ base: "#f8d7da", _dark: "#7f1d1d" }}
+                  color={{ base: "#721c24", _dark: "#fca5a5" }}
+                  border="1px solid"
+                  borderColor={{ base: "#f5c6cb", _dark: "#991b1b" }}
+                >
+                  {modalError}
+                </Box>
+              )}
+
+              <VStack align="stretch" gap={4}>
+                <Field.Root>
+                  <Field.Label color="text">Widget Name (camelCase)*</Field.Label>
+                  <Input
+                    placeholder="myCustomWidget"
+                    value={formData.name}
+                    onChange={e => handleFormChange('name', e.target.value)}
+                    bg="inputBg"
+                  />
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label color="text">Display Name*</Field.Label>
+                  <Input
+                    placeholder="My Custom Widget"
+                    value={formData.displayName}
+                    onChange={e => handleFormChange('displayName', e.target.value)}
+                    bg="inputBg"
+                  />
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label color="text">Description</Field.Label>
+                  <Textarea
+                    placeholder="What does this widget do?"
+                    value={formData.description}
+                    onChange={e => handleFormChange('description', e.target.value)}
+                    rows={3}
+                    bg="inputBg"
+                  />
+                </Field.Root>
+
+                <Checkbox.Root
                   checked={formData.allowMultiple}
-                  onChange={e => handleFormChange('allowMultiple', e.target.checked)}
-                />
-                Allow multiple instances
-              </label>
-            </div>
-            
-            <div className="form-field checkbox-field">
-              <label>
-                <input
-                  type="checkbox"
+                  onCheckedChange={e => handleFormChange('allowMultiple', e.checked)}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control />
+                  <Checkbox.Label color="text" fontWeight="medium">Allow multiple instances</Checkbox.Label>
+                </Checkbox.Root>
+
+                <Checkbox.Root
                   checked={formData.hasConfig}
-                  onChange={e => handleFormChange('hasConfig', e.target.checked)}
-                />
-                Has configuration options
-              </label>
-            </div>
-            
-            {formData.hasConfig && (
-              <div className="form-field">
-                <label>Config Template (YAML)</label>
-                <textarea
-                  placeholder="key: value"
-                  value={formData.configTemplate}
-                  onChange={e => handleFormChange('configTemplate', e.target.value)}
-                  rows="5"
-                  className="code-input"
-                />
-              </div>
-            )}
-            
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => { setShowAddWidgetModal(false); resetForm(); }}>
+                  onCheckedChange={e => handleFormChange('hasConfig', e.checked)}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control />
+                  <Checkbox.Label color="text" fontWeight="medium">Has configuration options</Checkbox.Label>
+                </Checkbox.Root>
+
+                {formData.hasConfig && (
+                  <Field.Root>
+                    <Field.Label color="text">Config Template (YAML)</Field.Label>
+                    <Textarea
+                      placeholder="key: value"
+                      value={formData.configTemplate}
+                      onChange={e => handleFormChange('configTemplate', e.target.value)}
+                      rows={5}
+                      bg="inputBg"
+                      fontFamily="monospace"
+                      fontSize="sm"
+                    />
+                  </Field.Root>
+                )}
+              </VStack>
+            </Box>
+
+            <Flex
+              justify="flex-end"
+              gap={3}
+              px={6}
+              py={4}
+              bg="panelBg"
+              borderTop="1px solid"
+              borderColor="border"
+            >
+              <Button
+                onClick={() => { setShowAddWidgetModal(false); resetForm(); }}
+                variant="outline"
+                colorPalette="gray"
+              >
                 Cancel
-              </button>
-              <button className="btn-primary" onClick={handleAddWidget}>
+              </Button>
+              <Button
+                onClick={handleAddWidget}
+                bg="primary"
+                color="white"
+                _hover={{ bg: "primaryHover" }}
+              >
                 Add Widget
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </Flex>
+          </Flex>
+        </Flex>
       )}
 
       {/* Edit Widget Modal */}
       {showEditWidgetModal && editingWidget && (
-        <div className="modal-overlay" onClick={() => { setShowEditWidgetModal(false); setEditingWidget(null); resetForm(); }}>
-          <div className="modal-content widget-modal" onClick={e => e.stopPropagation()}>
-            <h4>Edit Widget Definition</h4>
-            {modalError && <div className="modal-error">{modalError}</div>}
-            
-            <div className="form-field">
-              <label>Widget Name (camelCase)*</label>
-              <input
-                type="text"
-                placeholder="myCustomWidget"
-                value={formData.name}
-                onChange={e => handleFormChange('name', e.target.value)}
-              />
-            </div>
-            
-            <div className="form-field">
-              <label>Display Name*</label>
-              <input
-                type="text"
-                placeholder="My Custom Widget"
-                value={formData.displayName}
-                onChange={e => handleFormChange('displayName', e.target.value)}
-              />
-            </div>
-            
-            <div className="form-field">
-              <label>Description</label>
-              <textarea
-                placeholder="What does this widget do?"
-                value={formData.description}
-                onChange={e => handleFormChange('description', e.target.value)}
-                rows="3"
-              />
-            </div>
-            
-            <div className="form-field checkbox-field">
-              <label>
-                <input
-                  type="checkbox"
+        <Flex
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(0, 0, 0, 0.7)"
+          align="center"
+          justify="center"
+          zIndex={1000}
+          onClick={() => { setShowEditWidgetModal(false); setEditingWidget(null); resetForm(); }}
+        >
+          <Flex
+            direction="column"
+            bg="cardBg"
+            border="2px solid"
+            borderColor="border"
+            borderRadius="lg"
+            boxShadow="xl"
+            w="90%"
+            maxW="600px"
+            maxH="90vh"
+            overflow="hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <Flex
+              justify="space-between"
+              align="center"
+              px={6}
+              py={4}
+              bg="panelBg"
+              borderBottom="1px solid"
+              borderColor="border"
+            >
+              <Heading as="h4" size="lg" color="text">
+                Edit Widget Definition
+              </Heading>
+            </Flex>
+
+            <Box px={6} py={4} overflowY="auto" bg="cardBg">
+              {modalError && (
+                <Box
+                  mb={4}
+                  p={3}
+                  borderRadius="md"
+                  bg={{ base: "#f8d7da", _dark: "#7f1d1d" }}
+                  color={{ base: "#721c24", _dark: "#fca5a5" }}
+                  border="1px solid"
+                  borderColor={{ base: "#f5c6cb", _dark: "#991b1b" }}
+                >
+                  {modalError}
+                </Box>
+              )}
+
+              <VStack align="stretch" gap={4}>
+                <Field.Root>
+                  <Field.Label color="text">Widget Name (camelCase)*</Field.Label>
+                  <Input
+                    placeholder="myCustomWidget"
+                    value={formData.name}
+                    onChange={e => handleFormChange('name', e.target.value)}
+                    bg="inputBg"
+                  />
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label color="text">Display Name*</Field.Label>
+                  <Input
+                    placeholder="My Custom Widget"
+                    value={formData.displayName}
+                    onChange={e => handleFormChange('displayName', e.target.value)}
+                    bg="inputBg"
+                  />
+                </Field.Root>
+
+                <Field.Root>
+                  <Field.Label color="text">Description</Field.Label>
+                  <Textarea
+                    placeholder="What does this widget do?"
+                    value={formData.description}
+                    onChange={e => handleFormChange('description', e.target.value)}
+                    rows={3}
+                    bg="inputBg"
+                  />
+                </Field.Root>
+
+                <Checkbox.Root
                   checked={formData.allowMultiple}
-                  onChange={e => handleFormChange('allowMultiple', e.target.checked)}
-                />
-                Allow multiple instances
-              </label>
-            </div>
-            
-            <div className="form-field checkbox-field">
-              <label>
-                <input
-                  type="checkbox"
+                  onCheckedChange={e => handleFormChange('allowMultiple', e.checked)}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control />
+                  <Checkbox.Label color="text" fontWeight="medium">Allow multiple instances</Checkbox.Label>
+                </Checkbox.Root>
+
+                <Checkbox.Root
                   checked={formData.hasConfig}
-                  onChange={e => handleFormChange('hasConfig', e.target.checked)}
-                />
-                Has configuration options
-              </label>
-            </div>
-            
-            {formData.hasConfig && (
-              <div className="form-field">
-                <label>Config Template (YAML)</label>
-                <textarea
-                  placeholder="key: value"
-                  value={formData.configTemplate}
-                  onChange={e => handleFormChange('configTemplate', e.target.value)}
-                  rows="5"
-                  className="code-input"
-                />
-              </div>
-            )}
-            
-            <div className="modal-actions">
-              <button className="btn-secondary" onClick={() => { setShowEditWidgetModal(false); setEditingWidget(null); resetForm(); }}>
+                  onCheckedChange={e => handleFormChange('hasConfig', e.checked)}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control />
+                  <Checkbox.Label color="text" fontWeight="medium">Has configuration options</Checkbox.Label>
+                </Checkbox.Root>
+
+                {formData.hasConfig && (
+                  <Field.Root>
+                    <Field.Label color="text">Config Template (YAML)</Field.Label>
+                    <Textarea
+                      placeholder="key: value"
+                      value={formData.configTemplate}
+                      onChange={e => handleFormChange('configTemplate', e.target.value)}
+                      rows={5}
+                      bg="inputBg"
+                      fontFamily="monospace"
+                      fontSize="sm"
+                    />
+                  </Field.Root>
+                )}
+              </VStack>
+            </Box>
+
+            <Flex
+              justify="flex-end"
+              gap={3}
+              px={6}
+              py={4}
+              bg="panelBg"
+              borderTop="1px solid"
+              borderColor="border"
+            >
+              <Button
+                onClick={() => { setShowEditWidgetModal(false); setEditingWidget(null); resetForm(); }}
+                variant="outline"
+                colorPalette="gray"
+              >
                 Cancel
-              </button>
-              <button className="btn-primary" onClick={handleEditWidget}>
+              </Button>
+              <Button
+                onClick={handleEditWidget}
+                bg="primary"
+                color="white"
+                _hover={{ bg: "primaryHover" }}
+              >
                 Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </Flex>
+          </Flex>
+        </Flex>
       )}
-    </div>
+    </Box>
   );
 }

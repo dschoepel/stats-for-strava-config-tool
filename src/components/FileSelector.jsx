@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
+import { Box, VStack, Heading, Text, Button, Flex, HStack, Spinner, Icon } from '@chakra-ui/react';
+import { MdFolder, MdDescription, MdInfo, MdLock } from 'react-icons/md';
 import { processYamlFiles } from '../utils/yamlFileHandler';
-import './FileSelector.css';
 
 const FileSelector = ({ onFilesSelected, onError }) => {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -55,18 +56,33 @@ const FileSelector = ({ onFilesSelected, onError }) => {
   };
 
   return (
-    <div className="file-selector">
-      <div className="file-selector-header">
-        <h3>📁 Select Config YAML Files</h3>
-        <p>Choose one or more files that start with "config" and end with .yaml or .yml</p>
-      </div>
+    <VStack align="stretch" gap={4}>
+      <HStack gap={2}>
+        <Icon as={MdFolder} boxSize={5} color="primary" />
+        <Heading as="h3" size="md" color="text">
+          Select Config YAML Files
+        </Heading>
+      </HStack>
+      <Text color="textMuted" fontSize="sm" mt={-2}>
+        Choose one or more files that start with "config" and end with .yaml or .yml
+      </Text>
       
-      <div
-        className={`file-drop-zone ${isDragOver ? 'drag-over' : ''} ${isProcessing ? 'processing' : ''}`}
+      <Box
+        p={8}
+        bg="cardBg"
+        border="2px dashed"
+        borderColor={isDragOver ? "primary" : "border"}
+        borderRadius="md"
+        cursor="pointer"
+        onClick={openFileDialog}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={openFileDialog}
+        textAlign="center"
+        transition="all 0.2s"
+        _hover={{ borderColor: "primary", bg: "panelBg" }}
+        opacity={isProcessing ? 0.6 : 1}
+        pointerEvents={isProcessing ? "none" : "auto"}
       >
         <input
           ref={fileInputRef}
@@ -74,41 +90,61 @@ const FileSelector = ({ onFilesSelected, onError }) => {
           multiple
           accept=".yaml,.yml"
           onChange={handleInputChange}
-          className="file-input-hidden"
+          style={{ display: 'none' }}
         />
         
         {isProcessing ? (
-          <div className="processing-indicator">
-            <div className="spinner"></div>
-            <span>Processing files...</span>
-          </div>
+          <VStack gap={3}>
+            <Spinner size="xl" color="primary" />
+            <Text color="text" fontWeight="medium">Processing files...</Text>
+          </VStack>
         ) : (
-          <div className="drop-zone-content">
-            <div className="drop-zone-icon">📄</div>
-            <h4>Drop files here or click to select</h4>
-            <p>Supports: config*.yaml, config*.yml files</p>
-            <button type="button" className="select-files-btn">
+          <VStack gap={4}>
+            <Icon as={MdDescription} boxSize={16} color="primary" />
+            <Heading as="h4" size="sm" color="text">
+              Drop files here or click to select
+            </Heading>
+            <Text color="textMuted" fontSize="sm">
+              Supports: config*.yaml, config*.yml files
+            </Text>
+            <Button
+              type="button"
+              bg="primary"
+              color="white"
+              _hover={{ bg: "primaryHover" }}
+              size="md"
+              onClick={(e) => {
+                e.stopPropagation();
+                openFileDialog();
+              }}
+            >
               Select Files
-            </button>
-          </div>
+            </Button>
+          </VStack>
         )}
-      </div>
+      </Box>
       
-      <div className="file-selector-info">
-        <div className="info-item">
-          <span className="info-icon">ℹ️</span>
-          <span>Only files starting with "config" will be processed</span>
-        </div>
-        <div className="info-item">
-          <span className="info-icon">📋</span>
-          <span>YAML and YML extensions are supported</span>
-        </div>
-        <div className="info-item">
-          <span className="info-icon">🔒</span>
-          <span>Files are processed locally in your browser</span>
-        </div>
-      </div>
-    </div>
+      <VStack align="stretch" gap={2}>
+        <HStack gap={2}>
+          <Icon as={MdInfo} boxSize={4} color="primary" />
+          <Text color="textMuted" fontSize="sm">
+            Only files starting with "config" will be processed
+          </Text>
+        </HStack>
+        <HStack gap={2}>
+          <Icon as={MdDescription} boxSize={4} color="primary" />
+          <Text color="textMuted" fontSize="sm">
+            YAML and YML extensions are supported
+          </Text>
+        </HStack>
+        <HStack gap={2}>
+          <Icon as={MdLock} boxSize={4} color="primary" />
+          <Text color="textMuted" fontSize="sm">
+            Files are processed locally in your browser
+          </Text>
+        </HStack>
+      </VStack>
+    </VStack>
   );
 };
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { Box, VStack, HStack, Heading, Text, Button, SimpleGrid, Flex, Spinner, Code, IconButton, Table } from '@chakra-ui/react';
+import { MdFolder, MdRefresh, MdVisibility, MdEdit, MdClose, MdExpandMore, MdChevronRight } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
 import YamlEditorModal from './YamlEditorModal';
-import './ConfigFileList.css';
 
 const NextConfigFileList = forwardRef((props, ref) => {
   const { 
@@ -361,175 +362,316 @@ const NextConfigFileList = forwardRef((props, ref) => {
   };
 
   return (
-    <div className="config-file-list">
-      <div className="section-header">
-        <h3>📁 Configuration Files</h3>
-        <p className="section-description">
-          Server-side file system access to Stats for Strava configuration files from: 
-          <code>{defaultPath || 'Loading...'}</code>
-        </p>
+    <Box p={6}>
+      <VStack align="stretch" gap={6}>
+        <Box>
+          <Heading as="h3" size="lg" color="text" mb={2}>
+            📁 Configuration Files
+          </Heading>
+          <Text color="textMuted">
+            Server-side file system access to Stats for Strava configuration files from:{' '}
+            <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text">
+              {defaultPath || 'Loading...'}
+            </Code>
+          </Text>
+        </Box>
+
         {configMode && (
-          <div className="info-card">
-            <div className="info-card-header">
-              <span className="info-card-icon">⚙️</span>
-              <span className="info-card-title">Configuration Mode</span>
-              <span className={`mode-badge ${configMode}`}>
+          <Box
+            p={4}
+            bg="cardBg"
+            borderRadius="md"
+            border="1px solid"
+            borderColor="border"
+            boxShadow="sm"
+          >
+            <Flex align="center" gap={3} mb={configMode === 'single-file' || configMode === 'multi-file' ? 2 : 0}>
+              <Text fontSize="lg">⚙️</Text>
+              <Text fontWeight="semibold" color="text">Configuration Mode</Text>
+              <Box
+                px={3}
+                py={1}
+                borderRadius="full"
+                bg={
+                  configMode === 'single-file' ? 'blue.100' :
+                  configMode === 'multi-file' ? 'green.100' :
+                  configMode === 'invalid' ? 'red.100' :
+                  'gray.100'
+                }
+                color={
+                  configMode === 'single-file' ? 'blue.800' :
+                  configMode === 'multi-file' ? 'green.800' :
+                  configMode === 'invalid' ? 'red.800' :
+                  'gray.800'
+                }
+                fontSize="sm"
+                fontWeight="medium"
+              >
                 {configMode === 'single-file' ? '📄 Single File' : 
                  configMode === 'multi-file' ? '📁 Multi-File' : 
                  configMode === 'invalid' ? '❌ Invalid' :
                  '❓ Unknown'}
-              </span>
-            </div>
-            <div className="info-card-content">
-              {configMode === 'single-file' && (
-                <span className="info-description">All configuration sections managed in a single config.yaml file</span>
-              )}
-              {configMode === 'multi-file' && (
-                <span className="info-description">Configuration distributed across multiple specialized files with config.yaml as the base</span>
-              )}
-              {configMode === 'invalid' && (
-                <span className="info-description error">Missing required config.yaml file - configuration editing is disabled</span>
-              )}
-            </div>
-          </div>
-        )}
-        {sectionToFileMap && sectionToFileMap.size > 0 && (
-          <div className="info-card">
-            <div 
-              className="info-card-header clickable"
-              onClick={() => setIsSectionMappingExpanded(!isSectionMappingExpanded)}
-            >
-              <span className="info-card-icon">📋</span>
-              <span className="info-card-title">Section Mapping</span>
-              <span className="section-count">({sectionToFileMap.size} sections)</span>
-              <button className="expand-toggle">
-                {isSectionMappingExpanded ? '▼' : '▶'}
-              </button>
-            </div>
-            {isSectionMappingExpanded && (
-              <div className="info-card-content">
-                <div className="mapping-grid">
-                  {Array.from(sectionToFileMap.entries()).map(([section, fileInfo]) => (
-                    <div key={section} className="mapping-item">
-                      <span className="section-name">{section}</span>
-                      <span className="mapping-arrow">→</span>
-                      <span className="file-name">
-                        {typeof fileInfo === 'string' ? fileInfo : fileInfo.fileName}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              </Box>
+            </Flex>
+            {configMode === 'single-file' && (
+              <Text color="textMuted" fontSize="sm">
+                All configuration sections managed in a single config.yaml file
+              </Text>
             )}
-          </div>
+            {configMode === 'multi-file' && (
+              <Text color="textMuted" fontSize="sm">
+                Configuration distributed across multiple specialized files with config.yaml as the base
+              </Text>
+            )}
+            {configMode === 'invalid' && (
+              <Text color="red.500" fontSize="sm">
+                Missing required config.yaml file - configuration editing is disabled
+              </Text>
+            )}
+          </Box>
         )}
-      </div>
 
-      <div className="file-list-controls" style={{ marginTop: '1rem' }}>
-        <div className="control-group">
-          <button 
-            onClick={handleBrowseDirectory}
-            className="btn-primary"
-            disabled={isLoading}
+        {sectionToFileMap && sectionToFileMap.size > 0 && (
+          <Box
+            bg="cardBg"
+            borderRadius="md"
+            border="1px solid"
+            borderColor="border"
+            boxShadow="sm"
           >
-            📁 Browse Directory
-          </button>
-          
-          {selectedDirectory && (
-            <button 
-              onClick={handleRefreshFiles}
-              className="btn-secondary"
-              disabled={isLoading}
+            <Flex
+              as="button"
+              w="full"
+              p={4}
+              align="center"
+              gap={3}
+              cursor="pointer"
+              onClick={() => setIsSectionMappingExpanded(!isSectionMappingExpanded)}
+              _hover={{ bg: "primaryHover", color: "white" }}
+              transition="background 0.2s"
             >
-              🔄 Refresh Files
-            </button>
-          )}
-        </div>
-      </div>
+              <Text fontSize="lg">📋</Text>
+              <Text fontWeight="semibold" color="text" flex={1} textAlign="left">
+                Section Mapping
+              </Text>
+              <Text color="textMuted" fontSize="sm">
+                ({sectionToFileMap.size} sections)
+              </Text>
+              <Box as={isSectionMappingExpanded ? MdExpandMore : MdChevronRight} fontSize="20px" color="text" />
+            </Flex>
+            {isSectionMappingExpanded && (
+              <Box p={4} pt={0} overflowX="auto">
+                <Table.Root size="sm" variant="outline">
+                  <Table.Header>
+                    <Table.Row bg="tableHeaderBg">
+                      <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">Section</Table.ColumnHeader>
+                      <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">File</Table.ColumnHeader>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {Array.from(sectionToFileMap.entries()).map(([section, fileInfo]) => (
+                      <Table.Row key={section}>
+                        <Table.Cell fontWeight="medium" color="text">{section}</Table.Cell>
+                        <Table.Cell color="textMuted">
+                          {typeof fileInfo === 'string' ? fileInfo : fileInfo.fileName}
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+              </Box>
+            )}
+          </Box>
+        )}
+      </VStack>
 
-      {selectedDirectory && (
-        <div className="directory-info">
-          <span className="directory-label">Current Directory:</span>
-          <code className="directory-path">{selectedDirectory}</code>
-        </div>
-      )}
+      <HStack mt={6} mb={3} gap={3}>
+        <Button
+          leftIcon={<MdFolder />}
+          onClick={handleBrowseDirectory}
+          bg="primary"
+          color="white"
+          _hover={{ bg: "primaryHover" }}
+          isDisabled={isLoading}
+        >
+          Browse Directory
+        </Button>
+        
+        {selectedDirectory && (
+          <Button
+            leftIcon={<MdRefresh />}
+            onClick={handleRefreshFiles}
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            _hover={{ bg: "primaryHover", color: "white" }}
+            isDisabled={isLoading}
+          >
+            Refresh Files
+          </Button>
+        )}
+      </HStack>
 
       {error && (
-        <div className={`error-message ${error.includes('not found') ? 'info-message' : ''}`}>
-          <span className="error-icon">{error.includes('not found') ? '💡' : '❌'}</span>
-          <span className="error-text">{error}</span>
-          <button onClick={() => setError(null)} className="error-close">✕</button>
-        </div>
+        <Box
+          p={4}
+          bg={error.includes('not found') ? 'blue.50' : 'red.50'}
+          borderRadius="md"
+          border="1px solid"
+          borderColor={error.includes('not found') ? 'blue.200' : 'red.200'}
+        >
+          <Flex align="center" gap={3}>
+            <Text fontSize="lg">{error.includes('not found') ? '💡' : '❌'}</Text>
+            <Text color={error.includes('not found') ? 'blue.800' : 'red.800'} flex={1}>
+              {error}
+            </Text>
+            <IconButton
+              onClick={() => setError(null)}
+              aria-label="Close error"
+              size="sm"
+              variant="ghost"
+              colorPalette="gray"
+            >
+              <MdClose />
+            </IconButton>
+          </Flex>
+        </Box>
       )}
 
       {isLoading && (
-        <div className="loading-indicator">
-          <div className="spinner"></div>
-          <span>Scanning for configuration files...</span>
-        </div>
+        <Flex
+          direction="column"
+          align="center"
+          justify="center"
+          gap={4}
+          p={8}
+          bg="cardBg"
+          borderRadius="md"
+          border="1px solid"
+          borderColor="border"
+        >
+          <Spinner size="xl" color="primary" />
+          <Text color="textMuted">Scanning for configuration files...</Text>
+        </Flex>
       )}
 
       {configFiles.length > 0 && (
-        <div className="file-list">
-          <div className="file-list-header">
-            <h4>Found {configFiles.length} configuration file{configFiles.length > 1 ? 's' : ''}</h4>
-          </div>
+        <Box>
+          <Flex align="center" gap={2} mb={4} flexWrap="wrap">
+            <Heading as="h4" size="md" color="text">
+              Found {configFiles.length} configuration file{configFiles.length > 1 ? 's' : ''} in directory:
+            </Heading>
+            <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text" fontSize="sm">
+              {selectedDirectory}
+            </Code>
+          </Flex>
           
-          <div className="file-grid">
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
             {configFiles.map((file, index) => (
-              <div key={index} className={`file-card ${file.isMainConfig ? 'primary-config' : ''}`}>
-                <div className="file-header">
-                  <div className="file-icon">
-                    {file.isMainConfig ? '⚙️' : '📄'}
-                  </div>
-                  {file.isMainConfig && (
-                    <div className="primary-badge">Primary Config</div>
-                  )}
-                </div>
-                
-                <div className="file-info">
-                  <div className="file-name">{file.name}</div>
-                  <div className="file-meta">
-                    <span className="file-size">{formatFileSize(file.size)}</span>
-                    <span className="file-date">{formatDate(file.lastModified)}</span>
-                  </div>
-                </div>
-                
-                <div className="file-actions">
-                  <button 
-                    onClick={() => handleViewFile(file)}
-                    className="btn-file-action"
-                    title="View file contents"
-                  >
-                    👁️ View
-                  </button>
-                  <button 
-                    onClick={() => handleEditFile(file)}
-                    className="btn-file-action btn-edit"
-                    title="Edit file"
-                  >
-                    ✏️ Edit
-                  </button>
-                </div>
-              </div>
+              <Box
+                key={index}
+                p={4}
+                bg="cardBg"
+                borderRadius="md"
+                border="2px solid"
+                borderColor={file.isMainConfig ? "primary" : "border"}
+                boxShadow="sm"
+                transition="all 0.2s"
+                _hover={{ boxShadow: "md", transform: "translateY(-2px)" }}
+              >
+                <VStack align="stretch" gap={3}>
+                  <Flex align="center" justify="space-between">
+                    <Text fontSize="2xl">
+                      {file.isMainConfig ? '⚙️' : '📄'}
+                    </Text>
+                    {file.isMainConfig && (
+                      <Box
+                        px={2}
+                        py={1}
+                        bg="primary"
+                        color="white"
+                        fontSize="xs"
+                        fontWeight="bold"
+                        borderRadius="md"
+                      >
+                        Primary Config
+                      </Box>
+                    )}
+                  </Flex>
+                  
+                  <Box>
+                    <Text fontWeight="bold" color="text" fontSize="md" mb={1}>
+                      {file.name}
+                    </Text>
+                    <HStack gap={3} fontSize="xs" color="textMuted">
+                      <Text>{formatFileSize(file.size)}</Text>
+                      <Text>•</Text>
+                      <Text>{formatDate(file.lastModified)}</Text>
+                    </HStack>
+                  </Box>
+                  
+                  <HStack gap={2}>
+                    <Button
+                      leftIcon={<MdVisibility />}
+                      onClick={() => handleViewFile(file)}
+                      size="sm"
+                      variant="outline"
+                      colorPalette="gray"
+                      borderColor="border"
+                      flex={1}
+                      _hover={{ bg: "primaryHover", color: "white" }}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      leftIcon={<MdEdit />}
+                      onClick={() => handleEditFile(file)}
+                      size="sm"
+                      bg="primary"
+                      color="white"
+                      flex={1}
+                      _hover={{ bg: "primaryHover" }}
+                    >
+                      Edit
+                    </Button>
+                  </HStack>
+                </VStack>
+              </Box>
             ))}
-          </div>
-        </div>
+          </SimpleGrid>
+        </Box>
       )}
 
       {!isLoading && !error && configFiles.length === 0 && selectedDirectory && (
-        <div className="no-files-message">
-          <div className="no-files-icon">📭</div>
-          <div className="no-files-content">
-            <h4>No Configuration Files Found</h4>
-            <p>No files matching the pattern were found in the selected directory.</p>
-            <p>Looking for:</p>
-            <ul>
-              <li><code>config.yaml</code> (main configuration)</li>
-              <li><code>config-*.yaml</code> (additional configurations)</li>
-            </ul>
-          </div>
-        </div>
+        <Box
+          p={8}
+          bg="cardBg"
+          borderRadius="md"
+          border="1px solid"
+          borderColor="border"
+          textAlign="center"
+        >
+          <VStack gap={4}>
+            <Text fontSize="4xl">📭</Text>
+            <Box>
+              <Heading as="h4" size="md" color="text" mb={2}>
+                No Configuration Files Found
+              </Heading>
+              <Text color="textMuted" mb={3}>
+                No files matching the pattern were found in the selected directory.
+              </Text>
+              <Text color="textMuted" fontWeight="semibold" mb={2}>
+                Looking for:
+              </Text>
+              <VStack align="center" gap={1}>
+                <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text">config.yaml</Code>
+                <Text color="textMuted" fontSize="sm">(main configuration)</Text>
+                <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text">config-*.yaml</Code>
+                <Text color="textMuted" fontSize="sm">(additional configurations)</Text>
+              </VStack>
+            </Box>
+          </VStack>
+        </Box>
       )}
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
@@ -549,7 +691,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
         filePath={editorFilePath}
         onSave={handleSaveFile}
       />
-    </div>
+    </Box>
   );
 });
 

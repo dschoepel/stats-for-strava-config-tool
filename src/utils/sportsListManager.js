@@ -22,7 +22,10 @@ export const initialSportsList = {
     'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining'
   ],
   'Mind & Body Sports': [
-    'Pilates', 'Yoga', 'Outdoor Sports', 'Golf', 'RockClimbing', 'Sail', 'Soccer'
+    'Pilates', 'Yoga'
+  ], 
+  'Outdoor Sports': [
+    'Golf', 'RockClimbing', 'Sail', 'Soccer'
   ],
   'Adaptive & Inclusive Sports': [
     'Handcycle', 'Wheelchair'

@@ -364,6 +364,8 @@
 
 /* Breadcrumbs */
 .breadcrumbs {
+  display: flex;
+  align-items: center;
   padding: 1.5rem 2rem 1rem;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-primary);

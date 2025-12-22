@@ -1,6 +1,5 @@
 import React from 'react';
 import ConfigSectionEditor from '../ConfigSectionEditor';
-import '../ConfigSectionEditor.css';
 
 /**
  * AthleteConfigEditor - Handles athlete-specific configuration fields

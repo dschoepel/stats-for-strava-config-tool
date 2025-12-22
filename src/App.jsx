@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useTheme } from 'next-themes';
+import { Box, Flex, Heading, IconButton, Icon, HStack } from '@chakra-ui/react';
+import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
 import './App.css'
+import Navbar from './components/Navbar'
+import Sidebar from './components/Sidebar'
 import YamlUtility from './components/YamlUtility'
 import SettingsDropdown from './components/SettingsDropdown'
 import UISettingsModal from './components/settings/UISettingsModal'
@@ -19,9 +24,10 @@ import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
 
 function App() {
+  const { theme, setTheme } = useTheme();
+  
   // Initialize settings
   const [settings, setSettings] = useState({}); // Will be loaded after hydration
-  const [isDarkMode, setIsDarkMode] = useState(false) // Will be set after hydration
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
   const [currentPage, setCurrentPage] = useState('Configuration')
   const [breadcrumbs, setBreadcrumbs] = useState(['Configuration'])
@@ -39,11 +45,11 @@ function App() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const toggleTheme = async () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
     // Save theme to settings
     const newSettings = { ...settings };
-    newSettings.ui.theme = newTheme ? 'dark' : 'light';
+    newSettings.ui.theme = newTheme;
     setSettings(newSettings);
     await saveSettings(newSettings);
   }
@@ -94,7 +100,9 @@ function App() {
         }
         
         setSettings(loadedSettings);
-        setIsDarkMode(loadedSettings.ui?.theme === 'dark');
+        if (loadedSettings.ui?.theme) {
+          setTheme(loadedSettings.ui.theme);
+        }
         setIsSidebarCollapsed(loadedSettings.ui?.sidebarCollapsed ?? false);
         
         console.log('Loaded settings:', loadedSettings);
@@ -106,7 +114,9 @@ function App() {
         // Fall back to defaults
         const loadedSettings = loadSettings();
         setSettings(loadedSettings);
-        setIsDarkMode(getSetting('ui.theme', 'dark') === 'dark');
+        if (loadedSettings.ui?.theme) {
+          setTheme(loadedSettings.ui.theme);
+        }
         setIsSidebarCollapsed(getSetting('ui.sidebarCollapsed', false));
         setHasHydrated(true);
       }
@@ -129,7 +139,6 @@ function App() {
   const handleSettingsChange = (newSettings) => {
     setSettings(newSettings);
     // Update UI state based on new settings
-    setIsDarkMode(newSettings.ui.theme === 'dark');
     setIsSidebarCollapsed(newSettings.ui.sidebarCollapsed);
   }
 
@@ -366,94 +375,26 @@ function App() {
   }, [fileCache.files])
 
   return (
-    <div className={`app-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
-      <nav className="navbar">
-        <div className="navbar-brand">
-          <button 
-            className="mobile-menu-toggle"
-            onClick={toggleSidebar}
-            aria-label="Toggle menu"
-          >
-            ☰
-          </button>
-          <img src="/logo.svg" alt="Stats for Strava" className="app-logo" />
-          <h1>Stats for Strava Config Tool</h1>
-        </div>
-        <div className="navbar-menu">
-          <a href="#home" onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}>Home</a>
-          <SettingsDropdown onSelectSetting={setActiveSettingsModal} />
-          <a href="#help" onClick={(e) => { e.preventDefault(); handleNavClick('Help & Documentation') }}>About</a>
-          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
-        </div>
-      </nav>
+    <Flex direction="column" h="100vh" w="full" bg="bg" color="text">
+      <Navbar 
+        isDarkMode={theme === 'dark'}
+        toggleTheme={toggleTheme}
+        toggleSidebar={toggleSidebar}
+        handleNavClick={handleNavClick}
+        onSelectSetting={setActiveSettingsModal}
+      />
       
-      <div className="main-layout">
-        <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : 'show'}`}>
-          <div className="sidebar-header">
-            <h2>Navigation</h2>
-            <button 
-              className="sidebar-toggle"
-              onClick={toggleSidebar}
-              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {isSidebarCollapsed ? '▶' : '◀'}
-            </button>
-          </div>
-          <ul className="sidebar-menu">
-            <li>
-              <div className="menu-item-wrapper">
-                <a 
-                  href="#main-config" 
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleNavClick('Configuration')
-                    // When sidebar is collapsed, expand both sidebar and submenu
-                    if (isSidebarCollapsed) {
-                      setIsSidebarCollapsed(false)
-                      setIsMainConfigExpanded(true)
-                    } else {
-                      setIsMainConfigExpanded(!isMainConfigExpanded)
-                    }
-                  }}
-                  className="menu-item-with-toggle"
-                  title="Configuration"
-                >
-                  <span className="menu-icon">⚙️</span>
-                  <span className="menu-text">Configuration</span>
-                </a>
-                <button 
-                  className="expand-toggle"
-                  onClick={() => setIsMainConfigExpanded(!isMainConfigExpanded)}
-                  aria-label="Toggle submenu"
-                >
-                  {isMainConfigExpanded ? '▼' : '▶'}
-                </button>
-              </div>
-              {isMainConfigExpanded && (
-                <ul className="submenu">
-                  <li><a href="#general" onClick={(e) => { e.preventDefault(); handleNavClick('General', 'Configuration') }} title="General"><span className="menu-icon">🔧</span><span className="menu-text">General</span></a></li>
-                  <li><a href="#athlete" onClick={(e) => { e.preventDefault(); handleNavClick('Athlete', 'Configuration') }} title="Athlete"><span className="menu-icon">👤</span><span className="menu-text">Athlete</span></a></li>
-                  <li><a href="#appearance" onClick={(e) => { e.preventDefault(); handleNavClick('Appearance', 'Configuration') }} title="Appearance"><span className="menu-icon">🎨</span><span className="menu-text">Appearance</span></a></li>
-                  <li><a href="#import" onClick={(e) => { e.preventDefault(); handleNavClick('Import', 'Configuration') }} title="Import"><span className="menu-icon">📥</span><span className="menu-text">Import</span></a></li>
-                  <li><a href="#metrics" onClick={(e) => { e.preventDefault(); handleNavClick('Metrics', 'Configuration') }} title="Metrics"><span className="menu-icon">📊</span><span className="menu-text">Metrics</span></a></li>
-                  <li><a href="#gear" onClick={(e) => { e.preventDefault(); handleNavClick('Gear', 'Configuration') }} title="Gear"><span className="menu-icon">🚴</span><span className="menu-text">Gear</span></a></li>
-                  <li><a href="#zwift" onClick={(e) => { e.preventDefault(); handleNavClick('Zwift', 'Configuration') }} title="Zwift"><span className="menu-icon">🖥️</span><span className="menu-text">Zwift</span></a></li>
-                  <li><a href="#integrations" onClick={(e) => { e.preventDefault(); handleNavClick('Integrations', 'Configuration') }} title="Integrations"><span className="menu-icon">🔗</span><span className="menu-text">Integrations</span></a></li>
-                  <li><a href="#scheduling" onClick={(e) => { e.preventDefault(); handleNavClick('Scheduling Daemon', 'Configuration') }} title="Scheduling Daemon"><span className="menu-icon">⏰</span><span className="menu-text">Scheduling Daemon</span></a></li>
-                </ul>
-              )}
-            </li>
-            <li><a href="#activities" onClick={(e) => { e.preventDefault(); handleNavClick('Activities') }} title="Activities"><span className="menu-icon">🏃</span><span className="menu-text">Activities</span></a></li>
-            <li><a href="#stats" onClick={(e) => { e.preventDefault(); handleNavClick('Statistics') }} title="Statistics"><span className="menu-icon">📈</span><span className="menu-text">Statistics</span></a></li>
-            <li><a href="#yaml-utility" onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility') }} title="YAML Utility"><span className="menu-icon">📄</span><span className="menu-text">YAML Utility</span></a></li>
-            <li><a href="#export" onClick={(e) => { e.preventDefault(); handleNavClick('Export') }} title="Export"><span className="menu-icon">📤</span><span className="menu-text">Export</span></a></li>
-            <li><a href="#help" onClick={(e) => { e.preventDefault(); handleNavClick('Help & Documentation') }} title="Help & Documentation"><span className="menu-icon">❓</span><span className="menu-text">Help & Documentation</span></a></li>
-          </ul>
-        </aside>
+      <Flex mt="64px" h="calc(100vh - 64px)">
+        <Sidebar 
+          isCollapsed={isSidebarCollapsed}
+          onToggle={toggleSidebar}
+          isMainConfigExpanded={isMainConfigExpanded}
+          setIsMainConfigExpanded={setIsMainConfigExpanded}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
+          handleNavClick={handleNavClick}
+        />
         
-        <main className="content-area">
+        <Box as="main" flex={1} bg="bg" overflowY="auto">
           <nav className="breadcrumbs" aria-label="Breadcrumb">
             <a 
               href="#" 
@@ -461,7 +402,7 @@ function App() {
               className="breadcrumb-home"
               title="Go to Configuration"
             >
-              🏠
+              <Icon fontSize="1.5em" style={{ verticalAlign: 'middle' }}><MdHome /></Icon>
             </a>
             {hasHydrated && breadcrumbs.map((crumb, index) => (
               <span key={index}>
@@ -478,7 +419,7 @@ function App() {
           </nav>
           <div className="content-body">
             {currentPage === 'YAML Utility' ? (
-              <YamlUtility />
+              <YamlUtility setBreadcrumbs={setBreadcrumbs} breadcrumbs={breadcrumbs} />
             ) : currentPage === 'Configuration' ? (
               <>
                 <h2>{currentPage}</h2>
@@ -529,8 +470,8 @@ function App() {
               </>
             )}
           </div>
-        </main>
-      </div>
+        </Box>
+      </Flex>
       
       {/* Individual Settings Modals */}
       <UISettingsModal
@@ -556,33 +497,119 @@ function App() {
       
       {/* Sports List and Widget Definitions as full-screen modals */}
       {activeSettingsModal === 'sportsList' && (
-        <div className="modal-overlay" onClick={() => setActiveSettingsModal(null)}>
-          <div className="setting-modal" style={{ maxWidth: '1000px', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>🏅 Sports List</h2>
-              <button onClick={() => setActiveSettingsModal(null)} className="modal-close">✕</button>
-            </div>
-            <div className="modal-body">
+        <Flex
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(0, 0, 0, 0.7)"
+          justify="center"
+          align="center"
+          zIndex={10000}
+          onClick={() => setActiveSettingsModal(null)}
+        >
+          <Flex
+            bg="cardBg"
+            borderRadius="xl"
+            boxShadow="0 20px 60px rgba(0, 0, 0, 0.3)"
+            w="90%"
+            maxW="1000px"
+            maxH="90vh"
+            flexDirection="column"
+            border="1px solid"
+            borderColor="border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Flex
+              justify="space-between"
+              align="center"
+              p={4}
+              borderBottom="1px solid"
+              borderColor="border"
+              bg="panelBg"
+              borderTopRadius="xl"
+            >
+              <HStack gap={2}>
+                <Icon fontSize="2xl" color="primary"><MdSportsBasketball /></Icon>
+                <Heading as="h2" size="lg" color="text" fontWeight="semibold">
+                  Sports List
+                </Heading>
+              </HStack>
+              <IconButton
+                onClick={() => setActiveSettingsModal(null)}
+                aria-label="Close"
+                size="sm"
+                variant="ghost"
+                colorPalette="gray"
+              >
+                <Icon><MdClose /></Icon>
+              </IconButton>
+            </Flex>
+            <Box flex={1} p={8} overflowY="auto" bg="cardBg">
               <SportsListEditor settings={settings} />
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Flex>
+        </Flex>
       )}
       
       {activeSettingsModal === 'widgetDefinitions' && (
-        <div className="modal-overlay" onClick={() => setActiveSettingsModal(null)}>
-          <div className="setting-modal" style={{ maxWidth: '1200px', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>🧩 Widget Definitions</h2>
-              <button onClick={() => setActiveSettingsModal(null)} className="modal-close">✕</button>
-            </div>
-            <div className="modal-body">
+        <Flex
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(0, 0, 0, 0.7)"
+          justify="center"
+          align="center"
+          zIndex={10000}
+          onClick={() => setActiveSettingsModal(null)}
+        >
+          <Flex
+            bg="cardBg"
+            borderRadius="xl"
+            boxShadow="0 20px 60px rgba(0, 0, 0, 0.3)"
+            w="90%"
+            maxW="1200px"
+            maxH="90vh"
+            flexDirection="column"
+            border="1px solid"
+            borderColor="border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Flex
+              justify="space-between"
+              align="center"
+              p={4}
+              borderBottom="1px solid"
+              borderColor="border"
+              bg="panelBg"
+              borderTopRadius="xl"
+            >
+              <HStack gap={2}>
+                <Icon fontSize="2xl" color="primary"><MdWidgets /></Icon>
+                <Heading as="h2" size="lg" color="text" fontWeight="semibold">
+                  Widget Definitions
+                </Heading>
+              </HStack>
+              <IconButton
+                onClick={() => setActiveSettingsModal(null)}
+                aria-label="Close"
+                size="sm"
+                variant="ghost"
+                colorPalette="gray"
+              >
+                <Icon><MdClose /></Icon>
+              </IconButton>
+            </Flex>
+            <Box flex={1} p={8} overflowY="auto" bg="cardBg">
               <WidgetDefinitionsEditor settings={settings} />
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Flex>
+        </Flex>
       )}
-    </div>
+    </Flex>
   )
 }
 
