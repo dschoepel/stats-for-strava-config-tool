@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton } from '@chakra-ui/react';
-import { MdClose, MdFolder } from 'react-icons/md';
+import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton, Icon } from '@chakra-ui/react';
+import { MdClose, MdFolder, MdDescription } from 'react-icons/md';
 import { formatFileSize } from '../utils/yamlFileHandler';
 import CombineFilesModal from './CombineFilesModal';
 import MonacoYamlViewer from './MonacoYamlViewer';
@@ -115,8 +115,8 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         direction={{ base: "column", sm: "row" }}
       >
         <Flex direction={{ base: "column", sm: "row" }} gap={{ base: 1, sm: 3 }} align={{ base: "flex-start", sm: "center" }}>
-          <Heading as="h3" size={{ base: "sm", sm: "md" }} color="text" lineHeight="1.2" wordBreak="break-word">
-            📄 Config YAML Viewer
+          <Heading as="h3" size={{ base: "sm", sm: "md" }} color="text" lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdDescription /></Icon> Config YAML Viewer
           </Heading>
           <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
             {allFiles.length} file{allFiles.length > 1 ? 's' : ''} loaded

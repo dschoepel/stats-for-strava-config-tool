@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, SimpleGrid, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
-import { MdFolder, MdRefresh, MdVisibility, MdEdit, MdClose, MdExpandMore, MdChevronRight, MdDescription, MdSettings, MdWarning, MdLightbulb, MdError } from 'react-icons/md';
+import { MdFolder, MdRefresh, MdVisibility, MdEdit, MdClose, MdExpandMore, MdChevronRight, MdDescription, MdSettings, MdWarning, MdLightbulb, MdError, MdHelp } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
@@ -414,7 +414,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
                   {configMode === 'single-file' ? <><Icon><MdDescription /></Icon> Single File</> : 
                    configMode === 'multi-file' ? <><Icon><MdFolder /></Icon> Multi-File</> : 
                    configMode === 'invalid' ? <><Icon color="red.500"><MdError /></Icon> Invalid</> :
-                   '❓ Unknown'}
+                   <><Icon color="text"><MdHelp /></Icon> Unknown</>}
                 </Flex>
               </Box>
             </Flex>

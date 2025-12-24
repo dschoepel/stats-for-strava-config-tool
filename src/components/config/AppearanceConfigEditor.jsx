@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code, Checkbox } from '@chakra-ui/react';
-import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward } from 'react-icons/md';
+import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code, Checkbox, Icon } from '@chakra-ui/react';
+import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward, MdInfo, MdWarning, MdDashboard } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
 import CountrySelector from '../config-fields/CountrySelector';
@@ -504,7 +504,7 @@ const AppearanceConfigEditor = ({
                         borderRadius="md"
                         mb={3}
                       >
-                        <Text fontSize="lg">ℹ️</Text>
+                        <Icon fontSize="lg" color="blue.600"><MdInfo /></Icon>
                         <Text fontSize="sm">
                           Dashboard layout is a complex nested structure. 
                           Use the Dashboard Editor below to view and manage your widgets.
@@ -521,7 +521,7 @@ const AppearanceConfigEditor = ({
                           borderRadius="md"
                           mb={3}
                         >
-                          <Text fontSize="lg">⚠️</Text>
+                          <Icon fontSize="lg" color="orange.500"><MdWarning /></Icon>
                           <Text fontSize="sm">
                             Dashboard changes saved to form. <Text as="strong">Click the main Save button below to persist these changes to your config file.</Text>
                           </Text>
@@ -535,7 +535,7 @@ const AppearanceConfigEditor = ({
                         height="auto"
                         py={2}
                       >
-                        📊 Edit Dashboard Layout
+                        <Flex align="center" gap={2}><Icon><MdDashboard /></Icon> Edit Dashboard Layout</Flex>
                       </Button>
                     </Box>
                   )}

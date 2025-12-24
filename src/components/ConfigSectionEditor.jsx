@@ -1355,7 +1355,7 @@ const ConfigSectionEditor = ({
           {showUnitNote && (
             <Box p={3} bg="blue.50" borderRadius="md" mb={4} fontSize="sm">
               <Flex align="center" gap={2}>
-                <Text>ℹ️</Text>
+                <Icon color="blue.600"><MdInfo /></Icon>
                 <Text color="blue.800">
                   Weight unit depends on <Text as="strong">appearance.unitSystem</Text> setting (imperial = lbs, metric = kg). Configure this in the Appearance section.
                 </Text>

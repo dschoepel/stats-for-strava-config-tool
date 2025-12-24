@@ -17,7 +17,7 @@ import {
   Select,
   createListCollection,
 } from '@chakra-ui/react';
-import { MdAdd, MdClose, MdWarning, MdInfo } from 'react-icons/md';
+import { MdAdd, MdClose, MdWarning, MdInfo, MdLightbulb } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import { Tooltip } from '../Tooltip';
 import { generateRandomString } from '../../utils/stringUtils';
@@ -116,7 +116,7 @@ const ImportConfigEditor = ({
                   <HStack gap={2} align="flex-start">
                     <MdWarning color="orange.500" size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                     <Text fontSize="sm" color={{ base: "orange.800", _dark: "orange.200" }}>
-                      ⚠️ Changing this setting after activities have been imported will delete activities that don't match the new criteria.
+                      Changing this setting after activities have been imported will delete activities that don't match the new criteria.
                     </Text>
                   </HStack>
                 </Box>
@@ -286,7 +286,7 @@ const ImportConfigEditor = ({
                 <HStack gap={2} align="flex-start">
                   <MdWarning color="orange.500" size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <Text fontSize="sm" color={{ base: "orange.800", _dark: "orange.200" }}>
-                    ⚠️ Changing this setting after activities have been imported will delete activities that don't match the new criteria.
+                    Changing this setting after activities have been imported will delete activities that don't match the new criteria.
                   </Text>
                 </HStack>
               </Box>
@@ -417,7 +417,7 @@ const ImportConfigEditor = ({
                 <HStack gap={2} align="flex-start">
                   <MdWarning color="orange.500" size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <Text fontSize="sm" color={{ base: "orange.800", _dark: "orange.200" }}>
-                    ⚠️ Changing this setting after activities have been imported will delete activities that don't match the new criteria.
+                    Changing this setting after activities have been imported will delete activities that don't match the new criteria.
                   </Text>
                 </HStack>
               </Box>
@@ -646,13 +646,17 @@ const ImportConfigEditor = ({
                                 These will trigger the import and build processes in the background. It may take a few minutes for all updates to fully complete.
                               </Text>
                               <Box p={2} bg={{ base: "orange.50", _dark: "orange.900/20" }} borderRadius="md" borderLeft="3px solid" borderColor="orange.500">
-                                <Text fontSize="sm" fontWeight="semibold" mb={1} color="text">⚠️ Important</Text>
+                                <Text fontSize="sm" fontWeight="semibold" mb={1} color="text" display="flex" alignItems="center" gap={1}>
+                                  <MdWarning color="orange" size={16} /> Important
+                                </Text>
                                 <Text fontSize="sm" color="text">
                                   Your Statistics for Strava instance must be publicly accessible over HTTPS for Strava webhooks to work.
                                 </Text>
                               </Box>
                               <Box p={2} bg={{ base: "blue.50", _dark: "blue.900/20" }} borderRadius="md" borderLeft="3px solid" borderColor="blue.500">
-                                <Text fontSize="sm" fontWeight="semibold" mb={1} color="text">💡 Tip</Text>
+                                <Text fontSize="sm" fontWeight="semibold" mb={1} color="text" display="flex" alignItems="center" gap={1}>
+                                  <MdLightbulb color="#3b82f6" size={16} /> Tip
+                                </Text>
                                 <Text fontSize="sm" color="text">
                                   If you're hosting on Cloudflare, make sure to disable "Bot Fight Mode". Cloudflare may incorrectly flag Strava's requests as bot traffic, causing the webhook integration to fail.
                                 </Text>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Icon, IconButton, Textarea } from '@chakra-ui/react';
-import { MdClose, MdSave, MdRefresh, MdFileUpload, MdFileDownload, MdPalette, MdFolder, MdEdit, MdSpeed, MdSportsBasketball, MdWidgets } from 'react-icons/md';
+import { MdClose, MdSave, MdRefresh, MdFileUpload, MdFileDownload, MdPalette, MdFolder, MdEdit, MdSpeed, MdSportsBasketball, MdWidgets, MdSettings } from 'react-icons/md';
 import { NativeSelectField, NativeSelectRoot } from '@chakra-ui/react';
 import { Field } from '@chakra-ui/react';
 import { Checkbox } from '@chakra-ui/react';

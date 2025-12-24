@@ -8,7 +8,9 @@ import {
   Input,
   Flex,
   Switch,
+  Icon,
 } from '@chakra-ui/react';
+import { MdSave, MdEdit } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 

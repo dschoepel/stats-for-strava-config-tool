@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Text, Input, Flex, VStack, Heading } from '@chakra-ui/react';
+import { Box, Text, Input, Flex, VStack, Heading, Icon } from '@chakra-ui/react';
+import { MdInfo } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 
 /**
@@ -142,7 +143,7 @@ const ZwiftConfigEditor = ({
                 borderRadius="md"
                 mt={2}
               >
-                <Text fontSize="lg">ℹ️</Text>
+                <Icon fontSize="lg" color="blue.600"><MdInfo /></Icon>
                 <Text fontSize="sm">
                   Both fields are optional. Leave them empty (null) to disable Zwift badge display. 
                   The racing score will only be shown if a level is also provided.

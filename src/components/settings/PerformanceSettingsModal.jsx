@@ -7,7 +7,9 @@ import {
   Field,
   Input,
   Flex,
+  Icon,
 } from '@chakra-ui/react';
+import { MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 
@@ -181,7 +183,7 @@ const PerformanceSettingsModal = ({ isOpen, onClose }) => {
             size={{ base: "sm", sm: "md" }}
             width={{ base: "100%", sm: "auto" }}
           >
-            💾 Save{isDirty && ' *'}
+            <Flex align="center" gap={2}><Icon><MdSave /></Icon> Save{isDirty && ' *'}</Flex>
           </Button>
         </Flex>
       </Box>
