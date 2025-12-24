@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import Editor from '@monaco-editor/react';
+import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react';
+import { MdFolder, MdSearch, MdContentCopy, MdDownload, MdCheckCircle, MdWarning } from 'react-icons/md';
 import { formatFileSize, validateYamlContent } from '../utils/yamlFileHandler';
 import { getSetting } from '../utils/settingsManager';
-import './MonacoYamlViewer.css';
 
 const MonacoYamlViewer = ({ 
   fileName, 
@@ -66,42 +67,100 @@ const MonacoYamlViewer = ({
     }
   };
 
+  const isValid = validateYamlContent(fileContent);
+  
   return (
-    <div className={`monaco-yaml-viewer ${className}`}>
+    <Box 
+      className={className}
+      display="flex" 
+      flexDirection="column" 
+      h="100%" 
+      bg="cardBg" 
+      borderRadius="lg" 
+      overflow="hidden"
+    >
       {showFileInfo && (
-        <div className="file-info-bar">
-          <div className="file-details">
-            <span className="file-name">📁 {fileName}</span>
+        <Flex 
+          justify="space-between" 
+          align="center" 
+          p={4} 
+          bg="panelBg" 
+          borderBottom="1px solid" 
+          borderColor="border"
+          flexDirection={{ base: "column", md: "row" }}
+          gap={{ base: 3, md: 0 }}
+        >
+          <Flex align="center" gap={3} flex={1} minW={0} flexWrap="wrap">
+            <Text fontWeight="semibold" color="text" display="flex" alignItems="center" gap={2}>
+              <Icon color="primary"><MdFolder /></Icon>
+              {fileName}
+            </Text>
             {fileSize && lastModified && (
-              <span className="file-meta">
+              <Text fontSize="sm" color="text" opacity={0.8} whiteSpace="nowrap">
                 {formatFileSize(fileSize)} • 
                 Modified: {(() => {
                   const date = new Date(lastModified);
                   return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
                 })()}
-              </span>
+              </Text>
             )}
-            <span className={`validation-status ${validateYamlContent(fileContent) ? 'valid' : 'invalid'}`}>
-              {validateYamlContent(fileContent) ? '✓ Valid YAML' : '⚠️ Invalid YAML'}
-            </span>
-          </div>
+            <Box 
+              px={2} 
+              py={1} 
+              borderRadius="md" 
+              fontSize="sm" 
+              fontWeight="medium"
+              bg={isValid ? "green.50" : "red.50"}
+              _dark={{ bg: isValid ? "green.950" : "red.950" }}
+              color={isValid ? "green.600" : "red.600"}
+              _dark={{ color: isValid ? "green.400" : "red.400" }}
+              display="flex"
+              alignItems="center"
+              gap={1}
+              whiteSpace="nowrap"
+            >
+              <Icon fontSize="md">{isValid ? <MdCheckCircle /> : <MdWarning />}</Icon>
+              {isValid ? 'Valid YAML' : 'Invalid YAML'}
+            </Box>
+          </Flex>
           {showActions && (
-            <div className="file-actions">
-              <button onClick={handleSearch} className="btn-action" title="Search (Ctrl+F)">
-                🔍 Search
-              </button>
-              <button onClick={handleCopy} className="btn-action" title="Copy to clipboard">
-                📋 Copy
-              </button>
-              <button onClick={handleDownload} className="btn-action" title="Download file">
-                💾 Download
-              </button>
-            </div>
+            <Flex gap={2} align="center" w={{ base: "100%", md: "auto" }} justify={{ base: "flex-end", md: "flex-start" }}>
+              <Button 
+                onClick={handleSearch} 
+                variant="outline" 
+                size="sm" 
+                colorPalette="gray"
+                title="Search (Ctrl+F)"
+              >
+                <Icon><MdSearch /></Icon>
+                Search
+              </Button>
+              <Button 
+                onClick={handleCopy} 
+                variant="outline" 
+                size="sm" 
+                colorPalette="gray"
+                title="Copy to clipboard"
+              >
+                <Icon><MdContentCopy /></Icon>
+                Copy
+              </Button>
+              <Button 
+                onClick={handleDownload} 
+                variant="outline" 
+                size="sm" 
+                colorPalette="gray"
+                title="Download file"
+              >
+                <Icon><MdDownload /></Icon>
+                Download
+              </Button>
+            </Flex>
           )}
-        </div>
+        </Flex>
       )}
 
-      <div className="monaco-editor-container">
+      <Box flex={1} overflow="hidden" minH={0}>
         <Editor
           height={height}
           language="yaml"
@@ -135,8 +194,8 @@ const MonacoYamlViewer = ({
             showFoldingControls: 'always'
           }}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

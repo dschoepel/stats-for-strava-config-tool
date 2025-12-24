@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTheme } from 'next-themes';
-import { Box, Flex, Heading, IconButton, Icon, HStack } from '@chakra-ui/react';
+import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
-import './App.css'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import YamlUtility from './components/YamlUtility'
@@ -130,6 +129,8 @@ function App() {
     };
     
     initializeApp();
+    // setTheme is stable from next-themes and won't cause re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save current page and breadcrumbs to localStorage
@@ -428,29 +429,43 @@ function App() {
         />
         
         <Box as="main" flex={1} bg="bg" overflowY="auto">
-          <nav className="breadcrumbs" aria-label="Breadcrumb">
-            <a 
-              href="#" 
-              onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}
-              className="breadcrumb-home"
-              title="Go to Configuration"
-            >
-              <Icon fontSize="1.5em" style={{ verticalAlign: 'middle' }}><MdHome /></Icon>
-            </a>
-            {hasHydrated && breadcrumbs.map((crumb, index) => (
-              <span key={index}>
-                {index > 0 && <span className="breadcrumb-separator"> / </span>}
-                <a 
-                  href="#" 
-                  onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(index) }}
-                  className={index === breadcrumbs.length - 1 ? 'active' : ''}
+          <Breadcrumb.Root size="lg" p={6} borderBottom="1px solid" borderColor="border" color="text">
+            <Breadcrumb.List>
+              <Breadcrumb.Item>
+                <Breadcrumb.Link 
+                  onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}
+                  cursor="pointer"
+                  title="Go to Configuration"
+                  color="text"
+                  _hover={{ color: "primary" }}
                 >
-                  {crumb}
-                </a>
-              </span>
-            ))}
-          </nav>
-          <div className="content-body">
+                  <Icon fontSize="1.5em"><MdHome /></Icon>
+                </Breadcrumb.Link>
+              </Breadcrumb.Item>
+              <Breadcrumb.Separator color="text" />
+              
+              {hasHydrated && breadcrumbs.map((crumb, index) => (
+                <React.Fragment key={index}>
+                  <Breadcrumb.Item>
+                    {index === breadcrumbs.length - 1 ? (
+                      <Breadcrumb.CurrentLink color="primary" fontWeight="semibold">{crumb}</Breadcrumb.CurrentLink>
+                    ) : (
+                      <Breadcrumb.Link 
+                        onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(index) }}
+                        cursor="pointer"
+                        color="text"
+                        _hover={{ color: "primary" }}
+                      >
+                        {crumb}
+                      </Breadcrumb.Link>
+                    )}
+                  </Breadcrumb.Item>
+                  {index < breadcrumbs.length - 1 && <Breadcrumb.Separator color="text" />}
+                </React.Fragment>
+              ))}
+            </Breadcrumb.List>
+          </Breadcrumb.Root>
+          <Box p={8} color="text">
             {currentPage === 'YAML Utility' ? (
               <YamlUtility setBreadcrumbs={setBreadcrumbs} breadcrumbs={breadcrumbs} />
             ) : currentPage === 'Configuration' ? (
@@ -520,7 +535,7 @@ function App() {
                 {/* Content for {currentPage} will be displayed here */}
               </>
             )}
-          </div>
+          </Box>
         </Box>
       </Flex>
       

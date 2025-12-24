@@ -1,284 +1,358 @@
 import React from 'react';
-import './Help.css';
+import { Box, Flex, Grid, Heading, Text, Stack, HStack, Icon, Code } from '@chakra-ui/react';
+import { 
+  MdEdit, MdWarning, MdSettings, MdBuild, MdPerson, MdPalette, 
+  MdGetApp, MdShowChart, MdDirectionsBike, MdComputer, MdLink, 
+  MdAccessTime, MdInsertDriveFile, MdWidgets, MdRocket, MdHelpOutline 
+} from 'react-icons/md';
 
 const Help = () => {
   return (
-    <div className="help-container">
-      <div className="help-header">
-        <h2>Help & Documentation</h2>
-        <p className="help-subtitle">Configuration tool guide and important information</p>
-      </div>
+    <Box maxW="1000px" mx="auto" p={8} bg="bg">
+      <Box textAlign="center" borderBottom="1px solid" borderColor="border" pb={8} mb={8}>
+        <Heading as="h2" size="2xl" color="text" fontWeight="semibold" mb={2}>
+          Help & Documentation
+        </Heading>
+        <Text color="text" fontSize="lg" opacity={0.8}>
+          Configuration tool guide and important information
+        </Text>
+      </Box>
 
-      <div className="help-content">
-        <section className="help-section">
-          <h3>📝 Using the Configuration Editor</h3>
-          <div className="help-card">
-            <h4>Form-Based Configuration</h4>
-            <p>
+      <Stack gap={10}>
+        <Box as="section">
+          <Heading as="h3" size="lg" color="text" fontWeight="semibold" mb={6} display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdEdit /></Icon>
+            Using the Configuration Editor
+          </Heading>
+          <Box p={6} bg="cardBg" border="1px solid" borderColor="border" borderRadius="lg">
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Form-Based Configuration
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>
               This tool provides guided forms for editing your Strava configuration files. Each form includes:
-            </p>
-            <ul>
-              <li><strong>Field descriptions</strong> - Explanations of what each setting does</li>
-              <li><strong>Input validation</strong> - Prevents invalid values from being saved</li>
-              <li><strong>Type-specific controls</strong> - Dropdowns for enums, number inputs for numeric values</li>
-              <li><strong>Required field indicators</strong> - Red asterisks (*) mark mandatory fields</li>
-            </ul>
-          </div>
+            </Text>
+            <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6">
+              <li><Text as="strong" color="text">Field descriptions</Text> - Explanations of what each setting does</li>
+              <li><Text as="strong" color="text">Input validation</Text> - Prevents invalid values from being saved</li>
+              <li><Text as="strong" color="text">Type-specific controls</Text> - Dropdowns for enums, number inputs for numeric values</li>
+              <li><Text as="strong" color="text">Required field indicators</Text> - Red asterisks (*) mark mandatory fields</li>
+            </Box>
+          </Box>
 
-          <div className="help-card warning">
-            <h4>⚠️ Important: Comment Preservation</h4>
-            <p>
+          <Box p={6} bg="orange.50" _dark={{ bg: "orange.950" }} border="1px solid" borderColor="orange.200" _dark={{ borderColor: "orange.800" }} borderRadius="lg" mt={6}>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4} display="flex" alignItems="center" gap={2}>
+              <Icon color="orange.500"><MdWarning /></Icon>
+              Important: Comment Preservation
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>
               When saving configuration changes through this editor:
-            </p>
-            <ul>
-              <li><strong>Section headers are preserved</strong> - Main comments like section titles remain intact</li>
-              <li><strong>Embedded comments may be removed</strong> - Detailed comments within YAML structures might be lost</li>
-              <li><strong>This is by design</strong> - The forms provide all necessary guidance, making embedded comments redundant</li>
-            </ul>
-            <p>
-              <em>If you need to preserve all comments, edit the YAML files manually instead of using this tool.</em>
-            </p>
-          </div>
-        </section>
+            </Text>
+            <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={4}>
+              <li><Text as="strong" color="text">Section headers are preserved</Text> - Main comments like section titles remain intact</li>
+              <li><Text as="strong" color="text">Embedded comments may be removed</Text> - Detailed comments within YAML structures might be lost</li>
+              <li><Text as="strong" color="text">This is by design</Text> - The forms provide all necessary guidance, making embedded comments redundant</li>
+            </Box>
+            <Text color="text" opacity={0.8} fontStyle="italic">
+              If you need to preserve all comments, edit the YAML files manually instead of using this tool.
+            </Text>
+          </Box>
+        </Box>
 
-        <section className="help-section">
-          <h3>⚙️ Configuration Sections</h3>
-          <div className="help-card">
-            <div className="config-sections">
-              <div className="section-item">
-                <span className="section-icon">🔧</span>
-                <div>
-                  <strong>General</strong>
-                  <p>Basic application settings like URLs and titles</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">👤</span>
-                <div>
-                  <strong>Athlete</strong>
-                  <p>Personal information including heart rate zones, weight history, and FTP data</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">🎨</span>
-                <div>
-                  <strong>Appearance</strong>
-                  <p>Visual customization options for your statistics display</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">📥</span>
-                <div>
-                  <strong>Import</strong>
-                  <p>Data import settings and preferences</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">📊</span>
-                <div>
-                  <strong>Metrics</strong>
-                  <p>Configuration for statistical calculations and metrics</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">🚴</span>
-                <div>
-                  <strong>Gear</strong>
-                  <p>Equipment and bike configuration</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">🖥️</span>
-                <div>
-                  <strong>Zwift</strong>
-                  <p>Zwift integration settings</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">🔗</span>
-                <div>
-                  <strong>Integrations</strong>
-                  <p>Third-party service connections and API settings</p>
-                </div>
-              </div>
-              <div className="section-item">
-                <span className="section-icon">⏰</span>
-                <div>
-                  <strong>Scheduling Daemon</strong>
-                  <p>Automated task scheduling and background processes</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <Box as="section">
+          <Heading as="h3" size="lg" color="text" fontWeight="semibold" mb={6} display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdSettings /></Icon>
+            Configuration Sections
+          </Heading>
+          <Box p={6} bg="cardBg" border="1px solid" borderColor="border" borderRadius="lg">
+            <Grid templateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={4}>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdBuild /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>General</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Basic application settings like URLs and titles</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdPerson /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Athlete</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Personal information including heart rate zones, weight history, and FTP data</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdPalette /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Appearance</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Visual customization options for your statistics display</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdGetApp /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Import</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Data import settings and preferences</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdShowChart /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Metrics</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Configuration for statistical calculations and metrics</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdDirectionsBike /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Gear</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Equipment and bike configuration</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdComputer /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Zwift</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Zwift integration settings</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdLink /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Integrations</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Third-party service connections and API settings</Text>
+                </Box>
+              </Flex>
+              <Flex gap={3} p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md" alignItems="flex-start">
+                <Icon fontSize="xl" color="primary" mt={1}><MdAccessTime /></Icon>
+                <Box>
+                  <Text fontWeight="semibold" color="text" mb={1}>Scheduling Daemon</Text>
+                  <Text fontSize="sm" color="text" opacity={0.8}>Automated task scheduling and background processes</Text>
+                </Box>
+              </Flex>
+            </Grid>
+          </Box>
+        </Box>
 
-        <section className="help-section">
-          <h3>📄 YAML Utility</h3>
-          <div className="help-card">
-            <h4>File Validation and Management</h4>
-            <p>
+        <Box as="section">
+          <Heading as="h3" size="lg" color="text" fontWeight="semibold" mb={6} display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdInsertDriveFile /></Icon>
+            YAML Utility
+          </Heading>
+          <Box p={6} bg="cardBg" border="1px solid" borderColor="border" borderRadius="lg">
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              File Validation and Management
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>
               The YAML Utility provides essential configuration file management tools:
-            </p>
-            <ul>
-              <li><strong>Validate YAML files</strong> - Check syntax and structure for errors</li>
-              <li><strong>View file contents</strong> - Browse and inspect configuration files</li>
-              <li><strong>Combine configurations</strong> - Merge multiple YAML files into a single unified configuration</li>
-            </ul>
+            </Text>
+            <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={6}>
+              <li><Text as="strong" color="text">Validate YAML files</Text> - Check syntax and structure for errors</li>
+              <li><Text as="strong" color="text">View file contents</Text> - Browse and inspect configuration files</li>
+              <li><Text as="strong" color="text">Combine configurations</Text> - Merge multiple YAML files into a single unified configuration</li>
+            </Box>
             
-            <h4>Future Enhancements</h4>
-            <p>Planned features for upcoming releases:</p>
-            <ul>
-              <li><strong>Direct file editing</strong> - Edit YAML files with syntax highlighting and validation</li>
-              <li><strong>Configuration splitting</strong> - Break a single config file into separate section files</li>
-            </ul>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Future Enhancements
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>Planned features for upcoming releases:</Text>
+            <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={6}>
+              <li><Text as="strong" color="text">Direct file editing</Text> - Edit YAML files with syntax highlighting and validation</li>
+              <li><Text as="strong" color="text">Configuration splitting</Text> - Break a single config file into separate section files</li>
+            </Box>
             
-            <p className="note">
-              <strong>Current Limitation:</strong> The YAML Utility does not support direct editing. 
-              For manual configuration changes, edit the files using an external text editor.
-            </p>
-          </div>
-        </section>
+            <Box p={4} bg="blue.50" _dark={{ bg: "blue.950" }} border="1px solid" borderColor="blue.200" _dark={{ borderColor: "blue.800" }} borderRadius="md">
+              <Text color="text" opacity={0.9}>
+                <Text as="strong" color="text">Current Limitation:</Text> The YAML Utility does not support direct editing. 
+                For manual configuration changes, edit the files using an external text editor.
+              </Text>
+            </Box>
+          </Box>
+        </Box>
 
-        <section className="help-section">
-          <h3>🧩 Widget Definitions Editor</h3>
-          <div className="help-card">
-            <h4>Managing Dashboard Widget Definitions</h4>
-            <p>
+        <Box as="section">
+          <Heading as="h3" size="lg" color="text" fontWeight="semibold" mb={6} display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdWidgets /></Icon>
+            Widget Definitions Editor
+          </Heading>
+          <Box p={6} bg="cardBg" border="1px solid" borderColor="border" borderRadius="lg">
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Managing Dashboard Widget Definitions
+            </Heading>
+            <Text color="text" opacity={0.9} mb={6}>
               The Widget Definitions Editor (accessible via Settings → Widgets tab) allows you to manage the widget templates that define what widgets are available for your dashboard.
-            </p>
+            </Text>
             
-            <h4>What are Widget Definitions?</h4>
-            <p>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              What are Widget Definitions?
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>
               Widget definitions are templates that describe:
-            </p>
-            <ul>
-              <li><strong>Widget metadata</strong> - Name, display name, and description</li>
-              <li><strong>Instance rules</strong> - Whether multiple instances of the widget can be added</li>
-              <li><strong>Configuration options</strong> - What settings the widget supports</li>
-              <li><strong>Default values</strong> - Initial configuration values for new widget instances</li>
-            </ul>
+            </Text>
+            <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={6}>
+              <li><Text as="strong" color="text">Widget metadata</Text> - Name, display name, and description</li>
+              <li><Text as="strong" color="text">Instance rules</Text> - Whether multiple instances of the widget can be added</li>
+              <li><Text as="strong" color="text">Configuration options</Text> - What settings the widget supports</li>
+              <li><Text as="strong" color="text">Default values</Text> - Initial configuration values for new widget instances</li>
+            </Box>
 
-            <h4>File Storage</h4>
-            <p>
-              Widget definitions are stored in <code>settings/widget-definitions.yaml</code> within your default file path. 
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              File Storage
+            </Heading>
+            <Text color="text" opacity={0.9} mb={6}>
+              Widget definitions are stored in <Code colorPalette="gray">settings/widget-definitions.yaml</Code> within your default file path. 
               This file is automatically created when you first open the tool and is synced with any widgets already in your dashboard configuration.
-            </p>
+            </Text>
 
-            <h4>Using the Editor</h4>
-            <ol>
-              <li><strong>Open Settings</strong> - Click the gear icon (⚙️) in the top navigation</li>
-              <li><strong>Select Widgets tab</strong> - Navigate to the Widget Definitions section</li>
-              <li><strong>View widgets</strong> - Widgets are grouped by "Can be added multiple times" and "Can only be added once"</li>
-              <li><strong>Expand details</strong> - Click the toggle arrow to see widget properties and configuration templates</li>
-              <li><strong>Add/Edit/Delete</strong> - Use the respective buttons to manage widget definitions</li>
-              <li><strong>Save changes</strong> - Click the 💾 Save button to write all changes to the file</li>
-            </ol>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Using the Editor
+            </Heading>
+            <Box as="ol" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={6}>
+              <li><Text as="strong" color="text">Open Settings</Text> - Click the gear icon in the top navigation</li>
+              <li><Text as="strong" color="text">Select Widgets tab</Text> - Navigate to the Widget Definitions section</li>
+              <li><Text as="strong" color="text">View widgets</Text> - Widgets are grouped by "Can be added multiple times" and "Can only be added once"</li>
+              <li><Text as="strong" color="text">Expand details</Text> - Click the toggle arrow to see widget properties and configuration templates</li>
+              <li><Text as="strong" color="text">Add/Edit/Delete</Text> - Use the respective buttons to manage widget definitions</li>
+              <li><Text as="strong" color="text">Save changes</Text> - Click the Save button to write all changes to the file</li>
+            </Box>
 
-            <div className="warning" style={{ marginTop: '12px', padding: '12px', backgroundColor: 'rgba(255, 193, 7, 0.1)', borderLeft: '4px solid #ffc107', borderRadius: '4px' }}>
-              <p style={{ margin: 0 }}>
-                <strong>⚠️ Important:</strong> Individual widget changes are saved in memory only. 
-                You must click the main <strong>Save</strong> button to write all changes to the file.
-              </p>
-            </div>
+            <Box p={3} bg="orange.50" _dark={{ bg: "orange.950" }} borderLeft="4px solid" borderColor="orange.400" borderRadius="md" mb={6}>
+              <Text color="text" opacity={0.9}>
+                <Icon display="inline" color="orange.500" mr={2}><MdWarning /></Icon>
+                <Text as="strong" color="text">Important:</Text> Individual widget changes are saved in memory only. 
+                You must click the main <Text as="strong" color="text">Save</Text> button to write all changes to the file.
+              </Text>
+            </Box>
 
-            <h4>Widget Properties</h4>
-            <dl className="troubleshooting-list">
-              <dt>Widget Name (camelCase)</dt>
-              <dd>Unique identifier in camelCase format (e.g., mostRecentActivities)</dd>
-              
-              <dt>Display Name</dt>
-              <dd>Human-readable name shown in the UI (e.g., "Most Recent Activities")</dd>
-              
-              <dt>Description</dt>
-              <dd>Brief explanation of what the widget displays or does</dd>
-              
-              <dt>Allow multiple instances</dt>
-              <dd>If checked, multiple copies of this widget can be added to the dashboard</dd>
-              
-              <dt>Has configuration options</dt>
-              <dd>If checked, the widget supports customizable settings</dd>
-              
-              <dt>Config Template (YAML)</dt>
-              <dd>Example configuration showing available options and syntax</dd>
-            </dl>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Widget Properties
+            </Heading>
+            <Stack gap={4} mb={6}>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Widget Name (camelCase)</Text>
+                <Text color="text" opacity={0.8} ml={4}>Unique identifier in camelCase format (e.g., mostRecentActivities)</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Display Name</Text>
+                <Text color="text" opacity={0.8} ml={4}>Human-readable name shown in the UI (e.g., "Most Recent Activities")</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Description</Text>
+                <Text color="text" opacity={0.8} ml={4}>Brief explanation of what the widget displays or does</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Allow multiple instances</Text>
+                <Text color="text" opacity={0.8} ml={4}>If checked, multiple copies of this widget can be added to the dashboard</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Has configuration options</Text>
+                <Text color="text" opacity={0.8} ml={4}>If checked, the widget supports customizable settings</Text>
+              </Box>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Config Template (YAML)</Text>
+                <Text color="text" opacity={0.8} ml={4}>Example configuration showing available options and syntax</Text>
+              </Box>
+            </Stack>
 
-            <h4>Automatic Initialization</h4>
-            <p>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Automatic Initialization
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>
               When the app starts:
-            </p>
-            <ul>
-              <li><strong>File creation</strong> - If the widget definitions file doesn't exist, it's created with 19 default widgets</li>
-              <li><strong>Config sync</strong> - Widget default values are updated based on widgets in your dashboard configuration</li>
-              <li><strong>Validation</strong> - All widget definitions are validated for correct structure</li>
-            </ul>
+            </Text>
+            <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={6}>
+              <li><Text as="strong" color="text">File creation</Text> - If the widget definitions file doesn't exist, it's created with 19 default widgets</li>
+              <li><Text as="strong" color="text">Config sync</Text> - Widget default values are updated based on widgets in your dashboard configuration</li>
+              <li><Text as="strong" color="text">Validation</Text> - All widget definitions are validated for correct structure</li>
+            </Box>
 
-            <h4>Default Widgets</h4>
-            <p>The system includes these built-in widget definitions:</p>
-            <ul style={{ columnCount: 2, columnGap: '20px' }}>
-              <li>Most Recent Activities</li>
-              <li>Introduction Text</li>
-              <li>Training Goals</li>
-              <li>Weekly Statistics</li>
-              <li>Peak Power Outputs</li>
-              <li>Heart Rate Zones</li>
-              <li>Activity Grid</li>
-              <li>Monthly Statistics</li>
-              <li>Training Load</li>
-              <li>Weekday Statistics</li>
-              <li>Day Time Statistics</li>
-              <li>Distance Breakdown</li>
-              <li>Yearly Statistics</li>
-              <li>Zwift Statistics</li>
-              <li>Gear Statistics</li>
-              <li>Eddington Number</li>
-              <li>Challenge Consistency</li>
-              <li>Most Recent Challenges</li>
-              <li>FTP History</li>
-              <li>Athlete Weight History</li>
-            </ul>
-          </div>
-        </section>
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4}>
+              Default Widgets
+            </Heading>
+            <Text color="text" opacity={0.9} mb={4}>The system includes these built-in widget definitions:</Text>
+            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={2}>
+              <Text color="text" opacity={0.9}>• Most Recent Activities</Text>
+              <Text color="text" opacity={0.9}>• Introduction Text</Text>
+              <Text color="text" opacity={0.9}>• Training Goals</Text>
+              <Text color="text" opacity={0.9}>• Weekly Statistics</Text>
+              <Text color="text" opacity={0.9}>• Peak Power Outputs</Text>
+              <Text color="text" opacity={0.9}>• Heart Rate Zones</Text>
+              <Text color="text" opacity={0.9}>• Activity Grid</Text>
+              <Text color="text" opacity={0.9}>• Monthly Statistics</Text>
+              <Text color="text" opacity={0.9}>• Training Load</Text>
+              <Text color="text" opacity={0.9}>• Weekday Statistics</Text>
+              <Text color="text" opacity={0.9}>• Day Time Statistics</Text>
+              <Text color="text" opacity={0.9}>• Distance Breakdown</Text>
+              <Text color="text" opacity={0.9}>• Yearly Statistics</Text>
+              <Text color="text" opacity={0.9}>• Zwift Statistics</Text>
+              <Text color="text" opacity={0.9}>• Gear Statistics</Text>
+              <Text color="text" opacity={0.9}>• Eddington Number</Text>
+              <Text color="text" opacity={0.9}>• Challenge Consistency</Text>
+              <Text color="text" opacity={0.9}>• Most Recent Challenges</Text>
+              <Text color="text" opacity={0.9}>• FTP History</Text>
+              <Text color="text" opacity={0.9}>• Athlete Weight History</Text>
+            </Grid>
+          </Box>
+        </Box>
 
-        <section className="help-section">
-          <h3>🚀 Getting Started</h3>
-          <div className="help-card">
-            <ol>
-              <li><strong>Choose a configuration section</strong> from the sidebar menu</li>
-              <li><strong>Fill in the form fields</strong> - required fields are marked with *</li>
-              <li><strong>Use the descriptions</strong> to understand what each setting does</li>
-              <li><strong>Save your changes</strong> - the tool will validate your input</li>
-              <li><strong>Review the results</strong> - check that your configuration works as expected</li>
-            </ol>
-          </div>
-        </section>
+        <Box as="section">
+          <Heading as="h3" size="lg" color="text" fontWeight="semibold" mb={6} display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdRocket /></Icon>
+            Getting Started
+          </Heading>
+          <Box p={6} bg="cardBg" border="1px solid" borderColor="border" borderRadius="lg">
+            <Box as="ol" pl={6} color="text" opacity={0.9} lineHeight="1.6">
+              <li><Text as="strong" color="text">Choose a configuration section</Text> from the sidebar menu</li>
+              <li><Text as="strong" color="text">Fill in the form fields</Text> - required fields are marked with *</li>
+              <li><Text as="strong" color="text">Use the descriptions</Text> to understand what each setting does</li>
+              <li><Text as="strong" color="text">Save your changes</Text> - the tool will validate your input</li>
+              <li><Text as="strong" color="text">Review the results</Text> - check that your configuration works as expected</li>
+            </Box>
+          </Box>
+        </Box>
 
-        <section className="help-section">
-          <h3>❓ Troubleshooting</h3>
-          <div className="help-card">
-            <h4>Common Issues</h4>
-            <dl className="troubleshooting-list">
-              <dt>Form validation errors</dt>
-              <dd>Check that all required fields are filled and values are in the correct format</dd>
+        <Box as="section">
+          <Heading as="h3" size="lg" color="text" fontWeight="semibold" mb={6} display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdHelpOutline /></Icon>
+            Troubleshooting
+          </Heading>
+          <Box p={6} bg="cardBg" border="1px solid" borderColor="border" borderRadius="lg">
+            <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={6}>
+              Common Issues
+            </Heading>
+            <Stack gap={4}>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Form validation errors</Text>
+                <Text color="text" opacity={0.8} ml={4}>Check that all required fields are filled and values are in the correct format</Text>
+              </Box>
               
-              <dt>Changes not saving</dt>
-              <dd>Ensure you have write permissions to the configuration directory</dd>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Changes not saving</Text>
+                <Text color="text" opacity={0.8} ml={4}>Ensure you have write permissions to the configuration directory</Text>
+              </Box>
               
-              <dt>Lost comments after saving</dt>
-              <dd>This is expected behavior - use manual YAML editing to preserve all comments</dd>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Lost comments after saving</Text>
+                <Text color="text" opacity={0.8} ml={4}>This is expected behavior - use manual YAML editing to preserve all comments</Text>
+              </Box>
               
-              <dt>Configuration not loading</dt>
-              <dd>Verify your YAML files have valid syntax and are in the expected directory</dd>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Configuration not loading</Text>
+                <Text color="text" opacity={0.8} ml={4}>Verify your YAML files have valid syntax and are in the expected directory</Text>
+              </Box>
               
-              <dt>Widget definitions not updating</dt>
-              <dd>Remember to click the main Save button after editing widgets - individual changes are held in memory</dd>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Widget definitions not updating</Text>
+                <Text color="text" opacity={0.8} ml={4}>Remember to click the main Save button after editing widgets - individual changes are held in memory</Text>
+              </Box>
               
-              <dt>Widget definition file missing</dt>
-              <dd>The file is auto-created on app startup. Check your default file path in Settings → Files</dd>
-            </dl>
-          </div>
-        </section>
-      </div>
-    </div>
+              <Box>
+                <Text fontWeight="semibold" color="text" mb={1}>Widget definition file missing</Text>
+                <Text color="text" opacity={0.8} ml={4}>The file is auto-created on app startup. Check your default file path in Settings → Files</Text>
+              </Box>
+            </Stack>
+          </Box>
+        </Box>
+      </Stack>
+    </Box>
   );
 };
 

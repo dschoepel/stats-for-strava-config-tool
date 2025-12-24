@@ -168,15 +168,14 @@ export default function Sidebar({
           onClick={onToggle}
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           size="sm"
-          bg={{ base: "primary", md: "transparent" }}
-          color={{ base: "white", md: "inherit" }}
-          border={{ base: "1px solid white", md: "none" }}
+          variant="ghost"
+          colorPalette="orange"
           _hover={{ 
-            bg: { base: "primaryHover", md: "bg" }
+            bg: "bg"
           }}
           display={{ base: isCollapsed ? "none" : "flex", md: "flex" }}
         >
-          {isCollapsed ? <ChevronRightIcon color="inherit" /> : <ChevronLeftIcon color="white" />}
+          {isCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
         </IconButton>
       </Flex>
 

@@ -20,11 +20,17 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
   // Initialize settings when modal opens
   useEffect(() => {
     if (isOpen) {
-      const loadedSettings = loadSettings();
-      setSettings(loadedSettings);
-      setIsDirty(false);
-      setSportsListDirty(false);
-      setWidgetDefinitionsDirty(false);
+      // Use a function to batch state updates and avoid cascading renders
+      const initializeSettings = () => {
+        const loadedSettings = loadSettings();
+        setSettings(loadedSettings);
+        setIsDirty(false);
+        setSportsListDirty(false);
+        setWidgetDefinitionsDirty(false);
+      };
+      
+      // Schedule state updates to run after the effect
+      Promise.resolve().then(initializeSettings);
     }
   }, [isOpen]);
 

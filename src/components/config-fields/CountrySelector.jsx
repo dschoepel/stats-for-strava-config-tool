@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import './CountrySelector.css';
+import { 
+  Box, Flex, Input, Button, Grid, Icon, Heading, Text, VStack, HStack,
+  DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogBody, DialogCloseTrigger 
+} from '@chakra-ui/react';
+import { MdClose, MdKeyboardArrowDown, MdKeyboardArrowRight } from 'react-icons/md';
 
 const CountrySelector = ({ value, onChange, onClose }) => {
   const [countries, setCountries] = useState([]);
@@ -111,83 +115,140 @@ const CountrySelector = ({ value, onChange, onClose }) => {
   });
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content country-selector-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Select Country</h3>
-          <button type="button" className="modal-close-btn" onClick={onClose}>
-            ✕
-          </button>
-        </div>
+    <DialogRoot open={true} onOpenChange={(e) => { if (!e.open) onClose(); }} size="xl">
+      <DialogBackdrop />
+      <DialogContent maxH="90vh" bg="cardBg" color="text">
+        <DialogHeader borderBottom="1px solid" borderColor="border" pb={4}>
+          <Heading as="h3" size="lg" fontWeight="semibold">
+            Select Country
+          </Heading>
+          <DialogCloseTrigger asChild>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <Icon><MdClose /></Icon>
+            </Button>
+          </DialogCloseTrigger>
+        </DialogHeader>
 
-        <div className="country-selector-controls">
-          <input
-            type="text"
-            placeholder="Search countries..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="country-search-input"
-            autoFocus
-          />
-          <div className="region-controls">
-            <button type="button" onClick={expandAll} className="region-control-btn">
-              Expand All
-            </button>
-            <button type="button" onClick={collapseAll} className="region-control-btn">
-              Collapse All
-            </button>
-            <button type="button" onClick={handleClear} className="region-control-btn clear-btn">
-              Clear Selection
-            </button>
-          </div>
-        </div>
+        <DialogBody display="flex" flexDirection="column" gap={4} p={6}>
+          <VStack gap={3} align="stretch">
+            <Input
+              placeholder="Search countries..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="md"
+              autoFocus
+            />
+            <HStack gap={2} flexWrap="wrap">
+              <Button size="xs" variant="outline" colorPalette="gray" onClick={expandAll}>
+                Expand All
+              </Button>
+              <Button size="xs" variant="outline" colorPalette="gray" onClick={collapseAll}>
+                Collapse All
+              </Button>
+              <Button size="xs" variant="solid" colorPalette="red" onClick={handleClear}>
+                Clear Selection
+              </Button>
+            </HStack>
+          </VStack>
 
-        {value && (
-          <div className="current-selection">
-            <strong>Current:</strong> {value}
-          </div>
-        )}
-
-        <div className="country-list">
-          {loading ? (
-            <div className="loading-state">Loading countries...</div>
-          ) : Object.keys(filteredCountryByRegion).length === 0 ? (
-            <div className="empty-state">No countries found matching "{searchTerm}"</div>
-          ) : (
-            Object.entries(filteredCountryByRegion)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([region, regionCountries]) => (
-                <div key={region} className="country-region">
-                  <h4 
-                    className="region-header collapsible"
-                    onClick={() => toggleRegion(region)}
-                  >
-                    <span className="region-toggle-icon">
-                      {expandedRegions[region] ? '▼' : '▶'}
-                    </span>
-                    {region} ({regionCountries.length})
-                  </h4>
-                  {expandedRegions[region] && (
-                    <div className="country-items">
-                      {regionCountries.map(country => (
-                        <button
-                          key={country.code}
-                          type="button"
-                          className={`country-item ${value === country.code ? 'selected' : ''}`}
-                          onClick={() => handleCountrySelect(country.code)}
-                        >
-                          <span className="country-name">{country.name}</span>
-                          <span className="country-code">{country.code}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
+          {value && (
+            <Box 
+              p={3} 
+              bg="green.50" 
+              borderRadius="md" 
+              border="1px solid" 
+              borderColor="green.200" 
+              _dark={{ bg: "green.950", borderColor: "green.800" }}
+            >
+              <Text fontSize="sm" fontWeight="medium" color="green.700" _dark={{ color: "green.300" }}>
+                <Text as="strong">Current:</Text> {value}
+              </Text>
+            </Box>
           )}
-        </div>
-      </div>
-    </div>
+
+          <Box flex={1} overflowY="auto" py={4}>
+            {loading ? (
+              <Text textAlign="center" py={10} color="text" opacity={0.6} fontStyle="italic">
+                Loading countries...
+              </Text>
+            ) : Object.keys(filteredCountryByRegion).length === 0 ? (
+              <Text textAlign="center" py={10} color="text" opacity={0.6} fontStyle="italic">
+                No countries found matching "{searchTerm}"
+              </Text>
+            ) : (
+              Object.entries(filteredCountryByRegion)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([region, regionCountries]) => (
+                  <Box 
+                    key={region} 
+                    mb={2} 
+                    border="1px solid" 
+                    borderColor="border" 
+                    borderRadius="md" 
+                    overflow="hidden"
+                    bg="panelBg"
+                  >
+                    <Flex
+                      align="center"
+                      gap={2}
+                      p={3}
+                      bg="bg"
+                      cursor="pointer"
+                      userSelect="none"
+                      _hover={{ bg: "panelBg" }}
+                      onClick={() => toggleRegion(region)}
+                    >
+                      <Icon fontSize="lg" transition="transform 0.2s" transform={expandedRegions[region] ? "rotate(0deg)" : "rotate(-90deg)"}>
+                        <MdKeyboardArrowDown />
+                      </Icon>
+                      <Text fontWeight="semibold" fontSize="md" color="text">
+                        {region} ({regionCountries.length})
+                      </Text>
+                    </Flex>
+                    {expandedRegions[region] && (
+                      <Grid 
+                        templateColumns="repeat(auto-fill, minmax(250px, 1fr))" 
+                        gap={2} 
+                        p={4}
+                        bg="cardBg"
+                      >
+                        {regionCountries.map(country => (
+                          <Button
+                            key={country.code}
+                            variant={value === country.code ? "solid" : "outline"}
+                            colorPalette={value === country.code ? "blue" : "gray"}
+                            onClick={() => handleCountrySelect(country.code)}
+                            justifyContent="space-between"
+                            size="sm"
+                            fontWeight={value === country.code ? "semibold" : "normal"}
+                          >
+                            <Text flex={1} textAlign="left" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                              {country.name}
+                            </Text>
+                            <Text 
+                              as="code" 
+                              fontSize="xs" 
+                              px={2} 
+                              py={0.5} 
+                              borderRadius="sm"
+                              bg={value === country.code ? "whiteAlpha.200" : "bg"}
+                              color={value === country.code ? "white" : "text"}
+                              opacity={value === country.code ? 1 : 0.7}
+                              flexShrink={0}
+                            >
+                              {country.code}
+                            </Text>
+                          </Button>
+                        ))}
+                      </Grid>
+                    )}
+                  </Box>
+                ))
+            )}
+          </Box>
+        </DialogBody>
+      </DialogContent>
+    </DialogRoot>
   );
 };
 
