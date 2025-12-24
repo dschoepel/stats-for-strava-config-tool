@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Textarea, Icon, IconButton, Code, Field } from '@chakra-ui/react';
 import { Checkbox } from '@chakra-ui/react';
-import { MdExpandMore, MdChevronRight, MdAdd, MdDelete, MdEdit, MdSave, MdRefresh } from 'react-icons/md';
+import { MdExpandMore, MdChevronRight, MdAdd, MdDelete, MdEdit, MdSave, MdRefresh, MdDescription, MdLightbulb } from 'react-icons/md';
 import { 
   readWidgetDefinitions, 
   writeWidgetDefinitions, 
   initialWidgetDefinitions
 } from '../utils/widgetDefinitionsManager';
 import { getSetting } from '../utils/settingsManager';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState(initialWidgetDefinitions);
@@ -15,6 +16,7 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [isDirty, setIsDirty] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   
   // Modal states
   const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
@@ -147,14 +149,20 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   };
 
   const handleDeleteWidget = async (widgetName) => {
-    if (window.confirm(`Delete widget "${widgetDefinitions[widgetName].displayName}"?`)) {
-      const updated = { ...widgetDefinitions };
-      delete updated[widgetName];
-      setWidgetDefinitions(updated);
-      setIsDirty(true);
-      if (onDirtyChange) onDirtyChange(true);
-      showMessage(`Widget "${widgetDefinitions[widgetName].displayName}" deleted`, 'success');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Widget',
+      message: `Are you sure you want to delete widget "${widgetDefinitions[widgetName].displayName}"?`,
+      onConfirm: () => {
+        const updated = { ...widgetDefinitions };
+        delete updated[widgetName];
+        setWidgetDefinitions(updated);
+        setIsDirty(true);
+        if (onDirtyChange) onDirtyChange(true);
+        showMessage(`Widget "${widgetDefinitions[widgetName].displayName}" deleted`, 'success');
+        setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      }
+    });
   };
 
   const handleSave = async () => {
@@ -169,12 +177,18 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   };
 
   const handleReset = async () => {
-    if (window.confirm('Reset all widget definitions to defaults? This will delete any custom widgets you have added.')) {
-      setWidgetDefinitions(initialWidgetDefinitions);
-      setIsDirty(true);
-      if (onDirtyChange) onDirtyChange(true);
-      showMessage('Widget definitions reset to defaults', 'success');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Reset Widget Definitions',
+      message: 'Reset all widget definitions to defaults? This will delete any custom widgets you have added.',
+      onConfirm: () => {
+        setWidgetDefinitions(initialWidgetDefinitions);
+        setIsDirty(true);
+        if (onDirtyChange) onDirtyChange(true);
+        showMessage('Widget definitions reset to defaults', 'success');
+        setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      }
+    });
   };
 
   const openAddModal = () => {
@@ -221,10 +235,10 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       <VStack align="stretch" gap={4} mb={5}>
         <Box p={3} bg="panelBg" borderRadius="md" border="1px solid" borderColor="border">
           <Text fontSize="sm" color="text" mb={2}>
-            📄 Widget definitions are saved to: <Code bg="inputBg" px={2} py={1} borderRadius="sm">{getSetting('files.defaultPath', '~/Documents/strava-config-tool/')}settings/widget-definitions.yaml</Code>
+            <Icon color="primary" mr={1}><MdDescription /></Icon> Widget definitions are saved to: <Code bg="inputBg" color="text" _dark={{ color: "#e2e8f0" }} px={2} py={1} borderRadius="sm">{getSetting('files.defaultPath', '~/Documents/strava-config-tool/')}settings/widget-definitions.yaml</Code>
           </Text>
           <Text fontSize="sm" color="textMuted">
-            💡 <Text as="strong" color="text">Note:</Text> Changes to individual widgets are saved in memory. Click the <Text as="strong" color="text">Save</Text> button below to write all changes to the file.
+            <Icon color="orange.500" mr={1}><MdLightbulb /></Icon> <Text as="strong" color="text">Note:</Text> Changes to individual widgets are saved in memory. Click the <Text as="strong" color="text">Save</Text> button below to write all changes to the file.
           </Text>
         </Box>
       </VStack>
@@ -250,7 +264,7 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
             borderColor="border"
             leftIcon={<Icon><MdChevronRight /></Icon>}
           >
-            Collapse
+            Collapse All
           </Button>
           <Button
             onClick={expandAll}
@@ -261,7 +275,7 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
             borderColor="border"
             leftIcon={<Icon><MdExpandMore /></Icon>}
           >
-            Expand
+            Expand All
           </Button>
           <Button
             onClick={handleReset}
@@ -278,8 +292,8 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
             variant="outline"
             colorPalette="gray"
             borderColor="border"
-            leftIcon={<Icon><MdAdd /></Icon>}
           >
+            <Icon><MdAdd /></Icon>
             Widget
           </Button>
           <Button
@@ -848,6 +862,17 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
           </Flex>
         </Flex>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.title === 'Reset Widget Definitions' ? 'Reset' : 'Delete'}
+        confirmColorPalette="red"
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+      />
     </Box>
   );
 }

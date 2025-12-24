@@ -21,6 +21,7 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
   const showLineNumbers = getSetting('ui.showLineNumbers', true) ? 'on' : 'off';
   const [validationError, setValidationError] = useState(null);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
 
   useEffect(() => {
     if (isOpen && fileContent) {
@@ -165,9 +166,15 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
 
   const handleClose = () => {
     if (isDirty) {
-      if (window.confirm('You have unsaved changes. Are you sure you want to close?')) {
-        onClose();
-      }
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. Are you sure you want to close?',
+        onConfirm: () => {
+          onClose();
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+        }
+      });
     } else {
       onClose();
     }
@@ -392,6 +399,17 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
         confirmText="Overwrite"
         cancelText="Cancel"
         confirmColorPalette="orange"
+      />
+      
+      {/* Unsaved Changes Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Leave Anyway"
+        confirmColorPalette="orange"
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
       />
     </Flex>
   );

@@ -48,6 +48,8 @@ function App() {
   const [sectionData, setSectionData] = useState({})
   const [isLoadingSectionData, setIsLoadingSectionData] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [sportsListDirty, setSportsListDirty] = useState(false)
+  const [widgetDefinitionsDirty, setWidgetDefinitionsDirty] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' })
 
   const toggleTheme = async () => {
@@ -77,6 +79,26 @@ function App() {
       console.log('Sidebar state saved successfully');
     }
   }
+
+  const handleCloseModal = (modalName) => {
+    const isDirty = modalName === 'sportsList' ? sportsListDirty : modalName === 'widgetDefinitions' ? widgetDefinitionsDirty : false;
+    
+    if (isDirty) {
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Unsaved Changes',
+        message: `You have unsaved changes in ${modalName === 'sportsList' ? 'Sports List' : 'Widget Definitions'}. These changes will be lost if you close without saving.\n\nAre you sure you want to close?`,
+        onConfirm: () => {
+          setActiveSettingsModal(null);
+          if (modalName === 'sportsList') setSportsListDirty(false);
+          if (modalName === 'widgetDefinitions') setWidgetDefinitionsDirty(false);
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+        }
+      });
+    } else {
+      setActiveSettingsModal(null);
+    }
+  };
 
   // Restore state from localStorage after hydration
   useEffect(() => {
@@ -607,7 +629,7 @@ function App() {
           justify="center"
           align="center"
           zIndex={10000}
-          onClick={() => setActiveSettingsModal(null)}
+          onClick={() => handleCloseModal('sportsList')}
         >
           <Flex
             bg="cardBg"
@@ -637,7 +659,7 @@ function App() {
                 </Heading>
               </HStack>
               <IconButton
-                onClick={() => setActiveSettingsModal(null)}
+                onClick={() => handleCloseModal('sportsList')}
                 aria-label="Close"
                 size="sm"
                 variant="ghost"
@@ -647,7 +669,7 @@ function App() {
               </IconButton>
             </Flex>
             <Box flex={1} p={8} overflowY="auto" bg="cardBg">
-              <SportsListEditor settings={settings} />
+              <SportsListEditor settings={settings} onDirtyChange={setSportsListDirty} />
             </Box>
           </Flex>
         </Flex>
@@ -664,7 +686,7 @@ function App() {
           justify="center"
           align="center"
           zIndex={10000}
-          onClick={() => setActiveSettingsModal(null)}
+          onClick={() => handleCloseModal('widgetDefinitions')}
         >
           <Flex
             bg="cardBg"
@@ -694,7 +716,7 @@ function App() {
                 </Heading>
               </HStack>
               <IconButton
-                onClick={() => setActiveSettingsModal(null)}
+                onClick={() => handleCloseModal('widgetDefinitions')}
                 aria-label="Close"
                 size="sm"
                 variant="ghost"
@@ -704,7 +726,7 @@ function App() {
               </IconButton>
             </Flex>
             <Box flex={1} p={8} overflowY="auto" bg="cardBg">
-              <WidgetDefinitionsEditor settings={settings} />
+              <WidgetDefinitionsEditor settings={settings} onDirtyChange={setWidgetDefinitionsDirty} />
             </Box>
           </Flex>
         </Flex>

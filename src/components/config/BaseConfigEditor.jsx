@@ -14,6 +14,7 @@ import {
   Checkbox,
 } from '@chakra-ui/react';
 import { getSchemaBySection } from '../../schemas/configSchemas';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 /**
  * BaseConfigEditor - Common form logic for all config section editors
@@ -32,6 +33,7 @@ const BaseConfigEditor = ({
   const [formData, setFormData] = useState(() => initialData);
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const schema = useMemo(() => getSchemaBySection(sectionName), [sectionName]);
 
   // Warn user before leaving with unsaved changes
@@ -130,9 +132,15 @@ const BaseConfigEditor = ({
   // Cancel with confirmation
   const handleCancelWithConfirm = () => {
     if (isDirty) {
-      if (window.confirm('You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?')) {
-        onCancel();
-      }
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. These changes will be lost if you leave without saving. Are you sure you want to leave?',
+        onConfirm: () => {
+          onCancel();
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+        }
+      });
     } else {
       onCancel();
     }
@@ -337,6 +345,17 @@ const BaseConfigEditor = ({
           </Button>
         </Flex>
       </VStack>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Leave Anyway"
+        confirmColorPalette="orange"
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+      />
     </Box>
   );
 };

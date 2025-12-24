@@ -12,10 +12,12 @@ import {
   Switch,
 } from '@chakra-ui/react';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 const UISettingsModal = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
 
   useEffect(() => {
     if (isOpen) {
@@ -26,7 +28,16 @@ const UISettingsModal = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   const handleClose = () => {
-    if (isDirty && !window.confirm('You have unsaved changes. Are you sure you want to close?')) {
+    if (isDirty) {
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. Are you sure you want to close?',
+        onConfirm: () => {
+          onClose();
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+        }
+      });
       return;
     }
     onClose();
@@ -193,6 +204,17 @@ const UISettingsModal = ({ isOpen, onClose }) => {
           </Button>
         </Flex>
       </Box>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Leave Anyway"
+        confirmColorPalette="orange"
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+      />
     </Box>
   );
 };

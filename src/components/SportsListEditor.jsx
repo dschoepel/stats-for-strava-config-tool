@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Icon, IconButton } from '@chakra-ui/react';
 import { MdExpandMore, MdChevronRight, MdAdd, MdDelete, MdEdit, MdSave } from 'react-icons/md';
 import { readSportsList, writeSportsList, initialSportsList } from '../utils/sportsListManager';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export default function SportsListEditor({ settings, onDirtyChange }) {
   const [sportsList, setSportsList] = useState(initialSportsList);
@@ -9,6 +10,7 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
   const [isDirty, setIsDirty] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   
   // Modal states
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -31,7 +33,8 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
       setExpandedCategories(expanded);
     }
     load();
-  }, [settings, onDirtyChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
 
   const showMessage = (msg, type) => {
     setMessage(msg);
@@ -137,27 +140,39 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
 
   // Delete sport
   const handleDeleteSport = () => {
-    if (window.confirm(`Delete sport "${selectedSport}"?`)) {
-      setSportsList({
-        ...sportsList,
-        [selectedCategory]: sportsList[selectedCategory].filter(s => s !== selectedSport)
-      });
-      setIsDirty(true);
-      if (onDirtyChange) onDirtyChange(true);
-      setShowEditSportModal(false);
-      showMessage(`Sport "${selectedSport}" deleted from ${selectedCategory}`, 'success');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Sport',
+      message: `Are you sure you want to delete sport "${selectedSport}"?`,
+      onConfirm: () => {
+        setSportsList({
+          ...sportsList,
+          [selectedCategory]: sportsList[selectedCategory].filter(s => s !== selectedSport)
+        });
+        setIsDirty(true);
+        if (onDirtyChange) onDirtyChange(true);
+        setShowEditSportModal(false);
+        showMessage(`Sport "${selectedSport}" deleted from ${selectedCategory}`, 'success');
+        setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      }
+    });
   };
 
   // Delete category
   const handleDeleteCategory = (cat) => {
-    if (window.confirm(`Delete category "${cat}" and all its sports?`)) {
-      const { [cat]: _, ...rest } = sportsList;
-      setSportsList(rest);
-      setIsDirty(true);
-      if (onDirtyChange) onDirtyChange(true);
-      showMessage(`Category "${cat}" deleted`, 'success');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Category',
+      message: `Are you sure you want to delete category "${cat}" and all its sports?`,
+      onConfirm: () => {
+        const { [cat]: _, ...rest } = sportsList;
+        setSportsList(rest);
+        setIsDirty(true);
+        if (onDirtyChange) onDirtyChange(true);
+        showMessage(`Category "${cat}" deleted`, 'success');
+        setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      }
+    });
   };
 
   // Save
@@ -203,7 +218,7 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
             borderColor="border"
             leftIcon={<Icon><MdChevronRight /></Icon>}
           >
-            Collapse
+            Collapse All
           </Button>
           <Button
             onClick={expandAll}
@@ -214,7 +229,7 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
             borderColor="border"
             leftIcon={<Icon><MdExpandMore /></Icon>}
           >
-            Expand
+            Expand All
           </Button>
           <Button
             onClick={() => {
@@ -224,8 +239,8 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
             variant="outline"
             colorPalette="gray"
             borderColor="border"
-            leftIcon={<Icon><MdAdd /></Icon>}
           >
+            <Icon><MdAdd /></Icon>
             Category
           </Button>
           <Button
@@ -623,6 +638,17 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
           </Box>
         </Flex>
       )}
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Delete"
+        confirmColorPalette="red"
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+      />
     </Box>
   );
 }

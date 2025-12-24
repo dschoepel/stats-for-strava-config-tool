@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { Box, VStack, HStack, Heading, Text, Button, SimpleGrid, Flex, Spinner, Code, IconButton, Table } from '@chakra-ui/react';
-import { MdFolder, MdRefresh, MdVisibility, MdEdit, MdClose, MdExpandMore, MdChevronRight } from 'react-icons/md';
+import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { Box, VStack, HStack, Heading, Text, Button, SimpleGrid, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
+import { MdFolder, MdRefresh, MdVisibility, MdEdit, MdClose, MdExpandMore, MdChevronRight, MdDescription, MdSettings, MdWarning, MdLightbulb, MdError } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
@@ -28,11 +28,12 @@ const NextConfigFileList = forwardRef((props, ref) => {
   const [editorFileName, setEditorFileName] = useState('');
   const [editorFileContent, setEditorFileContent] = useState('');
   const [editorFilePath, setEditorFilePath] = useState('');
-  const [lastCheck, setLastCheck] = useState(null);
   const [isSectionMappingExpanded, setIsSectionMappingExpanded] = useState(false);
 
+  const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
+
   // Parse sections from loaded files
-  const parseSections = async (files) => {
+  const parseSections = useCallback(async (files) => {
     if (!files || files.length === 0) return;
     
     try {
@@ -68,8 +69,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
     } catch (error) {
       console.warn('Section parsing failed:', error.message);
     }
-  };
-  const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
+  }, [setSectionToFileMap, showWarning, showSuccess]);
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -184,7 +184,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache]);
+  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized]);
 
 
 
@@ -344,7 +344,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
     setEditorFilePath('');
   };
 
-  const handleSaveFile = async (result) => {
+  const handleSaveFile = async () => {
     showSuccess(`${editorFileName} saved successfully`);
     // Refresh the file list to show updated file info
     await handleRefreshFiles();
@@ -369,7 +369,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
       <VStack align="stretch" gap={6}>
         <Box>
           <Heading as="h3" size="lg" color="text" mb={2}>
-            📁 Configuration Files
+            <Icon color="primary" mr={2}><MdFolder /></Icon> Configuration Files
           </Heading>
           <Text color="textMuted">
             Server-side file system access to Stats for Strava configuration files from:{' '}
@@ -389,7 +389,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
             boxShadow="sm"
           >
             <Flex align="center" gap={3} mb={configMode === 'single-file' || configMode === 'multi-file' ? 2 : 0}>
-              <Text fontSize="lg">⚙️</Text>
+              <Icon color="primary"><MdSettings /></Icon>
               <Text fontWeight="semibold" color="text">Configuration Mode</Text>
               <Box
                 px={3}
@@ -410,10 +410,12 @@ const NextConfigFileList = forwardRef((props, ref) => {
                 fontSize="sm"
                 fontWeight="medium"
               >
-                {configMode === 'single-file' ? '📄 Single File' : 
-                 configMode === 'multi-file' ? '📁 Multi-File' : 
-                 configMode === 'invalid' ? '❌ Invalid' :
-                 '❓ Unknown'}
+                <Flex align="center" gap={1}>
+                  {configMode === 'single-file' ? <><Icon><MdDescription /></Icon> Single File</> : 
+                   configMode === 'multi-file' ? <><Icon><MdFolder /></Icon> Multi-File</> : 
+                   configMode === 'invalid' ? <><Icon color="red.500"><MdError /></Icon> Invalid</> :
+                   '❓ Unknown'}
+                </Flex>
               </Box>
             </Flex>
             {configMode === 'single-file' && (
@@ -453,7 +455,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
               _hover={{ bg: "primaryHover", color: "white" }}
               transition="background 0.2s"
             >
-              <Text fontSize="lg">📋</Text>
+              <Icon color="text"><MdDescription /></Icon>
               <Text fontWeight="semibold" color="text" flex={1} textAlign="left">
                 Section Mapping
               </Text>
@@ -483,7 +485,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
                           <Table.Cell color={isMultiple ? "orange.600" : "textMuted"} _dark={{ color: isMultiple ? "orange.400" : "textMuted" }}>
                             {files.map((f, idx) => (
                               <Box key={idx}>
-                                {isMultiple && <Text as="span" fontWeight="600">⚠️ </Text>}
+                                {isMultiple && <Icon color="orange.500" mr={1}><MdWarning /></Icon>}
                                 {typeof f === 'string' ? f : f.fileName}
                               </Box>
                             ))}
@@ -535,7 +537,9 @@ const NextConfigFileList = forwardRef((props, ref) => {
           borderColor={error.includes('not found') ? 'blue.200' : 'red.200'}
         >
           <Flex align="center" gap={3}>
-            <Text fontSize="lg">{error.includes('not found') ? '💡' : '❌'}</Text>
+            <Icon fontSize="2xl" color={error.includes('not found') ? 'blue.500' : 'red.500'}>
+              {error.includes('not found') ? <MdLightbulb /> : <MdError />}
+            </Icon>
             <Text color={error.includes('not found') ? 'blue.800' : 'red.800'} flex={1}>
               {error}
             </Text>
@@ -595,8 +599,8 @@ const NextConfigFileList = forwardRef((props, ref) => {
               >
                 <VStack align="stretch" gap={3}>
                   <Flex align="center" justify="space-between">
-                    <Text fontSize="2xl">
-                      {file.isMainConfig ? '⚙️' : '📄'}
+                    <Text fontSize="lg" color={file.isMainConfig ? 'primary' : 'text'}>
+                      <Icon>{file.isMainConfig ? <MdSettings /> : <MdDescription />}</Icon>
                     </Text>
                     {file.isMainConfig && (
                       <Box

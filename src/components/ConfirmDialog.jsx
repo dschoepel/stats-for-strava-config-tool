@@ -20,8 +20,8 @@ export const ConfirmDialog = ({
   return (
     <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
       <Portal>
-        <Dialog.Backdrop bg="blackAlpha.700" />
-        <Dialog.Positioner>
+        <Dialog.Backdrop bg="blackAlpha.700" zIndex={99998} />
+        <Dialog.Positioner zIndex={99999}>
           <Dialog.Content
             maxW="400px"
             borderRadius="lg"
@@ -45,7 +45,11 @@ export const ConfirmDialog = ({
               p={{ base: 4, sm: 6 }}
               bg="cardBg"
             >
-              <Dialog.Description fontSize={{ base: "sm", sm: "md" }}>
+              <Dialog.Description 
+                fontSize={{ base: "sm", sm: "md" }}
+                color="#1a202c"
+                _dark={{ color: "#e2e8f0" }}
+              >
                 {message}
               </Dialog.Description>
             </Dialog.Body>
