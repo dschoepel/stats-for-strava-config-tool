@@ -25,6 +25,7 @@ import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
 import { useToast } from './hooks/useToast'
 import { ToastContainer } from './components/Toast'
+import { ConfirmDialog } from './components/ConfirmDialog'
 
 function App() {
   const { theme, setTheme } = useTheme();
@@ -47,6 +48,7 @@ function App() {
   const [sectionData, setSectionData] = useState({})
   const [isLoadingSectionData, setIsLoadingSectionData] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' })
 
   const toggleTheme = async () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -190,10 +192,23 @@ function App() {
   const handleNavClick = (page, parentPage = null, skipUnsavedCheck = false) => {
     // Warn if trying to navigate away with unsaved changes
     if (!skipUnsavedCheck && hasUnsavedChanges) {
-      if (!window.confirm('You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?')) {
-        return;
-      }
-      setHasUnsavedChanges(false);
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?',
+        onConfirm: () => {
+          setHasUnsavedChanges(false);
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          // Proceed with navigation
+          if (parentPage) {
+            setBreadcrumbs([parentPage, page])
+          } else {
+            setBreadcrumbs([page])
+          }
+          setCurrentPage(page)
+        }
+      });
+      return;
     }
     
     if (parentPage) {
@@ -207,10 +222,21 @@ function App() {
   const handleBreadcrumbClick = (index) => {
     // Warn if trying to navigate away with unsaved changes
     if (hasUnsavedChanges) {
-      if (!window.confirm('You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?')) {
-        return;
-      }
-      setHasUnsavedChanges(false);
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?',
+        onConfirm: () => {
+          setHasUnsavedChanges(false);
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          // Proceed with navigation
+          const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
+          setBreadcrumbs(newBreadcrumbs)
+          const targetPage = newBreadcrumbs[newBreadcrumbs.length - 1]
+          setCurrentPage(targetPage)
+        }
+      });
+      return;
     }
     
     const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
@@ -686,6 +712,17 @@ function App() {
       
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Leave Anyway"
+        confirmColorPalette="orange"
+        onConfirm={confirmDialog.onConfirm || (() => {})}
+        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+      />
     </Flex>
   )
 }
