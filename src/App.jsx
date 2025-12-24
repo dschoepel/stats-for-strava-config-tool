@@ -205,6 +205,14 @@ function App() {
   }
 
   const handleBreadcrumbClick = (index) => {
+    // Warn if trying to navigate away with unsaved changes
+    if (hasUnsavedChanges) {
+      if (!window.confirm('You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?')) {
+        return;
+      }
+      setHasUnsavedChanges(false);
+    }
+    
     const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
     setBreadcrumbs(newBreadcrumbs)
     const targetPage = newBreadcrumbs[newBreadcrumbs.length - 1]
