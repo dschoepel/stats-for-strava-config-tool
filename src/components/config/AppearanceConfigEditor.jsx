@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code } from '@chakra-ui/react';
+import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code, Checkbox } from '@chakra-ui/react';
 import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
@@ -156,23 +156,20 @@ const AppearanceConfigEditor = ({
                   {expandedSportCategories[category] !== false && (
                     <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2} p={3}>
                       {sports.map(sport => (
-                        <Flex
+                        <Checkbox.Root
                           key={sport}
-                          as="label"
-                          align="center"
-                          cursor="pointer"
-                          _hover={{ bg: 'bg' }}
-                          p={1}
-                          borderRadius="sm"
+                          checked={selectedSports.includes(sport)}
+                          onCheckedChange={() => handleSportToggle(sport)}
+                          colorPalette="orange"
                         >
-                          <input
-                            type="checkbox"
-                            checked={selectedSports.includes(sport)}
-                            onChange={() => handleSportToggle(sport)}
-                            style={{ marginRight: '8px' }}
-                          />
-                          <Text fontSize="sm">{sport}</Text>
-                        </Flex>
+                          <Checkbox.HiddenInput />
+                          <Checkbox.Control>
+                            <Checkbox.Indicator />
+                          </Checkbox.Control>
+                          <Checkbox.Label fontSize="sm">
+                            {sport}
+                          </Checkbox.Label>
+                        </Checkbox.Root>
                       ))}
                     </Grid>
                   )}

@@ -19,13 +19,17 @@ import ConfigSectionEditor from './components/ConfigSectionEditor'
 import AthleteConfigEditor from './components/config/AthleteConfigEditor'
 import GeneralConfigEditor from './components/config/GeneralConfigEditor'
 import AppearanceConfigEditor from './components/config/AppearanceConfigEditor'
+import ImportConfigEditor from './components/config/ImportConfigEditor'
 import ZwiftConfigEditor from './components/config/ZwiftConfigEditor'
 import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
+import { useToast } from './hooks/useToast'
+import { ToastContainer } from './components/Toast'
 
 function App() {
   const { theme, setTheme } = useTheme();
+  const { toasts, removeToast, showError, showSuccess } = useToast();
   
   // Initialize settings
   const [settings, setSettings] = useState({}); // Will be loaded after hydration
@@ -277,16 +281,38 @@ function App() {
           }))
         } else {
           console.error('Failed to load file content:', result.error)
+          setSectionData(prev => ({
+            ...prev,
+            [sectionName.toLowerCase()]: {}
+          }))
         }
       } else {
         console.error('Section info not found for:', sectionKey)
+        console.log('Available sections:', Array.from(sectionToFileMap.keys()))
+        
+        // Show user-friendly error message
+        showError(
+          `Configuration section "${sectionName}" not found in your config files. The section may be missing or in multiple files causing a conflict. Please check your configuration files.`,
+          7000
+        )
+        
+        // Set empty object so the editor can still open
+        setSectionData(prev => ({
+          ...prev,
+          [sectionName.toLowerCase()]: {}
+        }))
       }
     } catch (error) {
       console.error('Error loading section data:', error)
+      // Set empty object on error so editor can open
+      setSectionData(prev => ({
+        ...prev,
+        [sectionName.toLowerCase()]: {}
+      }))
     } finally {
       setIsLoadingSectionData(false)
     }
-  }, [sectionToFileMap, fileCache.directory])
+  }, [sectionToFileMap, fileCache.directory, showError])
 
   // Save section data
   const saveSectionData = async (sectionName, data) => {
@@ -319,8 +345,7 @@ function App() {
           // Reload section data to ensure form reflects actual saved data
           await loadSectionData(sectionName)
           
-          // Show success message or toast
-          console.log('Section updated successfully')
+          showSuccess('Configuration saved successfully!')
           
           // Clear unsaved changes flag and navigate back to Configuration
           setHasUnsavedChanges(false)
@@ -330,10 +355,15 @@ function App() {
         } else {
           throw new Error(result.error)
         }
+      } else {
+        // Section info not found - cannot save
+        const errorMsg = `Cannot save "${sectionName}" configuration: section mapping not found. The section may exist in multiple config files causing a conflict, or the files may need to be rescanned.`
+        showError(errorMsg, 8000)
+        throw new Error(errorMsg)
       }
     } catch (error) {
       console.error('Error saving section data:', error)
-      // Show error message
+      showError(`Failed to save configuration: ${error.message}`, 7000)
     } finally {
       setIsLoadingSectionData(false)
     }
@@ -341,7 +371,7 @@ function App() {
 
   // Load section data when navigating to section pages
   useEffect(() => {
-    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance') && sectionToFileMap.size > 0) {
+    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance' || currentPage === 'Import') && sectionToFileMap.size > 0) {
       loadSectionData(currentPage)
     }
   }, [currentPage, sectionToFileMap, loadSectionData])
@@ -460,6 +490,15 @@ function App() {
                 key={JSON.stringify(sectionData.appearance)}
                 initialData={sectionData.appearance || {}}
                 onSave={(data) => saveSectionData('appearance', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
+            ) : currentPage === 'Import' ? (
+              <ImportConfigEditor
+                key={JSON.stringify(sectionData.import)}
+                initialData={sectionData.import || {}}
+                onSave={(data) => saveSectionData('import', data)}
                 onCancel={() => handleNavClick('Configuration')}
                 isLoading={isLoadingSectionData}
                 onDirtyChange={setHasUnsavedChanges}
@@ -621,6 +660,9 @@ function App() {
           </Flex>
         </Flex>
       )}
+      
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </Flex>
   )
 }

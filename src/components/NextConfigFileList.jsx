@@ -55,7 +55,10 @@ const NextConfigFileList = forwardRef((props, ref) => {
         console.log('Section mapping (using detailed):', mappingToUse);
         if (result.conflicts.length > 0) {
           console.warn('Section conflicts detected:', result.conflicts);
-          showWarning(`Section conflicts detected in: ${result.conflicts.map(c => c.section).join(', ')}`);
+          const conflictDetails = result.conflicts.map(c => 
+            `${c.section} (${c.files.join(', ')})`
+          ).join('; ');
+          showWarning(`Duplicate sections found: ${conflictDetails}`);
         } else {
           showSuccess(`Mapped ${result.totalSections} configuration sections`);
         }
@@ -465,18 +468,29 @@ const NextConfigFileList = forwardRef((props, ref) => {
                   <Table.Header>
                     <Table.Row bg="tableHeaderBg">
                       <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">Section</Table.ColumnHeader>
-                      <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">File</Table.ColumnHeader>
+                      <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">File(s)</Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
-                    {Array.from(sectionToFileMap.entries()).map(([section, fileInfo]) => (
-                      <Table.Row key={section}>
-                        <Table.Cell fontWeight="medium" color="text">{section}</Table.Cell>
-                        <Table.Cell color="textMuted">
-                          {typeof fileInfo === 'string' ? fileInfo : fileInfo.fileName}
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
+                    {Array.from(sectionToFileMap.entries()).map(([section, fileInfo]) => {
+                      // Check if this is an array (multiple files)
+                      const isMultiple = Array.isArray(fileInfo);
+                      const files = isMultiple ? fileInfo : [fileInfo];
+                      
+                      return (
+                        <Table.Row key={section}>
+                          <Table.Cell fontWeight="medium" color="text">{section}</Table.Cell>
+                          <Table.Cell color={isMultiple ? "orange.600" : "textMuted"} _dark={{ color: isMultiple ? "orange.400" : "textMuted" }}>
+                            {files.map((f, idx) => (
+                              <Box key={idx}>
+                                {isMultiple && <Text as="span" fontWeight="600">⚠️ </Text>}
+                                {typeof f === 'string' ? f : f.fileName}
+                              </Box>
+                            ))}
+                          </Table.Cell>
+                        </Table.Row>
+                      );
+                    })}
                   </Table.Body>
                 </Table.Root>
               </Box>

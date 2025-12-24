@@ -11,8 +11,8 @@ import {
   NativeSelectField,
   HStack,
   Flex,
+  Checkbox,
 } from '@chakra-ui/react';
-import { Switch } from '@chakra-ui/react';
 import { getSchemaBySection } from '../../schemas/configSchemas';
 
 /**
@@ -223,22 +223,24 @@ const BaseConfigEditor = ({
 
       case 'boolean':
         return (
-          <Field.Root key={fieldPath} invalid={!!hasError}>
-            <HStack justify="space-between">
-              <Field.Label htmlFor={fieldPath} mb={0}>
+          <Field.Root key={fieldPath} invalid={!!hasError} required={isRequired}>
+            <Checkbox.Root
+              id={fieldPath}
+              checked={value || false}
+              onCheckedChange={(e) => handleFieldChange(fieldPath, e.checked)}
+              colorPalette="orange"
+            >
+              <Checkbox.HiddenInput />
+              <Checkbox.Control>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+              <Checkbox.Label>
                 {fieldSchema.title || fieldName}
                 {isRequired && <Text as="span" color="red.500" ml={1}>*</Text>}
-              </Field.Label>
-              <Switch.Root
-                id={fieldPath}
-                checked={value || false}
-                onCheckedChange={(e) => handleFieldChange(fieldPath, e.checked)}
-              >
-                <Switch.Thumb />
-              </Switch.Root>
-            </HStack>
+              </Checkbox.Label>
+            </Checkbox.Root>
             {!skipDescription && fieldSchema.description && (
-              <Field.HelperText color="helperText">{fieldSchema.description}</Field.HelperText>
+              <Field.HelperText color="helperText" mt={2}>{fieldSchema.description}</Field.HelperText>
             )}
             {hasError && <Field.ErrorText>{hasError}</Field.ErrorText>}
           </Field.Root>

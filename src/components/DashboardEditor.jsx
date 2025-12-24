@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Flex, Heading, Text, VStack, HStack, Input, Grid, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { readWidgetDefinitions } from '../utils/widgetDefinitionsManager';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState({});
@@ -10,6 +11,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [expandedConfigs, setExpandedConfigs] = useState({});
   const [expandedWidgets, setExpandedWidgets] = useState({});
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: null, data: null });
 
   useEffect(() => {
     async function loadDefinitions() {
@@ -86,23 +88,35 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
 
   const handleCancel = () => {
     if (isDirty) {
-      if (window.confirm('You have unsaved changes. Discard them?')) {
-        setLayout(dashboardLayout || []);
-        setIsDirty(false);
-        onClose();
-      }
+      setConfirmDialog({
+        isOpen: true,
+        type: 'unsavedChanges',
+        data: null
+      });
     } else {
       onClose();
     }
   };
 
+  const handleConfirmUnsavedChanges = () => {
+    setLayout(dashboardLayout || []);
+    setIsDirty(false);
+    onClose();
+  };
+
   // Delete widget from layout
   const handleDeleteWidget = (index) => {
-    if (window.confirm('Remove this widget from the dashboard?')) {
-      const newLayout = layout.filter((_, i) => i !== index);
-      setLayout(newLayout);
-      setIsDirty(true);
-    }
+    setConfirmDialog({
+      isOpen: true,
+      type: 'deleteWidget',
+      data: index
+    });
+  };
+
+  const handleConfirmDeleteWidget = () => {
+    const newLayout = layout.filter((_, i) => i !== confirmDialog.data);
+    setLayout(newLayout);
+    setIsDirty(true);
   };
 
   // Update widget width
@@ -452,10 +466,11 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                 {layout && layout.length > 0 && (
                   <Button
                     onClick={() => {
-                      if (window.confirm('Reset to default layout? This will remove all widgets and cannot be undone.')) {
-                        setLayout([]);
-                        setIsDirty(true);
-                      }
+                      setConfirmDialog({
+                        isOpen: true,
+                        type: 'resetLayout',
+                        data: null
+                      });
                     }}
                     size="sm"
                     variant="outline"
@@ -773,6 +788,41 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
             </Flex>
           </>
         )}
+
+        {/* Confirm Dialogs */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen && confirmDialog.type === 'unsavedChanges'}
+          onClose={() => setConfirmDialog({ isOpen: false, type: null, data: null })}
+          onConfirm={handleConfirmUnsavedChanges}
+          title="Unsaved Changes"
+          message="You have unsaved changes. Discard them?"
+          confirmText="Discard"
+          cancelText="Keep Editing"
+          confirmColorPalette="orange"
+        />
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen && confirmDialog.type === 'deleteWidget'}
+          onClose={() => setConfirmDialog({ isOpen: false, type: null, data: null })}
+          onConfirm={handleConfirmDeleteWidget}
+          title="Remove Widget"
+          message="Remove this widget from the dashboard?"
+          confirmText="Remove"
+          cancelText="Cancel"
+          confirmColorPalette="red"
+        />
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen && confirmDialog.type === 'resetLayout'}
+          onClose={() => setConfirmDialog({ isOpen: false, type: null, data: null })}
+          onConfirm={() => {
+            setLayout([]);
+            setIsDirty(true);
+          }}
+          title="Reset Layout"
+          message="Reset to default layout? This will remove all widgets and cannot be undone."
+          confirmText="Reset"
+          cancelText="Cancel"
+          confirmColorPalette="orange"
+        />
       </Box>
     </Box>
   );

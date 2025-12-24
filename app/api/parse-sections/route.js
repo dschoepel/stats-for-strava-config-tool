@@ -60,6 +60,7 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    // Use Map to store arrays of file info for each section
     const sectionMapping = new Map();
     const conflicts = [];
 
@@ -92,15 +93,11 @@ export async function POST(request) {
                   ...sectionPositions.get('general')
                 };
                 
-                if (sectionMapping.has('athlete')) {
-                  conflicts.push({
-                    section: 'athlete',
-                    files: [sectionMapping.get('athlete').fileName, file.name]
-                  });
-                } else {
-                  sectionMapping.set('athlete', athleteInfo);
-                  console.log('Athlete mapping created successfully');
+                if (!sectionMapping.has('athlete')) {
+                  sectionMapping.set('athlete', []);
                 }
+                sectionMapping.get('athlete').push(athleteInfo);
+                console.log('Athlete mapping created successfully');
               } else {
                 console.log('No athlete data found in general section of', file.name);
               }
@@ -117,14 +114,10 @@ export async function POST(request) {
                   ...sectionPositions.get('general')
                 };
                 
-                if (sectionMapping.has('general')) {
-                  conflicts.push({
-                    section: 'general',
-                    files: [sectionMapping.get('general').fileName, file.name]
-                  });
-                } else {
-                  sectionMapping.set('general', generalInfo);
+                if (!sectionMapping.has('general')) {
+                  sectionMapping.set('general', []);
                 }
+                sectionMapping.get('general').push(generalInfo);
               }
             } else {
               // Handle all non-general top-level sections
@@ -134,14 +127,10 @@ export async function POST(request) {
                 ...sectionPositions.get(key)
               };
               
-              if (sectionMapping.has(key)) {
-                conflicts.push({
-                  section: key,
-                  files: [sectionMapping.get(key).fileName, file.name]
-                });
-              } else {
-                sectionMapping.set(key, sectionInfo);
+              if (!sectionMapping.has(key)) {
+                sectionMapping.set(key, []);
               }
+              sectionMapping.get(key).push(sectionInfo);
             }
           }
         }
@@ -149,16 +138,33 @@ export async function POST(request) {
         console.warn(`Failed to parse ${file.name}:`, error.message);
       }
     }
+    
+    // Identify conflicts (sections with multiple files)
+    for (const [section, fileInfoArray] of sectionMapping.entries()) {
+      if (fileInfoArray.length > 1) {
+        conflicts.push({
+          section: section,
+          files: fileInfoArray.map(info => info.fileName)
+        });
+      }
+    }
 
     // Convert Map to objects for JSON serialization
+    // For sectionToFileMap (simple mapping), use the first file if multiple exist
     const sectionToFileMap = Object.fromEntries(
-      Array.from(sectionMapping.entries()).map(([key, value]) => [
+      Array.from(sectionMapping.entries()).map(([key, fileInfoArray]) => [
         key, 
-        typeof value === 'string' ? value : value.fileName
+        fileInfoArray[0].fileName // Use first file for backward compatibility
       ])
     );
     
-    const detailedSectionMapping = Object.fromEntries(sectionMapping);
+    // For detailedMapping, include all files for each section
+    const detailedSectionMapping = Object.fromEntries(
+      Array.from(sectionMapping.entries()).map(([key, fileInfoArray]) => [
+        key,
+        fileInfoArray.length === 1 ? fileInfoArray[0] : fileInfoArray // Single file or array
+      ])
+    );
 
     return NextResponse.json({
       success: true,

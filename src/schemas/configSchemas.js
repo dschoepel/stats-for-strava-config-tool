@@ -426,12 +426,109 @@ export const zwiftSchema = {
   additionalProperties: false
 };
 
+export const importSchema = {
+  type: "object",
+  title: "Import Configuration",
+  description: "Settings for importing activities from Strava",
+  properties: {
+    numberOfNewActivitiesToProcessPerImport: {
+      type: "integer",
+      title: "New Activities Per Import",
+      description: "Maximum number of new activities to process per import. Strava has a 1000 request per day limit and importing one activity can take up to 3 API calls, so 250 is a safe default.",
+      default: 250,
+      minimum: 1,
+      maximum: 500,
+      examples: [250, 100, 150]
+    },
+    sportTypesToImport: {
+      type: "array",
+      title: "Sport Types to Import",
+      description: "Leave empty to import all sport types. ⚠️ Changing this after activities are imported will delete activities not in the list.",
+      items: {
+        type: "string"
+      },
+      default: [],
+      examples: [["Ride", "Run"], ["Ride", "Run", "Swim", "Walk"]]
+    },
+    activityVisibilitiesToImport: {
+      type: "array",
+      title: "Activity Visibilities to Import",
+      description: "Leave empty to import all visibilities. ⚠️ Changing this after activities are imported will delete activities not in the list.",
+      items: {
+        type: "string",
+        enum: ["everyone", "followers_only", "only_me"]
+      },
+      default: [],
+      examples: [["everyone"], ["everyone", "followers_only"]]
+    },
+    skipActivitiesRecordedBefore: {
+      type: ["string", "null"],
+      title: "Skip Activities Before Date",
+      description: "Optional date (YYYY-MM-DD) to skip activities recorded before. ⚠️ Changing this will delete activities recorded before the specified date.",
+      format: "date",
+      pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+      default: null,
+      examples: ["2020-01-01", "2023-06-15", null]
+    },
+    activitiesToSkipDuringImport: {
+      type: "array",
+      title: "Activities to Skip",
+      description: "Array of activity IDs to skip during import.",
+      items: {
+        type: "string"
+      },
+      default: [],
+      examples: [["123456789", "987654321"], []]
+    },
+    optInToSegmentDetailImport: {
+      type: "boolean",
+      title: "Import Segment Details",
+      description: "Import detailed segment information (requires extra API calls per segment, significantly increases import time).",
+      default: false
+    },
+    webhooks: {
+      type: "object",
+      title: "Webhooks Configuration",
+      description: "Settings for Strava webhook integration",
+      properties: {
+        enabled: {
+          type: "boolean",
+          title: "Enable Webhooks",
+          description: "Enable automatic activity updates via Strava webhooks",
+          default: true
+        },
+        verifyToken: {
+          type: "string",
+          title: "Verify Token",
+          description: "Token used by Strava's validation request for security",
+          default: "",
+          minLength: 1,
+          examples: ["YL_thR2Aq8I6zdCm-MfwffZAxyx"]
+        },
+        checkIntervalInMinutes: {
+          type: "integer",
+          title: "Check Interval (Minutes)",
+          description: "How frequently to check for webhook events (1-60). Lower values = faster updates but more API calls.",
+          minimum: 1,
+          maximum: 60,
+          default: 1,
+          examples: [1, 5, 15, 30]
+        }
+      },
+      required: ["enabled", "verifyToken", "checkIntervalInMinutes"]
+    }
+  },
+  required: ["numberOfNewActivitiesToProcessPerImport"],
+  additionalProperties: false
+};
+
 // Helper function to get all available schemas
 export const getConfigSchemas = () => ({
   general: generalSchema,
   athlete: athleteSchema,
   appearance: appearanceSchema,
-  zwift: zwiftSchema
+  zwift: zwiftSchema,
+  import: importSchema
 });
 
 // Helper function to get schema by section name

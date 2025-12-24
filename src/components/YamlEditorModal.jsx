@@ -5,8 +5,9 @@ import { FaSave } from 'react-icons/fa';
 import Editor from '@monaco-editor/react';
 import * as YAML from 'yaml';
 import { getSetting } from '../utils/settingsManager';
+import { ConfirmDialog } from './ConfirmDialog';
 
-const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave }) => {
+const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave, isNewFile = false }) => {
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -19,16 +20,18 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
   const wordWrap = getSetting('editor.wordWrap', true) ? 'on' : 'off';
   const showLineNumbers = getSetting('ui.showLineNumbers', true) ? 'on' : 'off';
   const [validationError, setValidationError] = useState(null);
+  const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
 
   useEffect(() => {
     if (isOpen && fileContent) {
       setContent(fileContent);
       setOriginalContent(fileContent);
-      setIsDirty(false);
+      // For new files, mark as dirty so they can be saved even without edits
+      setIsDirty(isNewFile);
       setError(null);
       setValidationError(null);
     }
-  }, [isOpen, fileContent]);
+  }, [isOpen, fileContent, isNewFile]);
 
   // Warn before closing with unsaved changes
   useEffect(() => {
@@ -70,6 +73,63 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
       return;
     }
 
+    // Validate filename convention (must be config.yaml or config-*.yaml)
+    if (fileName) {
+      const isValidName = fileName === 'config.yaml' || 
+                         (fileName.startsWith('config-') && fileName.endsWith('.yaml'));
+      
+      if (!isValidName) {
+        setError('Invalid filename. Must be "config.yaml" or start with "config-" and end with ".yaml"');
+        return;
+      }
+    }
+
+    // Check if file exists
+    try {
+      const checkResponse = await fetch('/api/check-file-exists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath })
+      });
+
+      const checkResult = await checkResponse.json();
+      
+      console.log('[YamlEditorModal] File check result:', checkResult, 'isDirty:', isDirty, 'isNewFile:', isNewFile);
+      
+      // If editing an existing file (not creating new), just save it
+      if (!isNewFile) {
+        console.log('[YamlEditorModal] Editing existing file, saving directly');
+        await performSave();
+        return;
+      }
+      
+      // For new files only:
+      // If file exists but no changes were made, just close
+      if (checkResult.exists && !isDirty) {
+        console.log('[YamlEditorModal] File exists with no changes, closing');
+        onClose();
+        return;
+      }
+      
+      // If file exists and there are changes, show overwrite dialog
+      if (checkResult.exists && isDirty) {
+        console.log('[YamlEditorModal] File exists with changes, showing overwrite dialog');
+        setShowOverwriteDialog(true);
+        return;
+      }
+
+      // File doesn't exist, or exists but we need to save changes
+      console.log('[YamlEditorModal] Proceeding with save...');
+      await performSave();
+    } catch (error) {
+      // If check fails, proceed with save anyway
+      console.warn('File existence check failed, proceeding with save:', error);
+      await performSave();
+    }
+  };
+
+  const performSave = async () => {
+    console.log('[YamlEditorModal] performSave called, saving to:', filePath);
     setIsSaving(true);
     setError(null);
 
@@ -84,12 +144,14 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
       });
 
       const result = await response.json();
+      console.log('[YamlEditorModal] Save result:', result);
 
       if (result.success) {
         setOriginalContent(content);
         setIsDirty(false);
         if (onSave) {
-          onSave(result);
+          // Pass both the result and the content
+          onSave({ ...result, content: content });
         }
       } else {
         throw new Error(result.error || 'Failed to save file');
@@ -316,6 +378,21 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
           </Flex>
         </Flex>
       </Flex>
+
+      {/* Confirm Overwrite Dialog */}
+      <ConfirmDialog
+        isOpen={showOverwriteDialog}
+        onClose={() => setShowOverwriteDialog(false)}
+        onConfirm={() => {
+          setShowOverwriteDialog(false);
+          performSave();
+        }}
+        title="Overwrite File?"
+        message={`The file "${fileName}" already exists. Do you want to overwrite it?`}
+        confirmText="Overwrite"
+        cancelText="Cancel"
+        confirmColorPalette="orange"
+      />
     </Flex>
   );
 };
