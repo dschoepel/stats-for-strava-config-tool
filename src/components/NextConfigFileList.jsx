@@ -29,8 +29,39 @@ const NextConfigFileList = forwardRef((props, ref) => {
   const [editorFileContent, setEditorFileContent] = useState('');
   const [editorFilePath, setEditorFilePath] = useState('');
   const [isSectionMappingExpanded, setIsSectionMappingExpanded] = useState(false);
+  const [missingSections, setMissingSections] = useState([]);
+  const [validationStatus, setValidationStatus] = useState(null);
+  const [isMerging, setIsMerging] = useState(false);
 
   const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
+
+  // Validate that all required sections are present
+  const validateSections = useCallback(async (mapping) => {
+    try {
+      const response = await fetch('/api/validate-sections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sectionMapping: Object.fromEntries(mapping || sectionToFileMap)
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setValidationStatus(result);
+        setMissingSections(result.missingSections || []);
+        
+        if (!result.isComplete) {
+          showWarning(`Configuration incomplete: ${result.missingSections.length} section(s) missing`);
+        }
+      }
+    } catch (error) {
+      console.warn('Section validation failed:', error.message);
+    }
+  }, [sectionToFileMap, showWarning]);
 
   // Parse sections from loaded files
   const parseSections = useCallback(async (files) => {
@@ -63,14 +94,17 @@ const NextConfigFileList = forwardRef((props, ref) => {
         } else {
           showSuccess(`Mapped ${result.totalSections} configuration sections`);
         }
+        
+        // Validate sections after parsing
+        await validateSections(newMapping);
       } else {
         console.warn('Failed to parse sections:', result.error);
       }
     } catch (error) {
       console.warn('Section parsing failed:', error.message);
     }
-  }, [setSectionToFileMap, showWarning, showSuccess]);
-
+  }, [setSectionToFileMap, showWarning, showSuccess, validateSections]);
+  
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     checkForUpdates: async () => {
@@ -188,7 +222,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
 
 
 
-  const scanDirectory = async (dirPath, forceRefresh = false) => {
+  const scanDirectory = useCallback(async (dirPath, forceRefresh = false) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -271,7 +305,57 @@ const NextConfigFileList = forwardRef((props, ref) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fileCache, parseSections, showWarning, showError, showSuccess, setFileCache]);
+
+  // Merge all config files into a single config.yaml
+  const handleMergeToSingleFile = useCallback(async () => {
+    if (!configFiles || configFiles.length === 0) {
+      showError('No config files to merge');
+      return;
+    }
+    
+    setIsMerging(true);
+    try {
+      showInfo('Creating complete configuration file...', 3000);
+      
+      const response = await fetch('/api/merge-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: configFiles.map(f => ({ name: f.name, path: f.path })),
+          outputPath: `${selectedDirectory}/config.yaml`,
+          createBackup: true,
+          fillMissing: true  // Add missing sections with defaults
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showSuccess(`Created complete configuration with ${result.sectionsCount} sections`);
+        if (result.backupPath) {
+          showInfo(`Backup created: ${result.backupPath.split('\\').pop()}`, 5000);
+        }
+        if (result.warnings && result.warnings.length > 0) {
+          result.warnings.forEach(warning => {
+            if (warning.includes('Added missing section')) {
+              showInfo(warning, 3000);
+            }
+          });
+        }
+        // Refresh the file list and section mapping
+        await scanDirectory(selectedDirectory, true);
+      } else {
+        showError(`Merge failed: ${result.error}`);
+      }
+    } catch (error) {
+      showError(`Merge failed: ${error.message}`);
+    } finally {
+      setIsMerging(false);
+    }
+  }, [configFiles, selectedDirectory, showInfo, showSuccess, showError, scanDirectory]);
 
   const handleBrowseDirectory = async () => {
     const directoryPath = prompt('Enter the full path to your configuration directory:', defaultPath || '/home/user/Documents/config');
@@ -433,6 +517,88 @@ const NextConfigFileList = forwardRef((props, ref) => {
                 Missing required config.yaml file - configuration editing is disabled
               </Text>
             )}
+          </Box>
+        )}
+
+        {validationStatus && !validationStatus.isComplete && missingSections.length > 0 && (
+          <Box
+            p={4}
+            bg="orange.50"
+            _dark={{ bg: 'orange.900/30' }}
+            borderRadius="md"
+            border="2px solid"
+            borderColor="orange.400"
+            boxShadow="sm"
+          >
+            <Flex align="flex-start" gap={3} mb={3}>
+              <Icon fontSize="2xl" color="orange.500"><MdWarning /></Icon>
+              <Box flex={1}>
+                <Heading size="sm" color="orange.800" _dark={{ color: 'orange.200' }} mb={2}>
+                  Configuration Incomplete
+                </Heading>
+                <Text color="orange.700" _dark={{ color: 'orange.300' }} fontSize="sm" mb={2}>
+                  {missingSections.length} required section{missingSections.length > 1 ? 's are' : ' is'} missing from your configuration. 
+                  Configuration editing is disabled until this is resolved.
+                </Text>
+                <Box
+                  p={3}
+                  bg="orange.100"
+                  _dark={{ bg: 'orange.800/50' }}
+                  borderRadius="md"
+                  mb={3}
+                >
+                  <Text fontSize="sm" fontWeight="600" color="orange.900" _dark={{ color: 'orange.100' }} mb={2}>
+                    Missing Sections:
+                  </Text>
+                  <Flex gap={2} flexWrap="wrap">
+                    {missingSections.map(section => (
+                      <Code
+                        key={section}
+                        px={2}
+                        py={1}
+                        bg="orange.200"
+                        _dark={{ bg: 'orange.700', color: 'orange.100' }}
+                        color="orange.900"
+                        borderRadius="sm"
+                        fontSize="sm"
+                      >
+                        {section}
+                      </Code>
+                    ))}
+                  </Flex>
+                </Box>
+                <Text fontSize="sm" fontWeight="600" color="orange.800" _dark={{ color: 'orange.200' }} mb={2}>
+                  Resolution Options:
+                </Text>
+                <VStack align="stretch" gap={2}>
+                  <Button
+                    size="sm"
+                    onClick={handleMergeToSingleFile}
+                    isLoading={isMerging}
+                    loadingText="Merging..."
+                    bg="orange.600"
+                    color="white"
+                    _hover={{ bg: "orange.700" }}
+                  >
+                    Option 1: Create Complete Single File Configuration
+                  </Button>
+                  <Text fontSize="xs" color="orange.600" _dark={{ color: 'orange.400' }} pl={2}>
+                    Merges existing sections and fills in missing ones with defaults. Creates backup automatically.
+                  </Text>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorPalette="orange"
+                    onClick={() => showInfo('Use the sidebar menu to create individual section configurations', 5000)}
+                  >
+                    Option 2: Create Sections Individually
+                  </Button>
+                  <Text fontSize="xs" color="orange.600" _dark={{ color: 'orange.400' }} pl={2}>
+                    Navigate to each missing section via the sidebar menu and configure individually.
+                  </Text>
+                </VStack>
+              </Box>
+            </Flex>
           </Box>
         )}
 

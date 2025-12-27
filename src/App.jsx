@@ -375,7 +375,13 @@ function App() {
   const saveSectionData = async (sectionName, data) => {
     setIsLoadingSectionData(true)
     try {
-      const sectionInfo = sectionToFileMap.get(sectionName.toLowerCase())
+      const sectionKey = sectionName.toLowerCase()
+      let sectionInfo = sectionToFileMap.get(sectionKey)
+      
+      // Fallback: if athlete section not found, try to use general section
+      if (!sectionInfo && sectionKey === 'athlete') {
+        sectionInfo = sectionToFileMap.get('general')
+      }
       
       // Handle both string filename and full object formats
       let filePath = null

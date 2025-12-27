@@ -166,7 +166,6 @@ const BaseConfigEditor = ({
                   id={fieldPath}
                   value={value || ''}
                   onChange={(e) => handleFieldChange(fieldPath, e.target.value)}
-                  placeholder="Select..."
                 >
                   <option value="">Select...</option>
                   {fieldSchema.enum.map((option, idx) => (

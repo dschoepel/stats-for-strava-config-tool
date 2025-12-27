@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Button, Input, Flex, Text, VStack, HStack, Table, Heading, Grid, Portal } from '@chakra-ui/react';
+import { Box, Button, Input, Flex, Text, VStack, HStack, Table, Heading, Grid, Portal, Icon } from '@chakra-ui/react';
 import { NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { MdAdd, MdClose, MdInfo } from 'react-icons/md';
 import DatePicker from 'react-datepicker';
@@ -7,6 +7,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { getSchemaBySection } from '../schemas/configSchemas';
 import { readSportsList, initialSportsList } from '../utils/sportsListManager';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from './Toast';
 
 // Heart rate calculation functions
 const heartRateFormulas = {
@@ -81,11 +83,13 @@ const ConfigSectionEditor = ({
   const [errors, setErrors] = useState({});
   const [sportsList, setSportsList] = useState(initialSportsList);
   const [showSportModal, setShowSportModal] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const [appearanceData, setAppearanceData] = useState(null);
   const schema = React.useMemo(() => getSchemaBySection(sectionName), [sectionName]);
+  const [isDirty, setIsDirty] = useState(false);
   const isInitialMount = React.useRef(true);
+  const isAutoPopulating = React.useRef(false);
+  const { toasts, removeToast, showError } = useToast();
 
   useEffect(() => {
     setFormData(initialData);
@@ -128,17 +132,12 @@ const ConfigSectionEditor = ({
 
   // Load sports list for athlete config section
   useEffect(() => {
-    console.log('ConfigSectionEditor mounted. Section name:', sectionName);
     if (sectionName === 'athleteConfig') {
-      console.log('Section is athleteConfig, loading sports list...');
       async function loadSports() {
         try {
           // Load settings to get the default path
           const settings = JSON.parse(localStorage.getItem('config-tool-settings') || '{}');
-          console.log('Loading sports with settings:', settings);
           const list = await readSportsList(settings);
-          console.log('Loaded sports list from API:', list);
-          console.log('Sports list type:', typeof list, 'Keys:', Object.keys(list));
           setSportsList(list);
         } catch (error) {
           console.error('Error loading sports list:', error);
@@ -146,8 +145,6 @@ const ConfigSectionEditor = ({
         }
       }
       loadSports();
-    } else {
-      console.log('Section is NOT athleteConfig, skipping sports list load');
     }
   }, [sectionName]);
 
@@ -244,7 +241,8 @@ const ConfigSectionEditor = ({
     });
     
     // Only mark as dirty if this is not the initial mount/auto-population
-    if (!isInitialMount.current) {
+    if (!isInitialMount.current && !isAutoPopulating.current) {
+      console.log('Setting dirty to true. Field:', fieldPath, 'Value:', processedValue);
       setIsDirty(true);
     }
     
@@ -285,6 +283,22 @@ const ConfigSectionEditor = ({
       });
     }
     
+    // Special validation for athlete section - zone mode is required if zones exist
+    if (sectionName === 'athlete') {
+      const heartRateZones = getNestedValue(formData, 'heartRateZones');
+      // Check if any zones actually exist (not just empty objects/arrays)
+      const hasDefaultZones = heartRateZones?.default && Array.isArray(heartRateZones.default) && heartRateZones.default.length > 0;
+      const hasDateRanges = heartRateZones?.dateRanges && Object.keys(heartRateZones.dateRanges).length > 0;
+      const hasSportTypes = heartRateZones?.sportTypes && Object.keys(heartRateZones.sportTypes).length > 0;
+      
+      if (hasDefaultZones || hasDateRanges || hasSportTypes) {
+        const mode = getNestedValue(formData, 'heartRateZones.mode');
+        if (mode === null || mode === undefined || mode === '') {
+          newErrors['heartRateZones.mode'] = 'Zone Mode is required when heart rate zones are configured';
+        }
+      }
+    }
+    
     // Validate weight history entries
     const weightHistory = getNestedValue(formData, 'weightHistory');
     if (weightHistory && typeof weightHistory === 'object') {
@@ -318,6 +332,8 @@ const ConfigSectionEditor = ({
     if (validateForm()) {
       onSave(formData);
       setIsDirty(false);
+    } else {
+      showError('Please correct the errors in the form before saving.', 5000);
     }
   };
 
@@ -365,15 +381,27 @@ const ConfigSectionEditor = ({
     const birthday = formData.birthday;
     const formula = formData.maxHeartRateFormula;
     const mode = formData.heartRateZones?.mode || 'relative';
+    const existingZones = formData.heartRateZones?.default;
+    
+    // Only populate if zones don't already exist
+    if (existingZones && Object.keys(existingZones).length > 0) {
+      return; // Zones already exist, don't overwrite
+    }
     
     const maxHR = calculateMaxHeartRate(birthday, formula);
     if (maxHR) {
       const defaultZones = calculateDefaultZones(maxHR, mode);
       if (defaultZones) {
+        // Set flag to prevent marking as dirty
+        isAutoPopulating.current = true;
         handleFieldChange('heartRateZones.default', defaultZones);
+        // Reset flag after a short delay to ensure state update completes
+        setTimeout(() => {
+          isAutoPopulating.current = false;
+        }, 0);
       }
     }
-  }, [formData.birthday, formData.maxHeartRateFormula, formData.heartRateZones?.mode, handleFieldChange]);
+  }, [formData.birthday, formData.maxHeartRateFormula, formData.heartRateZones?.mode, formData.heartRateZones?.default, handleFieldChange]);
 
   // Auto-populate zones when mode changes or when birthday/formula changes
   React.useEffect(() => {
@@ -381,6 +409,7 @@ const ConfigSectionEditor = ({
     const formula = formData.maxHeartRateFormula;
     const mode = formData.heartRateZones?.mode;
     
+    // Auto-populate if we have all required data (function will check if zones exist)
     if (birthday && formula && mode) {
       autoPopulateZones();
     }
@@ -396,8 +425,14 @@ const ConfigSectionEditor = ({
 
   const renderHeartRateZones = (fieldName, fieldSchema, fieldPath, value, hasError) => {
     const currentZones = value?.default || {};
-    const currentMode = value?.mode || 'relative';
+    const currentMode = value?.mode || '';
     const dateRanges = value?.dateRanges || {};
+    
+    // Calculate current max heart rate for display
+    const birthday = formData.birthday;
+    const formula = formData.maxHeartRateFormula;
+    const calculatedMaxHR = calculateMaxHeartRate(birthday, formula);
+    const age = calculateAge(birthday);
 
     // Helper to update a date range zone
     const handleDateRangeZoneChange = (date, zoneNum, field, val) => {
@@ -581,20 +616,15 @@ const ConfigSectionEditor = ({
     };
     
     // Get available sports (not already used)
-    console.log('Sports list in renderHeartRateZones:', sportsList);
-    console.log('Sport types:', sportTypes);
     const usedSports = Object.keys(sportTypes);
-    console.log('Used sports:', usedSports);
     const availableSports = [];
     Object.entries(sportsList).forEach(([category, sports]) => {
-      console.log(`Processing category ${category} with sports:`, sports);
       sports.forEach(sport => {
         if (!usedSports.includes(sport)) {
           availableSports.push({ category, sport });
         }
       });
     });
-    console.log('Available sports:', availableSports);
     availableSports.sort((a, b) => {
       if (a.category === b.category) return a.sport.localeCompare(b.sport);
       return a.category.localeCompare(b.category);
@@ -609,26 +639,61 @@ const ConfigSectionEditor = ({
           )}
         </Box>
 
+        {/* Calculated Max Heart Rate Display */}
+        {calculatedMaxHR && (
+          <Box mb={4} p={3} bg="blue.50" _dark={{ bg: 'blue.900/30' }} borderRadius="md">
+            <Flex align="center" gap={2}>
+              <Icon color="blue.600"><MdInfo /></Icon>
+              <Box>
+                <Text fontSize="sm" fontWeight="600" color="blue.800" _dark={{ color: 'blue.200' }}>
+                  Calculated Max Heart Rate: {calculatedMaxHR} BPM
+                </Text>
+                <Text fontSize="xs" color="blue.700" _dark={{ color: 'blue.300' }}>
+                  Based on age {age} and {formula} formula
+                </Text>
+              </Box>
+            </Flex>
+          </Box>
+        )}
+
         {/* Mode Selection */}
         <Box mb={4}>
           <Text fontWeight="500" mb={1}>
             Zone Mode
             {schema?.required?.includes(fieldName) && <Text as="span" color="red.500" ml={1}>*</Text>}
           </Text>
-          <NativeSelectRoot>
+          <NativeSelectRoot borderColor={(errors['heartRateZones.mode'] || errors['heartRateZones']) ? 'red.500' : 'border'}>
             <NativeSelectField
               id="heartRateZones.mode"
-              value={currentMode}
+              value={currentMode || ''}
               onChange={(e) => handleFieldChange('heartRateZones.mode', e.target.value)}
               bg="inputBg"
             >
+              <option value="">Select...</option>
               <option value="relative">Relative (%)</option>
               <option value="absolute">Absolute (BPM)</option>
             </NativeSelectField>
           </NativeSelectRoot>
+          {(errors['heartRateZones.mode'] || errors['heartRateZones']) && (
+            <Text color="red.500" fontSize="sm" mt={1}>
+              {errors['heartRateZones.mode'] || errors['heartRateZones']}
+            </Text>
+          )}
         </Box>
 
-        <Heading size="sm" mb={3} lineHeight="1.2" wordBreak="break-word">Default Heart Rate Zones</Heading>
+        <Flex justify="space-between" align="center" mb={3}>
+          <Heading size="sm" lineHeight="1.2" wordBreak="break-word">Default Heart Rate Zones</Heading>
+          {calculatedMaxHR && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={autoPopulateZones}
+              title="Recalculate zones based on current age and formula"
+            >
+              Recalculate Zones
+            </Button>
+          )}
+        </Flex>
 
         {/* Default Zone Table */}
         <Box overflowX="auto" mb={6} borderWidth="1px" borderColor="border" borderRadius="md">
@@ -1852,7 +1917,7 @@ const ConfigSectionEditor = ({
                     <NativeSelectRoot flex="1" borderColor={hasError ? 'red.500' : 'border'}>
                       <NativeSelectField
                         id={fieldName}
-                        value={value || stringOption?.default || ''}
+                        value={value || ''}
                         onChange={(e) => handleFieldChange(fieldName, e.target.value)}
                         bg="inputBg"
                       >
@@ -1897,7 +1962,7 @@ const ConfigSectionEditor = ({
             borderColor={!isLoading ? "primaryHover" : "transparent"}
             boxShadow={!isLoading ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
           >
-            {isLoading ? 'Saving...' : `Save Changes${!isLoading ? ' *' : ''}`}
+            {isLoading ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
           </Button>
         </HStack>
       </Box>
@@ -1912,6 +1977,9 @@ const ConfigSectionEditor = ({
         onConfirm={confirmDialog.onConfirm || (() => {})}
         onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
       />
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </Box>
   );
 };

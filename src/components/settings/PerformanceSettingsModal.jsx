@@ -9,7 +9,7 @@ import {
   Flex,
   Icon,
 } from '@chakra-ui/react';
-import { MdSave } from 'react-icons/md';
+import { MdSave, MdSpeed } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 
@@ -20,9 +20,12 @@ const PerformanceSettingsModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      const loaded = loadSettings();
-      setSettings(loaded);
-      setIsDirty(false);
+      // Use queueMicrotask to defer state updates and avoid cascading renders
+      queueMicrotask(() => {
+        const loaded = loadSettings();
+        setSettings(loaded);
+        setIsDirty(false);
+      });
     }
   }, [isOpen]);
 
@@ -98,8 +101,8 @@ const PerformanceSettingsModal = ({ isOpen, onClose }) => {
           borderBottomWidth="1px"
           borderColor="border"
         >
-          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
-            ⚡ Performance Settings
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdSpeed /></Icon> Performance Settings
           </Heading>
           <Button
             onClick={handleClose}

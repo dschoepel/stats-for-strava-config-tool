@@ -522,13 +522,284 @@ export const importSchema = {
   additionalProperties: false
 };
 
+export const metricsSchema = {
+  type: "object",
+  title: "Metrics Configuration",
+  description: "Performance metrics and scoring settings",
+  properties: {
+    eddington: {
+      type: "array",
+      title: "Eddington Score Configuration",
+      description: "Customize which sport types are grouped together and how the Eddington score is calculated",
+      items: {
+        type: "object",
+        properties: {
+          label: {
+            type: "string",
+            title: "Label",
+            description: "The label to be used for the tabs on the Eddington page",
+            examples: ["Ride", "Run", "Walk"]
+          },
+          showInNavBar: {
+            type: "boolean",
+            title: "Show in Navigation Bar",
+            description: "Display this score in the side navigation (max 2 enabled)",
+            default: false
+          },
+          showInDashboardWidget: {
+            type: "boolean",
+            title: "Show in Dashboard Widget",
+            description: "Display this score in the dashboard widget (max 2 enabled)",
+            default: false
+          },
+          sportTypesToInclude: {
+            type: "array",
+            title: "Sport Types to Include",
+            description: "Sport types to include in the Eddington score calculation. Only sport types from the same activity type category can be combined.",
+            items: {
+              type: "string"
+            },
+            examples: [["Ride", "MountainBikeRide", "GravelRide", "VirtualRide"]]
+          }
+        },
+        required: ["label", "showInNavBar", "showInDashboardWidget", "sportTypesToInclude"]
+      },
+      default: [
+        {
+          label: "Ride",
+          showInNavBar: true,
+          showInDashboardWidget: true,
+          sportTypesToInclude: ["Ride", "MountainBikeRide", "GravelRide", "VirtualRide"]
+        },
+        {
+          label: "Run",
+          showInNavBar: true,
+          showInDashboardWidget: true,
+          sportTypesToInclude: ["Run", "TrailRun", "VirtualRun"]
+        },
+        {
+          label: "Walk",
+          showInNavBar: false,
+          showInDashboardWidget: false,
+          sportTypesToInclude: ["Walk", "Hike"]
+        }
+      ]
+    }
+  },
+  required: ["eddington"],
+  additionalProperties: false
+};
+
+export const gearSchema = {
+  type: "object",
+  title: "Gear Configuration",
+  description: "Gear tracking and maintenance settings",
+  properties: {
+    stravaGear: {
+      type: "array",
+      title: "Strava Gear",
+      description: "Enrich Strava gear with additional data not available in Strava",
+      items: {
+        type: "object",
+        properties: {
+          gearId: {
+            type: "string",
+            title: "Gear ID",
+            description: "Strava gear ID (get from gear details popup, NOT from URL)",
+            examples: ["g12337767"]
+          },
+          purchasePrice: {
+            type: "object",
+            title: "Purchase Price",
+            description: "Used to calculate relative cost per workout and hour",
+            properties: {
+              amountInCents: {
+                type: "integer",
+                title: "Amount in Cents",
+                description: "Price in smallest currency unit (cents, pence, etc.)",
+                minimum: 0,
+                examples: [123456]
+              },
+              currency: {
+                type: "string",
+                title: "Currency",
+                description: "ISO 4217 currency code",
+                pattern: "^[A-Z]{3}$",
+                examples: ["EUR", "USD", "GBP"]
+              }
+            },
+            required: ["amountInCents", "currency"]
+          }
+        },
+        required: ["gearId"]
+      },
+      default: []
+    },
+    customGear: {
+      type: "array",
+      title: "Custom Gear",
+      description: "Track gear that Strava doesn't allow you to configure",
+      items: {
+        type: "object"
+      },
+      default: []
+    }
+  },
+  additionalProperties: false
+};
+
+export const integrationsSchema = {
+  type: "object",
+  title: "Integrations Configuration",
+  description: "External service integrations and notifications",
+  properties: {
+    notifications: {
+      type: "object",
+      title: "Notifications",
+      description: "Notification service configuration",
+      properties: {
+        services: {
+          type: "array",
+          title: "Notification Services",
+          description: "List of notification service URLs (Shoutrrr format). Leave empty to disable.",
+          items: {
+            type: "string",
+            format: "uri"
+          },
+          default: [],
+          examples: [["ntfy://ntfy.sh/topic"]]
+        }
+      },
+      required: ["services"]
+    },
+    ai: {
+      type: "object",
+      title: "AI Integration",
+      description: "Artificial Intelligence features configuration",
+      properties: {
+        enabled: {
+          type: "boolean",
+          title: "Enable AI Features",
+          description: "⚠️ Use caution when enabling if your app is publicly accessible",
+          default: false
+        },
+        enableUI: {
+          type: "boolean",
+          title: "Enable AI UI",
+          description: "Enable AI features in the user interface (by default only accessible via CLI)",
+          default: false
+        },
+        provider: {
+          type: "string",
+          title: "AI Provider",
+          description: "The AI service provider to use",
+          enum: ["anthropic", "azureOpenAI", "gemini", "ollama", "openAI", "deepseek", "mistral"],
+          examples: ["openAI"]
+        },
+        configuration: {
+          type: "object",
+          title: "Provider Configuration",
+          description: "Provider-specific configuration",
+          properties: {
+            key: {
+              type: "string",
+              title: "API Key",
+              description: "Your API key for the selected provider",
+              examples: ["YOUR-API-KEY"]
+            },
+            model: {
+              type: "string",
+              title: "Model Name",
+              description: "The AI model to use",
+              examples: ["gpt-4", "claude-3-opus"]
+            },
+            url: {
+              type: ["string", "null"],
+              title: "Service URL",
+              description: "Required only for Ollama - URL to your hosted instance",
+              format: "uri",
+              default: null,
+              examples: ["http://host.docker.internal:11434/api"]
+            }
+          },
+          required: ["key", "model"]
+        }
+      },
+      required: ["enabled", "enableUI", "provider", "configuration"]
+    }
+  },
+  additionalProperties: false
+};
+
+export const daemonSchema = {
+  type: "object",
+  title: "Daemon Configuration",
+  description: "Scheduled tasks and background job configuration",
+  properties: {
+    cron: {
+      type: "array",
+      title: "Cron Jobs",
+      description: "Scheduled tasks that run at regular intervals",
+      items: {
+        type: "object",
+        properties: {
+          action: {
+            type: "string",
+            title: "Action",
+            description: "The action to perform",
+            enum: ["importDataAndBuildApp", "gearMaintenanceNotification", "appUpdateAvailableNotification"],
+            enumTitles: ["Import Data and Build App", "Gear Maintenance Notification", "App Update Available Notification"]
+          },
+          expression: {
+            type: "string",
+            title: "Cron Expression",
+            description: "Cron expression specifying when the action should run (see crontab.guru)",
+            pattern: "^(@(annually|yearly|monthly|weekly|daily|hourly|reboot))|(@every (\\d+(ns|us|µs|ms|s|m|h))+)|((((\\d+,)+\\d+|(\\d+([/\\-])\\d+)|\\d+|\\*) ){4,6}(((\\d+,)+\\d+|(\\d+([/\\-])\\d+)|\\d+|\\*)))$",
+            examples: ["0 14 * * *", "*/30 * * * *"]
+          },
+          enabled: {
+            type: "boolean",
+            title: "Enabled",
+            description: "Whether this action should be executed",
+            default: false
+          }
+        },
+        required: ["action", "expression", "enabled"]
+      },
+      default: [
+        {
+          action: "importDataAndBuildApp",
+          expression: "0 14 * * *",
+          enabled: true
+        },
+        {
+          action: "gearMaintenanceNotification",
+          expression: "0 14 * * *",
+          enabled: false
+        },
+        {
+          action: "appUpdateAvailableNotification",
+          expression: "0 14 * * *",
+          enabled: false
+        }
+      ]
+    }
+  },
+  required: ["cron"],
+  additionalProperties: false
+};
+
 // Helper function to get all available schemas
 export const getConfigSchemas = () => ({
   general: generalSchema,
   athlete: athleteSchema,
   appearance: appearanceSchema,
   zwift: zwiftSchema,
-  import: importSchema
+  import: importSchema,
+  metrics: metricsSchema,
+  gear: gearSchema,
+  integrations: integrationsSchema,
+  daemon: daemonSchema
 });
 
 // Helper function to get schema by section name

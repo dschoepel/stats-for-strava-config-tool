@@ -1,0 +1,398 @@
+#---------------------------------------------------#
+# Table of Contents
+#---------------------------------------------------#
+# - General configuration settings
+#   - Athlete configuration settings
+# - Appearance configuration settings
+#   - Date format configuration settings
+#   - Dashboard configuration settings
+#   - Heatmap configuration settings
+#   - Photos configuration settings
+# - Import configuration settings
+# - Metrics configuration settings
+#   - Eddington score configuration settings
+# - Gear configuration settings
+#   - Strava gear configuration settings
+#   - Custom gear configuration settings
+# - Zwift configuration settings
+# - Integrations configuration settings
+#   - Notifications configuration settings
+#   - AI integrations configuration settings
+# - Daemon configuration settings
+#   - Cron job configuration settings
+#
+
+#===================================#
+# General Configuration Settings
+#===================================#
+general:
+  appUrl: http://localhost:8080/
+  appSubTitle: null
+  profilePictureUrl: null
+
+#---------------------------------#
+# Athlete Configuration Settings
+#---------------------------------#
+  athlete:
+    birthday: YYYY-MM-DD
+    maxHeartRateFormula: fox
+    heartRateZones:
+      mode: relative
+      default:
+        zone1:
+          from: 50
+          to: 60
+        zone2:
+          from: 61
+          to: 70
+        zone3:
+          from: 71
+          to: 80
+        zone4:
+          from: 81
+          to: 90
+        zone5:
+          from: 91
+          to: null
+      dateRanges:
+        2025-01-10:
+          zone1:
+            from: 50
+            to: 60
+          zone2:
+            from: 61
+            to: 70
+          zone3:
+            from: 71
+            to: 80
+          zone4:
+            from: 81
+            to: 90
+          zone5:
+            from: 91
+            to: null
+        2024-01-10:
+          zone1:
+            from: 50
+            to: 60
+          zone2:
+            from: 61
+            to: 70
+          zone3:
+            from: 71
+            to: 80
+          zone4:
+            from: 81
+            to: 90
+          zone5:
+            from: 91
+            to: null
+      sportTypes:
+        VirtualRide:
+          default:
+            zone1:
+              from: 50
+              to: 60
+            zone2:
+              from: 61
+              to: 70
+            zone3:
+              from: 71
+              to: 80
+            zone4:
+              from: 81
+              to: 90
+            zone5:
+              from: 91
+              to: null
+          dateRanges:
+            2025-01-10:
+              zone1:
+                from: 50
+                to: 60
+              zone2:
+                from: 61
+                to: 70
+              zone3:
+                from: 71
+                to: 80
+              zone4:
+                from: 81
+                to: 90
+              zone5:
+                from: 91
+                to: null
+            2024-01-10:
+              zone1:
+                from: 50
+                to: 60
+              zone2:
+                from: 61
+                to: 70
+              zone3:
+                from: 71
+                to: 80
+              zone4:
+                from: 81
+                to: 90
+              zone5:
+                from: 91
+                to: null
+    weightHistory:
+      2024-11-21: 69.2
+      2023-04-03: 74.6
+      2023-01-01: 70.3
+    ftpHistory:
+      cycling:
+        2025-11-08: 264
+        2024-11-21: 243
+        2023-01-01: 200
+      running: []
+
+#===================================#
+# Appearance Configuration Settings
+#===================================#
+appearance:
+  locale: en_US
+  unitSystem: metric
+  timeFormat: 24
+  sportTypesSortingOrder: []
+
+#---------------------------------#
+# Date Format Configuration Settings
+#---------------------------------#
+  dateFormat:
+    short: d-m-y
+    normal: d-m-Y
+
+#---------------------------------#
+# Dashboard Configuration Settings
+#---------------------------------#
+  dashboard:
+    layout:
+      - widget: mostRecentActivities
+        width: 66
+        enabled: true
+        config:
+          numberOfActivitiesToDisplay: 5
+      - widget: introText
+        width: 33
+        enabled: true
+      - widget: trainingGoals
+        width: 33
+        enabled: false
+        config:
+          goals: []
+      - widget: weeklyStats
+        width: 100
+        enabled: true
+        config:
+          metricsDisplayOrder:
+            - distance
+            - movingTime
+            - elevation
+      - widget: peakPowerOutputs
+        width: 50
+        enabled: true
+      - widget: heartRateZones
+        width: 50
+        enabled: true
+      - widget: activityGrid
+        width: 100
+        enabled: true
+      - widget: monthlyStats
+        width: 100
+        enabled: true
+        config:
+          enableLastXYearsByDefault: 10
+          metricsDisplayOrder:
+            - distance
+            - movingTime
+            - elevation
+      - widget: trainingLoad
+        width: 100
+        enabled: true
+      - widget: weekdayStats
+        width: 50
+        enabled: true
+      - widget: dayTimeStats
+        width: 50
+        enabled: true
+      - widget: distanceBreakdown
+        width: 100
+        enabled: true
+      - widget: yearlyStats
+        width: 100
+        enabled: true
+        config:
+          enableLastXYearsByDefault: 10
+          metricsDisplayOrder:
+            - distance
+            - movingTime
+            - elevation
+      - widget: zwiftStats
+        width: 50
+        enabled: true
+      - widget: gearStats
+        width: 50
+        enabled: true
+        config:
+          includeRetiredGear: true
+      - widget: eddington
+        width: 50
+        enabled: true
+      - widget: challengeConsistency
+        width: 50
+        enabled: true
+        config:
+          challenges: []
+      - widget: mostRecentChallengesCompleted
+        width: 50
+        enabled: true
+        config:
+          numberOfChallengesToDisplay: 5
+      - widget: ftpHistory
+        width: 50
+        enabled: true
+      - widget: athleteWeightHistory
+        width: 50
+        enabled: true
+
+#---------------------------------#
+# Heatmap Configuration Settings
+#---------------------------------#
+  heatmap:
+    polylineColor: "#fc6719"
+    tileLayerUrl: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+    enableGreyScale: true
+
+#---------------------------------#
+# Photos Configuration Settings
+#---------------------------------#
+  photos:
+    hidePhotosForSportTypes: []
+    defaultEnabledFilters:
+      sportTypes: []
+      countryCode: null
+
+#===================================#
+# Import Configuration Settings
+#===================================#
+import:
+  numberOfNewActivitiesToProcessPerImport: 250
+  sportTypesToImport: []
+  activityVisibilitiesToImport: []
+  skipActivitiesRecordedBefore: null
+  activitiesToSkipDuringImport: []
+  optInToSegmentDetailImport: false
+
+#===================================#
+# Metrics Configuration Settings
+#===================================#
+metrics:
+
+#---------------------------------#
+# Eddington Score Configuration Settings
+#---------------------------------#
+  eddington:
+    - label: Ride
+      showInNavBar: true
+      showInDashboardWidget: true
+      sportTypesToInclude:
+        - Ride
+        - MountainBikeRide
+        - GravelRide
+        - VirtualRide
+    - label: Run
+      showInNavBar: true
+      showInDashboardWidget: true
+      sportTypesToInclude:
+        - Run
+        - TrailRun
+        - VirtualRun
+    - label: Walk
+      showInNavBar: false
+      showInDashboardWidget: false
+      sportTypesToInclude:
+        - Walk
+        - Hike
+
+#===================================#
+# Gear Configuration Settings
+#===================================#
+gear:
+
+#---------------------------------#
+# Strava Gear Configuration Settings
+#---------------------------------#
+  stravaGear:
+    - gearId: g12337767
+      purchasePrice:
+        amountInCents: 123456
+        currency: EUR
+
+#---------------------------------#
+# Custom Gear Configuration Settings
+#---------------------------------#
+  customGear:
+    enabled: true
+    hashtagPrefix: sfs
+    customGears:
+      - tag: peddle-board
+        label: Peddle Board
+        isRetired: false
+        purchasePrice: null
+        amountInCents: 123456
+        currency: EUR
+      - tag: workout-shoes
+        label: Fancy workout shoes
+        isRetired: true
+
+#===================================#
+# Zwift Configuration Settings
+#===================================#
+zwift:
+  level: null
+  racingScore: null
+
+#===================================#
+# Integrations Configuration Settings
+#===================================#
+integrations:
+
+#---------------------------------#
+# Notifications Configuration Settings
+#---------------------------------#
+  notifications:
+    services: []
+
+#---------------------------------#
+# AI Integration Configuration Settings
+#---------------------------------#
+  ai:
+    enabled: false
+    enableUI: false
+    provider: PROVIDER-YOU-CHOOSE
+    configuration:
+      key: YOUR-API-KEY
+      model: MODEL-NAME
+      url: http://host.docker.internal:11434/api
+
+#===================================#
+# Daemon Configuration Settings
+#===================================#
+daemon:
+
+#---------------------------------#
+# Cron Job Configuration Settings
+#---------------------------------#
+  cron:
+    - action: importDataAndBuildApp
+      expression: 0 14 * * *
+      enabled: true
+    - action: gearMaintenanceNotification
+      expression: 0 14 * * *
+      enabled: false
+    - action: appUpdateAvailableNotification
+      expression: 0 14 * * *
+      enabled: false

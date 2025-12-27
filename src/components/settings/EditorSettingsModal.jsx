@@ -21,9 +21,12 @@ const EditorSettingsModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      const loaded = loadSettings();
-      setSettings(loaded);
-      setIsDirty(false);
+      // Use queueMicrotask to defer state updates and avoid cascading renders
+      queueMicrotask(() => {
+        const loaded = loadSettings();
+        setSettings(loaded);
+        setIsDirty(false);
+      });
     }
   }, [isOpen]);
 
@@ -99,8 +102,8 @@ const EditorSettingsModal = ({ isOpen, onClose }) => {
           borderBottomWidth="1px"
           borderColor="border"
         >
-          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
-            📝 Editor Settings
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdEdit /></Icon> Editor Settings
           </Heading>
           <Button
             onClick={handleClose}
@@ -213,7 +216,7 @@ const EditorSettingsModal = ({ isOpen, onClose }) => {
             size={{ base: "sm", sm: "md" }}
             width={{ base: "100%", sm: "auto" }}
           >
-            💾 Save{isDirty && ' *'}
+            <Flex align="center" gap={2}><Icon><MdSave /></Icon> Save{isDirty && ' *'}</Flex>
           </Button>
         </Flex>
       </Box>

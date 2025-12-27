@@ -6,7 +6,10 @@ import {
   Button,
   Textarea,
   Flex,
+  Icon,
 } from '@chakra-ui/react';
+import { MdSave, MdFileUpload, MdFileDownload } from 'react-icons/md';
+import { FiPackage } from 'react-icons/fi';
 import { exportSettingsAsYaml, importSettingsFromYaml } from '../../utils/settingsManager';
 
 const ImportExportModal = ({ isOpen, onClose }) => {
@@ -80,8 +83,8 @@ const ImportExportModal = ({ isOpen, onClose }) => {
           borderBottomWidth="1px"
           borderColor="border"
         >
-          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
-            📦 Import/Export Settings
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><FiPackage /></Icon> Import/Export Settings
           </Heading>
           <Button
             onClick={onClose}
@@ -105,7 +108,7 @@ const ImportExportModal = ({ isOpen, onClose }) => {
               size={{ base: "sm", sm: "md" }}
               flex="1"
             >
-              📤 Export
+              <Flex align="center" gap={2}><Icon><MdFileDownload /></Icon> Export</Flex>
             </Button>
             <Button
               onClick={handleImport}
@@ -114,7 +117,7 @@ const ImportExportModal = ({ isOpen, onClose }) => {
               size={{ base: "sm", sm: "md" }}
               flex="1"
             >
-              📥 Import
+              <Flex align="center" gap={2}><Icon><MdFileUpload /></Icon> Import</Flex>
             </Button>
           </Flex>
 
@@ -157,7 +160,7 @@ const ImportExportModal = ({ isOpen, onClose }) => {
               size={{ base: "sm", sm: "md" }}
               width={{ base: "100%", sm: "auto" }}
             >
-              💾 Download
+              <Flex align="center" gap={2}><Icon><MdSave /></Icon> Download</Flex>
             </Button>
           ) : (
             <Button
@@ -166,7 +169,7 @@ const ImportExportModal = ({ isOpen, onClose }) => {
               size={{ base: "sm", sm: "md" }}
               width={{ base: "100%", sm: "auto" }}
             >
-              📥 Import
+              <Flex align="center" gap={2}><Icon><MdFileUpload /></Icon> Import</Flex>
             </Button>
           )}
         </Flex>

@@ -9,7 +9,9 @@ import {
   Input,
   Flex,
   Switch,
+  Icon,
 } from '@chakra-ui/react';
+import { MdFolder, MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 
@@ -129,8 +131,8 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
           borderBottomWidth="1px"
           borderColor="border"
         >
-          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word">
-            📁 File Settings
+          <Heading size={{ base: "md", sm: "lg" }} lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={2}>
+            <Icon color="primary"><MdFolder /></Icon> File Settings
           </Heading>
           <Button
             onClick={handleClose}
@@ -226,7 +228,7 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
             size={{ base: "sm", sm: "md" }}
             width={{ base: "100%", sm: "auto" }}
           >
-            💾 Save{isDirty && ' *'}
+            <Flex align="center" gap={2}><Icon><MdSave /></Icon> Save{isDirty && ' *'}</Flex>
           </Button>
         </Flex>
       </Box>

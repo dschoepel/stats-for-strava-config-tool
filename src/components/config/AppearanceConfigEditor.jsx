@@ -21,6 +21,7 @@ const AppearanceConfigEditor = ({
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showDashboardEditor, setShowDashboardEditor] = useState(false);
   const [dashboardJustSaved, setDashboardJustSaved] = useState(false);
+  const [dashboardLayout, setDashboardLayout] = useState(initialData?.dashboard?.layout || []);
   const countryChangeHandlerRef = useRef(null);
   const formDataRef = useRef(null);
   const [expandedGroups, setExpandedGroups] = useState({
@@ -811,7 +812,7 @@ const AppearanceConfigEditor = ({
 
       {showDashboardEditor && (
         <DashboardEditor
-          dashboardLayout={formDataRef.current?.dashboard?.layout || []}
+          dashboardLayout={dashboardLayout}
           onClose={() => setShowDashboardEditor(false)}
           onSave={(updatedLayout) => {
             // Update the dashboard.layout in the form data
@@ -819,6 +820,7 @@ const AppearanceConfigEditor = ({
             if (countryChangeHandlerRef.current) {
               countryChangeHandlerRef.current('dashboard.layout', updatedLayout);
             }
+            setDashboardLayout(updatedLayout);
             setShowDashboardEditor(false);
             setDashboardJustSaved(true);
             // Clear the indicator after 8 seconds

@@ -52,12 +52,61 @@ export async function POST(request) {
         if (trimmedLine === 'general:') {
           result.push(line);
           i++;
+          let foundAthlete = false;
+          let generalIndent = line.length - line.trimStart().length;
+          
           // Look for athlete subsection
           while (i < lines.length) {
             const subLine = lines[i];
             const subTrimmed = subLine.trim();
+            const subIndent = subLine.length - subLine.trimStart().length;
+            
+            // If we hit another top-level section, we need to insert athlete before it
+            if (subTrimmed && subIndent <= generalIndent && !subTrimmed.startsWith('#')) {
+              if (!foundAthlete) {
+                // Insert athlete section before this top-level section
+                const athleteIndent = ' '.repeat(generalIndent + 2);
+                result.push(`${athleteIndent}athlete:`);
+                const baseIndent = ' '.repeat(generalIndent + 4);
+                Object.entries(sectionData).forEach(([key, value]) => {
+                  let valueStr;
+                  if (value === null) {
+                    valueStr = 'null';
+                  } else if (typeof value === 'string') {
+                    const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+                    if (needsQuoting) {
+                      valueStr = `'${value.replace(/'/g, "''")}'`;
+                    } else {
+                      valueStr = value;
+                    }
+                  } else if (typeof value === 'object' && value !== null) {
+                    let complexYaml = YAML.stringify({ [key]: value }, {
+                      indent: 2,
+                      lineWidth: 0,
+                      minContentWidth: 0,
+                      singleQuote: true
+                    }).trim();
+                    complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
+                    const complexLines = complexYaml.split('\n');
+                    complexLines.forEach((complexLine, index) => {
+                      if (index === 0) {
+                        result.push(baseIndent + complexLine.trimStart());
+                      } else {
+                        result.push(baseIndent + complexLine);
+                      }
+                    });
+                    return;
+                  } else {
+                    valueStr = String(value);
+                  }
+                  result.push(`${baseIndent}${key}: ${valueStr}`);
+                });
+              }
+              break;
+            }
             
             if (subTrimmed === 'athlete:') {
+              foundAthlete = true;
               result.push(subLine);
               const athleteIndent = subLine.length - subLine.trimStart().length;
               
@@ -68,26 +117,20 @@ export async function POST(request) {
                 if (value === null) {
                   valueStr = 'null';
                 } else if (typeof value === 'string') {
-                  // Check if string needs quoting for YAML special characters
                   const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
                   if (needsQuoting) {
-                    // Escape single quotes by doubling them
                     valueStr = `'${value.replace(/'/g, "''")}'`;
                   } else {
                     valueStr = value;
                   }
                 } else if (typeof value === 'object' && value !== null) {
-                  // Handle complex objects like heartRateZones
                   let complexYaml = YAML.stringify({ [key]: value }, {
                     indent: 2,
                     lineWidth: 0,
                     minContentWidth: 0,
                     singleQuote: true
                   }).trim();
-                  
-                  // Post-process to ensure date keys (YYYY-MM-DD format) are quoted
                   complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
-                  
                   const complexLines = complexYaml.split('\n');
                   complexLines.forEach((complexLine, index) => {
                     if (index === 0) {
@@ -96,11 +139,10 @@ export async function POST(request) {
                       result.push(baseIndent + complexLine);
                     }
                   });
-                  return; // Skip the simple field handling below
+                  return;
                 } else {
                   valueStr = String(value);
                 }
-                
                 result.push(`${baseIndent}${key}: ${valueStr}`);
               });
               
