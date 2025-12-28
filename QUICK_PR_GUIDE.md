@@ -1,10 +1,11 @@
 # Quick Guide: Create Pull Request
 
-## 🎯 You're Ready to Create a PR!
+## 🎯 Ready to Create a PR?
 
-**Current Branch:** `copilot/merge-to-main-via-pr`  
-**Target Branch:** `main`  
-**Status:** ✅ Pushed and ready
+Make sure your branch is pushed to GitHub:
+```bash
+git push origin YOUR_BRANCH_NAME
+```
 
 ---
 
@@ -13,7 +14,7 @@
 1. Go to: https://github.com/dschoepel/stats-for-strava-config-tool
 
 2. Look for the yellow banner that says:
-   > `copilot/merge-to-main-via-pr had recent pushes`
+   > `YOUR_BRANCH_NAME had recent pushes`
 
 3. Click the green **"Compare & pull request"** button
 
@@ -49,9 +50,11 @@ gh pr merge
 
 ## 🔗 Or Use Direct Link
 
-Click this link to go straight to the PR creation page:
+Use this URL format to go straight to the PR creation page:
 
-**https://github.com/dschoepel/stats-for-strava-config-tool/compare/main...copilot/merge-to-main-via-pr**
+**https://github.com/dschoepel/stats-for-strava-config-tool/compare/main...YOUR_BRANCH_NAME**
+
+Replace `YOUR_BRANCH_NAME` with your actual branch name.
 
 ---
 
@@ -68,7 +71,7 @@ Update your local repository:
 ```bash
 git checkout main
 git pull origin main
-git branch -d copilot/merge-to-main-via-pr  # Delete local branch
+git branch -d YOUR_BRANCH_NAME  # Delete local branch
 ```
 
 ---

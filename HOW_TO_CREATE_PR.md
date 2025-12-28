@@ -1,14 +1,19 @@
 # How to Create a Pull Request to Merge Your Branch to Main
 
-This guide explains how to create a pull request (PR) to merge the `copilot/merge-to-main-via-pr` branch into `main`.
+This guide explains how to create a pull request (PR) to merge your feature branch into `main`.
 
-## Current Status
+## Before You Start
 
-✅ **Your branch is ready!**
-- Branch name: `copilot/merge-to-main-via-pr`
-- Status: Pushed to remote
-- Commits ahead of main: 1 commit ("Initial plan")
-- Working directory: Clean
+Make sure:
+- ✅ Your branch is pushed to the remote repository
+- ✅ All your changes are committed
+- ✅ Your working directory is clean (no uncommitted changes)
+
+You can verify this with:
+```bash
+git status
+git push origin YOUR_BRANCH_NAME
+```
 
 ## Method 1: Using GitHub Web Interface (Recommended for Beginners)
 
@@ -21,14 +26,14 @@ This is the easiest method and provides a visual interface.
 
 2. **GitHub should show a prompt:**
    - After pushing your branch, GitHub usually displays a yellow banner at the top of the repository page saying:
-     > `copilot/merge-to-main-via-pr had recent pushes`
+     > `YOUR_BRANCH_NAME had recent pushes`
    - Click the green **"Compare & pull request"** button
 
 3. **If you don't see the banner:**
    - Click on the **"Pull requests"** tab
    - Click the green **"New pull request"** button
    - Set the base branch to `main`
-   - Set the compare branch to `copilot/merge-to-main-via-pr`
+   - Set the compare branch to your branch name
    - Click **"Create pull request"**
 
 4. **Fill in the PR details:**
@@ -57,7 +62,7 @@ This is the easiest method and provides a visual interface.
 
 8. **Clean up:**
    - After merging, GitHub will offer to delete the branch
-   - It's safe to delete `copilot/merge-to-main-via-pr` after merging
+   - It's safe to delete your feature branch after merging
 
 ## Method 2: Using GitHub CLI (gh)
 
@@ -67,13 +72,13 @@ If you have the GitHub CLI installed, this is the fastest method.
 
 ```bash
 # Make sure you're on your branch
-git checkout copilot/merge-to-main-via-pr
+git checkout YOUR_BRANCH_NAME
 
-# Create the pull request
-gh pr create --base main --head copilot/merge-to-main-via-pr --title "Your PR Title" --body "Your PR description"
+# Create the pull request (one-line command)
+gh pr create --base main --head YOUR_BRANCH_NAME --title "Your PR Title" --body "Your PR description"
 
-# Or use interactive mode (easier)
-gh pr create --base main --head copilot/merge-to-main-via-pr
+# Or use interactive mode (easier - recommended)
+gh pr create --base main
 
 # To view the PR
 gh pr view
@@ -94,10 +99,16 @@ This will prompt you for:
 
 ## Method 3: Direct URL
 
-You can also create a PR by visiting this URL directly:
+You can also create a PR by visiting a URL in this format:
 
 ```
-https://github.com/dschoepel/stats-for-strava-config-tool/compare/main...copilot/merge-to-main-via-pr
+https://github.com/OWNER/REPOSITORY/compare/BASE_BRANCH...YOUR_BRANCH
+```
+
+For this repository, replace the placeholders:
+
+```
+https://github.com/dschoepel/stats-for-strava-config-tool/compare/main...YOUR_BRANCH_NAME
 ```
 
 This takes you directly to the "compare and create PR" page.
@@ -180,13 +191,13 @@ gh pr status
 
 ### "No changes between branches"
 - Your branch might already be merged or has no differences from main
-- Check: `git log main..copilot/merge-to-main-via-pr`
+- Check: `git log main..YOUR_BRANCH_NAME`
 
 ### "Merge conflicts"
 - Your branch has conflicts with main
 - You need to resolve conflicts before merging:
   ```bash
-  git checkout copilot/merge-to-main-via-pr
+  git checkout YOUR_BRANCH_NAME
   git pull origin main
   # Resolve conflicts in your editor
   git add .
@@ -212,10 +223,10 @@ git checkout main
 git pull origin main
 
 # Delete your local branch (optional)
-git branch -d copilot/merge-to-main-via-pr
+git branch -d YOUR_BRANCH_NAME
 
 # Delete remote branch (if not done through GitHub)
-git push origin --delete copilot/merge-to-main-via-pr
+git push origin --delete YOUR_BRANCH_NAME
 ```
 
 ## Additional Resources
