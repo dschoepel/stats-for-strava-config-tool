@@ -1,0 +1,17 @@
+services:
+  config-manager:
+    image: stats-config-manager:latest
+    container_name: stats-config-manager
+    restart: unless-stopped
+    env_file: ./.env
+    volumes:
+    - ./config-manager/configs:/data/configs
+    - ./config-manager/settings:/data/settings
+    - ./config-manager/backups:/data/backups
+    ports:
+    - "8092:80"
+#    networks:
+#      - statistics-for-strava-network
+
+ # networks:
+  #  statistics-for-strava-network 
