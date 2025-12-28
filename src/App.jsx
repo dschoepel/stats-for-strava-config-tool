@@ -18,7 +18,11 @@ import AthleteConfigEditor from './components/config/AthleteConfigEditor'
 import GeneralConfigEditor from './components/config/GeneralConfigEditor'
 import AppearanceConfigEditor from './components/config/AppearanceConfigEditor'
 import ImportConfigEditor from './components/config/ImportConfigEditor'
-import ZwiftConfigEditor from './components/config/ZwiftConfigEditor'
+import MetricsConfigEditor from './components/config/MetricsConfigEditor'
+import GearConfigEditor from './components/config/GearConfigEditor'
+import IntegrationsConfigEditor from './components/config/IntegrationsConfigEditor';
+import DaemonConfigEditor from './components/config/DaemonConfigEditor';
+import ZwiftConfigEditor from './components/config/ZwiftConfigEditor';
 import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
@@ -274,8 +278,14 @@ function App() {
       console.log('Available section mappings:', Array.from(sectionToFileMap.keys()))
       console.log('Section mapping entries:', Array.from(sectionToFileMap.entries()))
       
-      // Map section names to the appropriate keys in the section mapping
-      const sectionKey = sectionName.toLowerCase()
+      // Map display names to actual YAML section keys
+      const sectionKeyMap = {
+        'scheduling daemon': 'daemon',
+      };
+      
+      const sectionKey = sectionKeyMap[sectionName.toLowerCase()] || sectionName.toLowerCase();
+      console.log(`Mapped '${sectionName}' to section key '${sectionKey}'`);
+      
       let sectionInfo = null
       
       // Get section info from mapping (handle both string and object formats)
@@ -317,29 +327,29 @@ function App() {
           console.log('Parsed YAML data:', parsedData)
           
           let sectionContent = {}
-          if (sectionName.toLowerCase() === 'athlete') {
+          if (sectionKey === 'athlete') {
             // Athlete data comes from general.athlete
             sectionContent = parsedData.general?.athlete || {}
-          } else if (sectionName.toLowerCase() === 'general') {
+          } else if (sectionKey === 'general') {
             // General section excludes athlete data
             const { athlete: _athlete, ...generalData } = parsedData.general || {}
             sectionContent = generalData
             console.log('Extracted general data:', sectionContent)
           } else {
-            // Other sections are top-level
-            sectionContent = parsedData[sectionName.toLowerCase()] || {}
+            // Other sections are top-level - use sectionKey not sectionName
+            sectionContent = parsedData[sectionKey] || {}
             console.log('Extracted section data:', sectionContent)
           }
           
           setSectionData(prev => ({
             ...prev,
-            [sectionName.toLowerCase()]: sectionContent
+            [sectionKey]: sectionContent
           }))
         } else {
           console.error('Failed to load file content:', result.error)
           setSectionData(prev => ({
             ...prev,
-            [sectionName.toLowerCase()]: {}
+            [sectionKey]: {}
           }))
         }
       } else {
@@ -355,15 +365,19 @@ function App() {
         // Set empty object so the editor can still open
         setSectionData(prev => ({
           ...prev,
-          [sectionName.toLowerCase()]: {}
+          [sectionKey]: {}
         }))
       }
     } catch (error) {
       console.error('Error loading section data:', error)
       // Set empty object on error so editor can open
+      const sectionKeyMap = {
+        'scheduling daemon': 'daemon',
+      };
+      const sectionKey = sectionKeyMap[sectionName.toLowerCase()] || sectionName.toLowerCase();
       setSectionData(prev => ({
         ...prev,
-        [sectionName.toLowerCase()]: {}
+        [sectionKey]: {}
       }))
     } finally {
       setIsLoadingSectionData(false)
@@ -433,7 +447,7 @@ function App() {
 
   // Load section data when navigating to section pages
   useEffect(() => {
-    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance' || currentPage === 'Import') && sectionToFileMap.size > 0) {
+    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance' || currentPage === 'Import' || currentPage === 'Metrics' || currentPage === 'Gear' || currentPage === 'Integrations' || currentPage === 'Scheduling Daemon') && sectionToFileMap.size > 0) {
       loadSectionData(currentPage)
     }
   }, [currentPage, sectionToFileMap, loadSectionData])
@@ -575,6 +589,42 @@ function App() {
                 key={JSON.stringify(sectionData.import)}
                 initialData={sectionData.import || {}}
                 onSave={(data) => saveSectionData('import', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
+            ) : currentPage === 'Metrics' ? (
+              <MetricsConfigEditor
+                key={JSON.stringify(sectionData.metrics)}
+                initialData={sectionData.metrics || {}}
+                onSave={(data) => saveSectionData('metrics', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
+            ) : currentPage === 'Gear' ? (
+              <GearConfigEditor
+                key={JSON.stringify(sectionData.gear)}
+                initialData={sectionData.gear || {}}
+                onSave={(data) => saveSectionData('gear', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
+            ) : currentPage === 'Integrations' ? (
+              <IntegrationsConfigEditor
+                key={JSON.stringify(sectionData.integrations)}
+                initialData={sectionData.integrations || {}}
+                onSave={(data) => saveSectionData('integrations', data)}
+                onCancel={() => handleNavClick('Configuration')}
+                isLoading={isLoadingSectionData}
+                onDirtyChange={setHasUnsavedChanges}
+              />
+            ) : currentPage === 'Scheduling Daemon' ? (
+              <DaemonConfigEditor
+                key={JSON.stringify(sectionData.daemon)}
+                initialData={sectionData.daemon || {}}
+                onSave={(data) => saveSectionData('daemon', data)}
                 onCancel={() => handleNavClick('Configuration')}
                 isLoading={isLoadingSectionData}
                 onDirtyChange={setHasUnsavedChanges}
