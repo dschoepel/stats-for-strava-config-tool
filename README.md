@@ -1,5 +1,4 @@
-![Logo white gear on orange background.](/public/logo.svg)
-# Stats for Strava - Configuration Tool
+# <img src="./public/logo.svg" alt="Logo showing orange gear on white" width="25" height="25"> Stats for Strava - Configuration Tool
 
 A modern web application for managing and editing Stats for Strava configuration files with an intuitive, form-based interface.
 
