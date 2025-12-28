@@ -17,6 +17,14 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    // Check if this is a nested section (e.g., "appearance.dashboard")
+    const isNestedSection = sectionName.includes('.');
+    let topLevelKey, secondLevelKey;
+    
+    if (isNestedSection) {
+      [topLevelKey, secondLevelKey] = sectionName.split('.');
+    }
+
     // Read the existing YAML file
     const content = await fs.readFile(filePath, 'utf8');
     console.log('Original file has comments:', content.includes('#'));
@@ -170,72 +178,138 @@ export async function POST(request) {
           i++;
         }
       } else {
-        // Handle top-level sections
-        if (trimmedLine === `${sectionName}:`) {
+        // Handle top-level sections or nested sections
+        const targetKey = isNestedSection ? topLevelKey : sectionName;
+        
+        if (trimmedLine === `${targetKey}:`) {
           result.push(line);
           const sectionIndent = line.length - line.trimStart().length;
           
-          // Add new section data with proper quoting
-          const baseIndent = ' '.repeat(sectionIndent + 2);
-          Object.entries(sectionData).forEach(([key, value]) => {
-            let valueStr;
-            if (value === null) {
-              valueStr = 'null';
-            } else if (typeof value === 'string') {
-              // Check if string needs quoting for YAML special characters
-              const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
-              if (needsQuoting) {
-                // Escape single quotes by doubling them
-                valueStr = `'${value.replace(/'/g, "''")}'`;
-              } else {
-                valueStr = value;
-              }
-            } else if (typeof value === 'object' && value !== null) {
-              // Handle complex objects like heartRateZones
-              let complexYaml = YAML.stringify({ [key]: value }, {
-                indent: 2,
-                lineWidth: 0,
-                minContentWidth: 0,
-                singleQuote: true
-              }).trim();
-              
-              // Post-process to ensure date keys (YYYY-MM-DD format) are quoted
-              complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
-              
-              const complexLines = complexYaml.split('\n');
-              complexLines.forEach((complexLine, index) => {
-                if (index === 0) {
-                  result.push(baseIndent + complexLine.trimStart());
-                } else {
-                  result.push(baseIndent + complexLine);
-                }
-              });
-              return; // Skip the simple field handling below
-            } else {
-              valueStr = String(value);
-            }
-            
-            result.push(`${baseIndent}${key}: ${valueStr}`);
-          });
-          
-          // Skip original section content
-          i++;
-          while (i < lines.length) {
-            const nextLine = lines[i];
-            const nextTrimmed = nextLine.trim();
-            const nextIndent = nextLine.length - nextLine.trimStart().length;
-            
-            // Stop if we find a top-level section
-            if (nextTrimmed && nextIndent <= sectionIndent && !nextTrimmed.startsWith('#')) {
-              break;
-            }
+          if (isNestedSection) {
+            // For nested sections, we need to find and update the second-level key
             i++;
+            let foundSecondLevel = false;
+            
+            while (i < lines.length) {
+              const subLine = lines[i];
+              const subTrimmed = subLine.trim();
+              const subIndent = subLine.length - subLine.trimStart().length;
+              
+              // Stop if we hit another top-level section
+              if (subTrimmed && subIndent <= sectionIndent && !subTrimmed.startsWith('#')) {
+                // If we didn't find the second-level key, add it before this line
+                if (!foundSecondLevel) {
+                  const secondLevelIndent = ' '.repeat(sectionIndent + 2);
+                  result.push(`${secondLevelIndent}${secondLevelKey}:`);
+                  const baseIndent = ' '.repeat(sectionIndent + 4);
+                  Object.entries(sectionData).forEach(([key, value]) => {
+                    addYamlField(result, baseIndent, key, value);
+                  });
+                }
+                break;
+              }
+              
+              if (subTrimmed === `${secondLevelKey}:`) {
+                foundSecondLevel = true;
+                result.push(subLine);
+                const secondLevelIndent = subLine.length - subLine.trimStart().length;
+                
+                // Add new data for the second-level key
+                const baseIndent = ' '.repeat(secondLevelIndent + 2);
+                Object.entries(sectionData).forEach(([key, value]) => {
+                  addYamlField(result, baseIndent, key, value);
+                });
+                
+                // Skip original second-level section content
+                i++;
+                while (i < lines.length) {
+                  const nextLine = lines[i];
+                  const nextTrimmed = nextLine.trim();
+                  const nextIndent = nextLine.length - nextLine.trimStart().length;
+                  
+                  // Stop if we find a section at the same level as secondLevelKey or higher
+                  if (nextTrimmed && nextIndent <= secondLevelIndent && !nextTrimmed.startsWith('#')) {
+                    break;
+                  }
+                  i++;
+                }
+                break;
+              } else {
+                result.push(subLine);
+                i++;
+              }
+            }
+            
+            // If we reached the end without finding second-level key, add it
+            if (!foundSecondLevel) {
+              const secondLevelIndent = ' '.repeat(sectionIndent + 2);
+              result.push(`${secondLevelIndent}${secondLevelKey}:`);
+              const baseIndent = ' '.repeat(sectionIndent + 4);
+              Object.entries(sectionData).forEach(([key, value]) => {
+                addYamlField(result, baseIndent, key, value);
+              });
+            }
+          } else {
+            // Handle top-level sections (original logic)
+            const baseIndent = ' '.repeat(sectionIndent + 2);
+            Object.entries(sectionData).forEach(([key, value]) => {
+              addYamlField(result, baseIndent, key, value);
+            });
+            
+            // Skip original section content
+            i++;
+            while (i < lines.length) {
+              const nextLine = lines[i];
+              const nextTrimmed = nextLine.trim();
+              const nextIndent = nextLine.length - nextLine.trimStart().length;
+              
+              // Stop if we find a top-level section
+              if (nextTrimmed && nextIndent <= sectionIndent && !nextTrimmed.startsWith('#')) {
+                break;
+              }
+              i++;
+            }
           }
         } else {
           result.push(line);
           i++;
         }
       }
+    }
+    
+    // Helper function to add a YAML field with proper formatting
+    function addYamlField(result, baseIndent, key, value) {
+      let valueStr;
+      if (value === null) {
+        valueStr = 'null';
+      } else if (typeof value === 'string') {
+        const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+        if (needsQuoting) {
+          valueStr = `'${value.replace(/'/g, "''")}'`;
+        } else {
+          valueStr = value;
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        let complexYaml = YAML.stringify({ [key]: value }, {
+          indent: 2,
+          lineWidth: 0,
+          minContentWidth: 0,
+          singleQuote: true
+        }).trim();
+        complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
+        const complexLines = complexYaml.split('\n');
+        complexLines.forEach((complexLine, index) => {
+          if (index === 0) {
+            result.push(baseIndent + complexLine.trimStart());
+          } else {
+            result.push(baseIndent + complexLine);
+          }
+        });
+        return;
+      } else {
+        valueStr = String(value);
+      }
+      result.push(`${baseIndent}${key}: ${valueStr}`);
     }
     
     updatedYaml = result.join('\n');

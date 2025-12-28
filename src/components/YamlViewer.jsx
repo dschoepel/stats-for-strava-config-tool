@@ -6,6 +6,7 @@ import { formatFileSize } from '../utils/yamlFileHandler';
 import CombineFilesModal from './CombineFilesModal';
 import SplitConfigModal from './SplitConfigModal';
 import DownloadFilesModal from './DownloadFilesModal';
+import YamlEditorModal from './YamlEditorModal';
 import MonacoYamlViewer from './MonacoYamlViewer';
 
 const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpdated }) => {
@@ -13,6 +14,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
   const [showCombineModal, setShowCombineModal] = useState(false);
   const [showSplitModal, setShowSplitModal] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [allFiles, setAllFiles] = useState(files);
 
   // Sync allFiles with files prop when it changes
@@ -33,6 +35,26 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
 
   const handleCopyFile = async () => {
     await copyToClipboard(currentFile.content);
+  };
+
+  const handleEditFile = () => {
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = (updatedContent) => {
+    // Update the file content in memory
+    const updatedFiles = [...allFiles];
+    updatedFiles[selectedFileIndex] = {
+      ...updatedFiles[selectedFileIndex],
+      content: updatedContent,
+      size: new Blob([updatedContent]).size
+    };
+    setAllFiles(updatedFiles);
+    setShowEditModal(false);
+    // Notify parent component to update
+    if (onFilesUpdated) {
+      onFilesUpdated(updatedFiles);
+    }
   };
 
 
@@ -316,6 +338,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
           showActions={true}
           onDownload={handleDownloadFile}
           onCopy={handleCopyFile}
+          onEdit={handleEditFile}
           className="page-viewer"
           height="100%"
         />
@@ -339,6 +362,16 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         files={allFiles}
         isOpen={showDownloadModal}
         onClose={() => setShowDownloadModal(false)}
+      />
+
+      <YamlEditorModal
+        fileName={currentFile.name}
+        fileContent={currentFile.content}
+        filePath={currentFile.path}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveEdit}
+        skipValidation={true}
       />
     </VStack>
   );

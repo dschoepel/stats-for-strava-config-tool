@@ -1,6 +1,7 @@
 // Settings utility for Stats for Strava Config Tool
 // Uses file-based storage in {defaultPath}/settings/config-tool-settings.yaml
 
+/* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
 const DEFAULT_SETTINGS_PATH = process.env.NEXT_PUBLIC_DEFAULT_STATS_CONFIG_PATH || '~/Documents/strava-config-tool/';
 const SETTINGS_FILENAME = 'config-tool-settings.yaml';

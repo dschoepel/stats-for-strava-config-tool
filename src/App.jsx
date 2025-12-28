@@ -270,27 +270,105 @@ function App() {
     setCurrentPage(targetPage)
   }
 
+  // Helper function to load a single section file
+  const loadSectionFile = async (sectionInfo, sectionKey) => {
+    let filePath = null;
+    let topLevelKey = null;
+    let secondLevelKey = null;
+    
+    if (typeof sectionInfo === 'string') {
+      filePath = `${fileCache.directory}/${sectionInfo}`;
+    } else if (sectionInfo && sectionInfo.filePath) {
+      filePath = sectionInfo.filePath;
+      topLevelKey = sectionInfo.topLevelKey;
+      secondLevelKey = sectionInfo.secondLevelKey;
+    }
+    
+    if (!filePath) return null;
+    
+    const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`);
+    const result = await response.json();
+    
+    if (!result.success) return null;
+    
+    const YAML = await import('yaml');
+    const parsedData = YAML.parse(result.content);
+    
+    // Handle split files
+    if (topLevelKey && secondLevelKey) {
+      return parsedData[topLevelKey]?.[secondLevelKey] || parsedData[topLevelKey] || {};
+    }
+    
+    // Handle nested section keys (e.g., "appearance.dashboard")
+    if (sectionKey.includes('.')) {
+      const [topKey, ...restKeys] = sectionKey.split('.');
+      let data = parsedData[topKey];
+      for (const key of restKeys) {
+        if (data && typeof data === 'object') {
+          data = data[key];
+        } else {
+          return {};
+        }
+      }
+      return data || {};
+    }
+    
+    // Return the section data for simple keys
+    return parsedData[sectionKey] || {};
+  };
+
   // Load section data when navigating to a section page
   const loadSectionData = useCallback(async (sectionName) => {
     setIsLoadingSectionData(true)
     try {
-      console.log('Loading section data for:', sectionName)
-      console.log('Available section mappings:', Array.from(sectionToFileMap.keys()))
-      console.log('Section mapping entries:', Array.from(sectionToFileMap.entries()))
-      
       // Map display names to actual YAML section keys
       const sectionKeyMap = {
         'scheduling daemon': 'daemon',
       };
       
       const sectionKey = sectionKeyMap[sectionName.toLowerCase()] || sectionName.toLowerCase();
-      console.log(`Mapped '${sectionName}' to section key '${sectionKey}'`);
       
       let sectionInfo = null
       
-      // Get section info from mapping (handle both string and object formats)
+      // First try direct match
       sectionInfo = sectionToFileMap.get(sectionKey)
-      console.log(`Section info for ${sectionKey}:`, sectionInfo)
+      
+      // Check for nested mappings (e.g., "appearance" might have "appearance.dashboard")
+      // This should be checked regardless of whether we found a direct match
+      if (!sectionKey.includes('.')) {
+        // Look for any nested paths that start with this key
+        const nestedMappings = Array.from(sectionToFileMap.entries())
+          .filter(([key]) => key.startsWith(`${sectionKey}.`));
+        
+        if (nestedMappings.length > 0) {
+          // Load all nested sections and combine them
+          const combinedData = {};
+          
+          // Also load parent section if it exists
+          if (sectionInfo) {
+            const parentData = await loadSectionFile(sectionInfo, sectionKey);
+            Object.assign(combinedData, parentData);
+          }
+          
+          // Load each nested section
+          for (const [nestedKey, nestedInfo] of nestedMappings) {
+            const nestedData = await loadSectionFile(nestedInfo, nestedKey);
+            // Extract the second-level key (e.g., "dashboard" from "appearance.dashboard")
+            const secondKey = nestedKey.split('.')[1];
+            if (nestedData && secondKey) {
+              combinedData[secondKey] = nestedData;
+            }
+          }
+          
+          // Set the combined data and return early
+          setSectionData(prev => ({
+            ...prev,
+            [sectionKey]: combinedData
+          }));
+          setIsLoadingSectionData(false);
+          return;
+        }
+      }
       
       if (!sectionInfo && sectionKey === 'athlete') {
         // Fallback: if athlete section not found, try to use general section
@@ -305,6 +383,9 @@ function App() {
       
       // Handle both string filename and full object formats
       let filePath = null
+      let topLevelKey = null
+      let secondLevelKey = null
+      
       if (typeof sectionInfo === 'string') {
         // API returned simple mapping with just filename
         filePath = `${fileCache.directory}/${sectionInfo}`
@@ -312,7 +393,12 @@ function App() {
       } else if (sectionInfo && sectionInfo.filePath) {
         // API returned detailed mapping with full object
         filePath = sectionInfo.filePath
+        topLevelKey = sectionInfo.topLevelKey
+        secondLevelKey = sectionInfo.secondLevelKey
         console.log(`Using file path from object: ${filePath}`)
+        if (sectionInfo.isSplitFile) {
+          console.log(`This is a split file for ${topLevelKey}.${secondLevelKey}`)
+        }
       }
       
       if (filePath) {
@@ -327,7 +413,13 @@ function App() {
           console.log('Parsed YAML data:', parsedData)
           
           let sectionContent = {}
-          if (sectionKey === 'athlete') {
+          
+          // Handle split files differently
+          if (topLevelKey && secondLevelKey) {
+            // This is a split file - the content is under topLevelKey.secondLevelKey
+            sectionContent = parsedData[topLevelKey]?.[secondLevelKey] || parsedData[topLevelKey] || {}
+            console.log(`Extracted split file data for ${topLevelKey}.${secondLevelKey}:`, sectionContent)
+          } else if (sectionKey === 'athlete') {
             // Athlete data comes from general.athlete
             sectionContent = parsedData.general?.athlete || {}
           } else if (sectionKey === 'general') {
@@ -391,6 +483,60 @@ function App() {
       const sectionKey = sectionName.toLowerCase()
       let sectionInfo = sectionToFileMap.get(sectionKey)
       
+      // Check if there are nested mappings for this section
+      const nestedMappings = Array.from(sectionToFileMap.entries())
+        .filter(([key]) => key.startsWith(`${sectionKey}.`));
+      
+      // If we have nested mappings (split files), save each nested key to its respective file
+      if (nestedMappings.length > 0) {
+        const savePromises = [];
+        
+        // Save parent section data (keys that aren't split out)
+        const parentInfo = sectionToFileMap.get(sectionKey);
+        if (parentInfo) {
+          // Extract keys that belong in parent file (not in any nested mapping)
+          const nestedKeys = nestedMappings.map(([key]) => key.split('.')[1]);
+          const parentData = {};
+          for (const [key, value] of Object.entries(data)) {
+            if (!nestedKeys.includes(key)) {
+              parentData[key] = value;
+            }
+          }
+          
+          if (Object.keys(parentData).length > 0) {
+            savePromises.push(
+              saveSingleSection(parentInfo, sectionKey, parentData, sectionKey === 'athlete')
+            );
+          }
+        }
+        
+        // Save each nested section to its split file
+        for (const [nestedKey, nestedInfo] of nestedMappings) {
+          const secondKey = nestedKey.split('.')[1];
+          if (data[secondKey]) {
+            savePromises.push(
+              saveSingleSection(nestedInfo, nestedKey, data[secondKey], false)
+            );
+          }
+        }
+        
+        // Wait for all saves to complete
+        const results = await Promise.all(savePromises);
+        const allSuccessful = results.every(r => r.success);
+        
+        if (allSuccessful) {
+          await loadSectionData(sectionName);
+          showSuccess('Configuration saved successfully!');
+          setHasUnsavedChanges(false);
+          handleNavClick('Configuration', null, true);
+        } else {
+          throw new Error('Some files failed to save');
+        }
+        
+        setIsLoadingSectionData(false);
+        return;
+      }
+      
       // Fallback: if athlete section not found, try to use general section
       if (!sectionInfo && sectionKey === 'athlete') {
         sectionInfo = sectionToFileMap.get('general')
@@ -445,9 +591,36 @@ function App() {
     }
   }
 
+  // Helper function to save a single section to a file
+  const saveSingleSection = async (sectionInfo, sectionKey, data, isAthlete = false) => {
+    let filePath = null;
+    if (typeof sectionInfo === 'string') {
+      filePath = `${fileCache.directory}/${sectionInfo}`;
+    } else if (sectionInfo && sectionInfo.filePath) {
+      filePath = sectionInfo.filePath;
+    }
+    
+    if (!filePath) {
+      return { success: false, error: 'No file path found' };
+    }
+    
+    const response = await fetch('/api/update-section', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filePath: filePath,
+        sectionName: sectionKey,
+        sectionData: data,
+        isAthlete: isAthlete
+      })
+    });
+    
+    return await response.json();
+  }
+
   // Load section data when navigating to section pages
   useEffect(() => {
-    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance' || currentPage === 'Import' || currentPage === 'Metrics' || currentPage === 'Gear' || currentPage === 'Integrations' || currentPage === 'Scheduling Daemon') && sectionToFileMap.size > 0) {
+    if ((currentPage === 'General' || currentPage === 'Athlete' || currentPage === 'Appearance' || currentPage === 'Import' || currentPage === 'Metrics' || currentPage === 'Gear' || currentPage === 'Integrations' || currentPage === 'Scheduling Daemon' || currentPage === 'Zwift') && sectionToFileMap.size > 0) {
       loadSectionData(currentPage)
     }
   }, [currentPage, sectionToFileMap, loadSectionData])

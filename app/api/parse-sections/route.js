@@ -77,6 +77,33 @@ export async function POST(request) {
           // Get top-level keys from this file
           const topLevelKeys = Object.keys(yamlData);
           
+          // Check if this is a split file (e.g., config-appearance-dashboard.yaml)
+          const splitFileMatch = file.name.match(/^config-([^-]+)-(.+)\.ya?ml$/);
+          
+          if (splitFileMatch) {
+            // This is a split file containing a second-level key
+            const [, topKey, secondKey] = splitFileMatch;
+            const nestedPath = `${topKey}.${secondKey}`;
+            
+            console.log(`Detected split file: ${file.name} -> ${nestedPath}`);
+            
+            // Map the nested path to this file
+            const sectionInfo = {
+              fileName: file.name,
+              filePath: file.path,
+              topLevelKey: topKey,
+              secondLevelKey: secondKey,
+              isSplitFile: true,
+              ...sectionPositions.get(topKey)
+            };
+            
+            if (!sectionMapping.has(nestedPath)) {
+              sectionMapping.set(nestedPath, []);
+            }
+            sectionMapping.get(nestedPath).push(sectionInfo);
+            continue; // Skip normal processing for split files
+          }
+          
           for (const key of topLevelKeys) {
             if (key === 'general') {
               // Handle general section with special athlete processing
@@ -150,21 +177,57 @@ export async function POST(request) {
     }
 
     // Convert Map to objects for JSON serialization
+    // Group nested sections with their parent for better organization
+    const topLevelSections = [];
+    const nestedSections = new Map(); // Map of parent -> array of children
+    
+    for (const [sectionKey] of sectionMapping.entries()) {
+      if (sectionKey.includes('.')) {
+        // This is a nested section (e.g., appearance.dashboard)
+        const [topLevel] = sectionKey.split('.');
+        if (!nestedSections.has(topLevel)) {
+          nestedSections.set(topLevel, []);
+        }
+        nestedSections.get(topLevel).push(sectionKey);
+      } else {
+        // This is a top-level section
+        topLevelSections.push(sectionKey);
+      }
+    }
+    
+    // Sort top-level sections alphabetically
+    topLevelSections.sort();
+    
+    // Build sorted list: parent followed immediately by its children
+    const sortedSectionKeys = [];
+    for (const topLevel of topLevelSections) {
+      sortedSectionKeys.push(topLevel);
+      
+      // Add children for this parent, if any
+      if (nestedSections.has(topLevel)) {
+        const children = nestedSections.get(topLevel).sort();
+        sortedSectionKeys.push(...children);
+      }
+    }
+    
     // For sectionToFileMap (simple mapping), use the first file if multiple exist
-    const sectionToFileMap = Object.fromEntries(
-      Array.from(sectionMapping.entries()).map(([key, fileInfoArray]) => [
-        key, 
-        fileInfoArray[0].fileName // Use first file for backward compatibility
-      ])
-    );
+    // Maintain grouped order
+    const sectionToFileMap = {};
+    for (const key of sortedSectionKeys) {
+      if (sectionMapping.has(key)) {
+        sectionToFileMap[key] = sectionMapping.get(key)[0].fileName;
+      }
+    }
     
     // For detailedMapping, include all files for each section
-    const detailedSectionMapping = Object.fromEntries(
-      Array.from(sectionMapping.entries()).map(([key, fileInfoArray]) => [
-        key,
-        fileInfoArray.length === 1 ? fileInfoArray[0] : fileInfoArray // Single file or array
-      ])
-    );
+    // Maintain grouped order
+    const detailedSectionMapping = {};
+    for (const key of sortedSectionKeys) {
+      if (sectionMapping.has(key)) {
+        const fileInfoArray = sectionMapping.get(key);
+        detailedSectionMapping[key] = fileInfoArray.length === 1 ? fileInfoArray[0] : fileInfoArray;
+      }
+    }
 
     return NextResponse.json({
       success: true,

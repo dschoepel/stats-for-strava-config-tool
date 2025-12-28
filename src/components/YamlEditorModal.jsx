@@ -7,7 +7,7 @@ import * as YAML from 'yaml';
 import { getSetting } from '../utils/settingsManager';
 import { ConfirmDialog } from './ConfirmDialog';
 
-const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave, isNewFile = false }) => {
+const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave, isNewFile = false, skipValidation = false }) => {
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
   const [isDirty, setIsDirty] = useState(false);
@@ -75,7 +75,8 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     }
 
     // Validate filename convention (must be config.yaml or config-*.yaml)
-    if (fileName) {
+    // Skip validation if skipValidation prop is true (e.g., when editing in YAML Viewer)
+    if (fileName && !skipValidation) {
       const isValidName = fileName === 'config.yaml' || 
                          (fileName.startsWith('config-') && fileName.endsWith('.yaml'));
       
@@ -86,6 +87,18 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     }
 
     // Check if file exists
+    // If no filePath is provided (e.g., editing in YAML Viewer), skip the file check
+    if (!filePath) {
+      // No server path available, just return the content to the caller
+      if (onSave) {
+        onSave(content);
+      }
+      setOriginalContent(content);
+      setIsDirty(false);
+      onClose();
+      return;
+    }
+    
     try {
       const checkResponse = await fetch('/api/check-file-exists', {
         method: 'POST',

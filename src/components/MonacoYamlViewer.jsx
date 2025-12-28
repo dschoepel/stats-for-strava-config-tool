@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react';
-import { MdFolder, MdSearch, MdContentCopy, MdDownload, MdCheckCircle, MdWarning } from 'react-icons/md';
+import { MdFolder, MdSearch, MdContentCopy, MdDownload, MdCheckCircle, MdWarning, MdEdit } from 'react-icons/md';
 import { formatFileSize, validateYamlContent } from '../utils/yamlFileHandler';
 import { getSetting } from '../utils/settingsManager';
 
@@ -14,6 +14,7 @@ const MonacoYamlViewer = ({
   showActions = true,
   onDownload = null,
   onCopy = null,
+  onEdit = null,
   className = '',
   height = '100%'
 }) => {
@@ -187,6 +188,21 @@ const MonacoYamlViewer = ({
                 <Icon fontSize={{ base: "xs", sm: "md" }}><MdDownload /></Icon>
                 <Text display={{ base: "none", sm: "inline" }} ml={1}>Download</Text>
               </Button>
+              {onEdit && (
+                <Button 
+                  onClick={onEdit} 
+                  variant="outline" 
+                  size={{ base: "xs", sm: "sm" }} 
+                  colorPalette="gray"
+                  title="Edit file"
+                  fontSize={{ base: "2xs", sm: "sm" }}
+                  px={{ base: 1.5, sm: 3 }}
+                  h={{ base: "24px", sm: "auto" }}
+                >
+                  <Icon fontSize={{ base: "xs", sm: "md" }}><MdEdit /></Icon>
+                  <Text display={{ base: "none", sm: "inline" }} ml={1}>Edit</Text>
+                </Button>
+              )}
             </Flex>
           )}
         </Flex>

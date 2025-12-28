@@ -95,7 +95,7 @@ const MetricsConfigEditor = ({
       onDirtyChange={onDirtyChange}
       customValidation={validateMetricsFields}
     >
-      {({ schema, formData, handleFieldChange, getNestedValue, errors }) => {
+      {({ formData, handleFieldChange, getNestedValue, errors }) => {
         const eddingtonArray = getNestedValue(formData, 'eddington') || [];
 
         const handleAddEddington = () => {
