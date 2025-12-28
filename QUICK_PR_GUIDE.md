@@ -1,0 +1,79 @@
+# Quick Guide: Create Pull Request
+
+## 🎯 Ready to Create a PR?
+
+Make sure your branch is pushed to GitHub:
+```bash
+git push origin YOUR_BRANCH_NAME
+```
+
+---
+
+## 🚀 Fastest Way: GitHub Web Interface
+
+1. Go to: https://github.com/dschoepel/stats-for-strava-config-tool
+
+2. Look for the yellow banner that says:
+   > `YOUR_BRANCH_NAME had recent pushes`
+
+3. Click the green **"Compare & pull request"** button
+
+4. Fill in:
+   - **Title:** Short description of your changes
+   - **Description:** Explain what and why
+
+5. Click **"Create pull request"**
+
+6. After review (if needed), click **"Merge pull request"**
+
+7. Done! 🎉
+
+---
+
+## 💻 Alternative: Using GitHub CLI
+
+```bash
+# Interactive mode (recommended)
+gh pr create
+
+# Or one-line command
+gh pr create --base main --title "Your title" --body "Your description"
+
+# View your PR
+gh pr view
+
+# Merge when ready
+gh pr merge
+```
+
+---
+
+## 🔗 Or Use Direct Link
+
+Use this URL format to go straight to the PR creation page:
+
+**https://github.com/dschoepel/stats-for-strava-config-tool/compare/main...YOUR_BRANCH_NAME**
+
+Replace `YOUR_BRANCH_NAME` with your actual branch name.
+
+---
+
+## 📚 Need More Details?
+
+See the complete guide: [HOW_TO_CREATE_PR.md](./HOW_TO_CREATE_PR.md)
+
+---
+
+## ⚡ After Merging
+
+Update your local repository:
+
+```bash
+git checkout main
+git pull origin main
+git branch -d YOUR_BRANCH_NAME  # Delete local branch
+```
+
+---
+
+**Questions?** Check the full guide or GitHub's documentation!
