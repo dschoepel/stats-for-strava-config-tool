@@ -1,3 +1,4 @@
+![Logo white gear on orange background.](/public/logo.svg)
 # Stats for Strava - Configuration Tool
 
 A modern web application for managing and editing Stats for Strava configuration files with an intuitive, form-based interface.
