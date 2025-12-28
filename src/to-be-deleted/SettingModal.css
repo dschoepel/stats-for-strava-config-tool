@@ -1,0 +1,159 @@
+/* Common Setting Modal Styles */
+.setting-modal {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-primary);
+}
+
+.setting-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.setting-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.setting-modal .modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.setting-modal .modal-close:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: #e74c3c;
+}
+
+.setting-modal .modal-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.setting-modal .setting-group {
+  margin-bottom: 1.5rem;
+}
+
+.setting-modal .setting-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.setting-modal .setting-group input[type="text"],
+.setting-modal .setting-group input[type="number"],
+.setting-modal .setting-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.setting-modal .setting-group input[type="text"]:focus,
+.setting-modal .setting-group input[type="number"]:focus,
+.setting-modal .setting-group select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(116, 185, 255, 0.2);
+}
+
+.setting-modal .setting-group input[type="checkbox"] {
+  margin-right: 0.75rem;
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+.setting-modal .modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #5a9ae8;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+/* Dark mode */
+.app-container.dark-mode .setting-modal {
+  --bg-primary: #2d3436;
+  --bg-secondary: #636e72;
+  --bg-tertiary: #636e72;
+  --text-primary: #ddd;
+  --text-secondary: #bbb;
+  --border-color: #4a5568;
+  --accent-color: #74b9ff;
+}
+
+/* Light mode */
+.app-container.light-mode .setting-modal {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #e9ecef;
+  --text-primary: #2d3436;
+  --text-secondary: #636e72;
+  --border-color: #dee2e6;
+  --accent-color: #0984e3;
+}

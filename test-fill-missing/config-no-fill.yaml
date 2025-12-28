@@ -1,0 +1,18 @@
+#---------------------------------------------------#
+# Table of Contents
+#---------------------------------------------------#
+# - General configuration settings
+#   - Athlete configuration settings
+#
+
+#===================================#
+# General Configuration Settings
+#===================================#
+general:
+
+#---------------------------------#
+# Athlete Configuration Settings
+#---------------------------------#
+  athlete:
+    firstName: John
+    lastName: Doe

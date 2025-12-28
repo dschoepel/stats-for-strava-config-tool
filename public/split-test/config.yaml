@@ -1,0 +1,126 @@
+#===================================#
+# General Configuration Settings
+#===================================#
+general:
+  appUrl: http://localhost:8080/
+  appSubTitle: null
+  profilePictureUrl: null
+
+#---------------------------------#
+# Athlete Configuration Settings
+#---------------------------------#
+  athlete:
+    birthday: YYYY-MM-DD
+    maxHeartRateFormula: fox
+    heartRateZones:
+      mode: relative
+      default:
+        zone1:
+          from: 50
+          to: 60
+        zone2:
+          from: 61
+          to: 70
+        zone3:
+          from: 71
+          to: 80
+        zone4:
+          from: 81
+          to: 90
+        zone5:
+          from: 91
+          to: null
+      dateRanges:
+        2025-01-10:
+          zone1:
+            from: 50
+            to: 60
+          zone2:
+            from: 61
+            to: 70
+          zone3:
+            from: 71
+            to: 80
+          zone4:
+            from: 81
+            to: 90
+          zone5:
+            from: 91
+            to: null
+        2024-01-10:
+          zone1:
+            from: 50
+            to: 60
+          zone2:
+            from: 61
+            to: 70
+          zone3:
+            from: 71
+            to: 80
+          zone4:
+            from: 81
+            to: 90
+          zone5:
+            from: 91
+            to: null
+      sportTypes:
+        VirtualRide:
+          default:
+            zone1:
+              from: 50
+              to: 60
+            zone2:
+              from: 61
+              to: 70
+            zone3:
+              from: 71
+              to: 80
+            zone4:
+              from: 81
+              to: 90
+            zone5:
+              from: 91
+              to: null
+          dateRanges:
+            2025-01-10:
+              zone1:
+                from: 50
+                to: 60
+              zone2:
+                from: 61
+                to: 70
+              zone3:
+                from: 71
+                to: 80
+              zone4:
+                from: 81
+                to: 90
+              zone5:
+                from: 91
+                to: null
+            2024-01-10:
+              zone1:
+                from: 50
+                to: 60
+              zone2:
+                from: 61
+                to: 70
+              zone3:
+                from: 71
+                to: 80
+              zone4:
+                from: 81
+                to: 90
+              zone5:
+                from: 91
+                to: null
+    weightHistory:
+      2024-11-21: 69.2
+      2023-04-03: 74.6
+      2023-01-01: 70.3
+    ftpHistory:
+      cycling:
+        2025-11-08: 264
+        2024-11-21: 243
+        2023-01-01: 200
+      running: []

@@ -1,0 +1,13 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  env: {
+    DEFAULT_STATS_CONFIG_PATH: process.env.DEFAULT_STATS_CONFIG_PATH,
+    SETTINGS_STORAGE_KEY: process.env.SETTINGS_STORAGE_KEY,
+    APP_VERSION: process.env.APP_VERSION,
+    NEXT_PUBLIC_SETTINGS_STORAGE_KEY: process.env.SETTINGS_STORAGE_KEY,
+    NEXT_PUBLIC_DEFAULT_STATS_CONFIG_PATH: process.env.DEFAULT_STATS_CONFIG_PATH,
+    NEXT_PUBLIC_APP_VERSION: process.env.APP_VERSION,
+  },
+}
+
+export default nextConfig

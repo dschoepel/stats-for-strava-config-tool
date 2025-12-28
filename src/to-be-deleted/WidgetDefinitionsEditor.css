@@ -1,0 +1,422 @@
+/* Widget Definitions Editor - matches SportsListEditor styling */
+.widget-definitions-editor {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.widget-info {
+  padding: 3px;
+  margin-bottom: 20px;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  color: var(--text-primary);
+}
+
+.widget-info p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.widget-section {
+  margin-bottom: 30px;
+}
+
+.widget-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  color: var(--text-secondary, #888);
+}
+
+.widgets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget-item {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--card-bg, #1e1e1e);
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  background-color: var(--header-bg, #252525);
+}
+
+.widget-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 15px;
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.widget-toggle:hover {
+  background-color: var(--hover-bg, #2a2a2a);
+}
+
+.widget-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #e0e0e0;
+}
+
+.widget-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+.widget-actions {
+  display: flex;
+  gap: 5px;
+  padding: 8px 10px;
+}
+
+.btn-icon {
+  padding: 6px 10px;
+  background-color: var(--button-bg, #333);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 4px;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background-color: var(--button-hover, #444);
+  transform: scale(1.05);
+}
+
+.btn-icon.btn-danger {
+  background-color: var(--danger-bg, #5a1a1a);
+  border-color: var(--danger-border, #721c24);
+  color: #ff9999;
+}
+
+.btn-icon.btn-danger:hover {
+  background-color: var(--danger-hover, #721c24);
+}
+
+.widget-details {
+  padding: 15px;
+  background-color: var(--list-bg, #1a1a1a);
+  border-top: 1px solid var(--border-color, #333);
+  color: #d0d0d0;
+}
+
+.detail-row {
+  margin-bottom: 12px;
+  line-height: 1.6;
+  color: #d0d0d0;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-row code {
+  background-color: var(--code-bg, #2a2a2a);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #a0d0ff;
+}
+
+.config-template {
+  margin-top: 8px;
+  padding: 10px;
+  background-color: var(--code-bg, #2a2a2a);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Modal specific */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background-color: #1e1e1e;
+  padding: 25px;
+  border-radius: 8px;
+  min-width: 500px;
+  max-width: 600px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.modal-content h4 {
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  color: #e0e0e0;
+}
+
+.widget-modal {
+  min-width: 500px;
+  max-width: 600px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.modal-actions .btn-secondary {
+  padding: 10px 20px;
+  background-color: #444;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.modal-actions .btn-secondary:hover {
+  background-color: #555;
+}
+
+.modal-actions .btn-primary {
+  padding: 10px 20px;
+  background-color: #007bff;
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.modal-actions .btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.form-field {
+  margin-bottom: 20px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #b0b0b0;
+}
+
+.form-field input[type="text"],
+.form-field textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid var(--border-color, #444);
+  border-radius: 4px;
+  background-color: var(--input-bg, #252525);
+  color: #e0e0e0;
+}
+
+.form-field textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-field textarea.code-input {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-field label {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+/* Light theme adjustments */
+@media (prefers-color-scheme: light) {
+  .widget-definitions-editor {
+    color: #333;
+  }
+
+  .widget-item {
+    --card-bg: #ffffff;
+    --border-color: #ddd;
+  }
+
+  .widget-header {
+    --header-bg: #f8f9fa;
+  }
+
+  .widget-toggle {
+    color: #333;
+  }
+
+  .widget-toggle:hover {
+    --hover-bg: #e9ecef;
+  }
+
+  .widget-name {
+    color: #333;
+  }
+
+  .btn-icon {
+    color: #333;
+    background-color: #f0f0f0;
+    border-color: #ccc;
+  }
+
+  .btn-icon:hover {
+    background-color: #e0e0e0;
+  }
+
+  .btn-icon.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+  }
+
+  .btn-icon.btn-danger:hover {
+    background-color: #c82333;
+  }
+
+  .widget-details {
+    --list-bg: #f8f9fa;
+    color: #333;
+  }
+
+  .detail-row {
+    color: #333;
+  }
+
+  .detail-row code,
+  .config-template {
+    --code-bg: #f0f0f0;
+    --border-color: #ddd;
+    color: #333;
+  }
+
+  .widget-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #333;
+  }
+
+  .widget-section h4 {
+    color: #666;
+  }
+
+  .form-field input,
+  .form-field textarea,
+  .form-field select {
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    color: #333;
+  }
+
+  .form-field input:focus,
+  .form-field textarea:focus,
+  .form-field select:focus {
+    background-color: #ffffff;
+    border-color: #1976d2;
+  }
+
+  .form-field label {
+    color: #333;
+    font-weight: 600;
+  }
+
+  .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.95);
+  }
+
+  .modal-content {
+    background-color: #ffffff;
+    color: #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-content h4 {
+    color: #1a1a1a;
+    font-weight: 600;
+  }
+
+  .modal-error {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .modal-actions .btn-secondary {
+    background-color: #e0e0e0;
+    border-color: #ccc;
+    color: #333;
+  }
+
+  .modal-actions .btn-secondary:hover {
+    background-color: #d0d0d0;
+  }
+
+  .modal-actions .btn-primary {
+    background-color: #1976d2;
+    border-color: #1976d2;
+    color: white;
+  }
+
+  .modal-actions .btn-primary:hover {
+    background-color: #1565c0;
+  }
+}
