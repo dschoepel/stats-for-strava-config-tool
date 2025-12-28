@@ -1,9 +1,64 @@
 // Utility functions for splitting a master config file into separate section files
 
-import { generateSectionHeader } from './configMerger';
+/**
+ * Detect if a value is a complex nested object
+ */
+const isComplex = (value) => {
+  return value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+};
 
 /**
- * Split a master config file into separate section files
+ * Build mapping table rows for header
+ */
+function buildMappingRows(prefix, obj) {
+  const rows = [];
+  
+  for (const [key, value] of Object.entries(obj)) {
+    const fullPath = `${prefix}.${key}`;
+    if (isComplex(value)) {
+      rows.push(`${fullPath} | Nested configuration block`);
+      rows.push(...buildMappingRows(fullPath, value));
+    } else {
+      rows.push(`${fullPath} | Simple value`);
+    }
+  }
+  
+  return rows;
+}
+
+/**
+ * Generate header banner with mapping table
+ */
+function generateHeader(topKey, secondKey, obj) {
+  const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+  
+  const title = secondKey
+    ? `${capitalize(topKey)} ${capitalize(secondKey)} Configuration Settings`
+    : `${capitalize(topKey)} Configuration Settings`;
+  
+  const rootPath = secondKey ? `${topKey}.${secondKey}` : topKey;
+  const mappingRows = buildMappingRows(rootPath, obj);
+  
+  const mappingTable =
+    "#-------------------------------------------------------------------------------#\n" +
+    "# Mapping Table\n" +
+    "#-------------------------------------------------------------------------------#\n" +
+    "# Key Path | Description\n" +
+    "#-------------------------------------------|-----------------------------------\n" +
+    mappingRows.map(r => `# ${r}`).join('\n') + '\n' +
+    "#===============================================================================#\n";
+  
+  return (
+    "#===============================================================================#\n" +
+    `# ${title}\n` +
+    "#===============================================================================#\n" +
+    mappingTable +
+    "\n"
+  );
+}
+
+/**
+ * Split a master config file into separate section files with smart 2nd-level splitting
  * @param {string} masterConfigContent - The content of the master config file
  * @returns {Object} - { success, files, errors }
  */
@@ -23,123 +78,86 @@ export async function splitConfigFile(masterConfigContent) {
     const files = [];
     const errors = [];
     
-    // Define which sections go into which files
-    const sectionToFileMapping = {
-      general: { fileName: 'config.yaml', sections: ['general'] },
-      appearance: { fileName: 'config-appearance.yaml', sections: ['appearance'] },
-      import: { fileName: 'config-import.yaml', sections: ['import'] },
-      metrics: { fileName: 'config-metrics.yaml', sections: ['metrics'] },
-      gear: { fileName: 'config-gear.yaml', sections: ['gear'] },
-      zwift: { fileName: 'config-zwift.yaml', sections: ['zwift'] },
-      integrations: { fileName: 'config-integrations.yaml', sections: ['integrations'] },
-      daemon: { fileName: 'config-daemon.yaml', sections: ['daemon'] }
-    };
-    
-    // Section labels for headers
-    const sectionLabels = {
-      general: 'General Configuration Settings',
-      appearance: 'Appearance Configuration Settings',
-      import: 'Import Configuration Settings',
-      metrics: 'Metrics Configuration Settings',
-      gear: 'Gear Configuration Settings',
-      zwift: 'Zwift Configuration Settings',
-      integrations: 'Integrations Configuration Settings',
-      daemon: 'Daemon Configuration Settings'
-    };
-    
-    // Nested section labels
-    const nestedLabels = {
-      athlete: 'Athlete Configuration Settings',
-      dateFormat: 'Date Format Configuration Settings',
-      dashboard: 'Dashboard Configuration Settings',
-      heatmap: 'Heatmap Configuration Settings',
-      photos: 'Photos Configuration Settings',
-      eddington: 'Eddington Score Configuration Settings',
-      stravaGear: 'Strava Gear Configuration Settings',
-      customGear: 'Custom Gear Configuration Settings',
-      notifications: 'Notifications Configuration Settings',
-      ai: 'AI Integration Configuration Settings',
-      cron: 'Cron Job Configuration Settings'
-    };
-    
-    // Define which nested sections should have headers
-    const nestedSections = {
-      general: ['athlete'],
-      appearance: ['dateFormat', 'dashboard', 'heatmap', 'photos'],
-      metrics: ['eddington'],
-      gear: ['stravaGear', 'customGear'],
-      integrations: ['notifications', 'ai'],
-      daemon: ['cron']
-    };
-    
-    // Create each config file
-    Object.entries(sectionToFileMapping).forEach(([, { fileName, sections }]) => {
-      const fileData = {};
-      let hasData = false;
+    // Process each top-level section
+    for (const [topKey, topValue] of Object.entries(parsedData)) {
+      if (!topValue || typeof topValue !== 'object') {
+        continue;
+      }
       
-      sections.forEach(section => {
-        if (parsedData[section]) {
-          fileData[section] = parsedData[section];
-          hasData = true;
-        }
-      });
+      const topFileName = topKey === 'general' ? 'config.yaml' : `config-${topKey}.yaml`;
       
-      if (hasData) {
-        // Generate file content with headers
-        let fileContent = '';
-        
-        sections.forEach(section => {
-          if (fileData[section]) {
-            // Add top-level section header
-            fileContent += generateSectionHeader(section, sectionLabels[section]) + '\n';
-            
-            const sectionData = fileData[section];
-            const hasNestedSections = nestedSections[section];
-            
-            if (hasNestedSections && typeof sectionData === 'object') {
-              // Handle top-level properties first
-              const topLevelData = {};
-              const nestedKeys = hasNestedSections;
-              
-              Object.keys(sectionData).forEach(key => {
-                if (!nestedKeys.includes(key)) {
-                  topLevelData[key] = sectionData[key];
-                }
-              });
-              
-              // Add top-level properties
-              if (Object.keys(topLevelData).length > 0) {
-                fileContent += `${section}:\n`;
-                const topYaml = YAML.stringify(topLevelData, { indent: 2 });
-                fileContent += topYaml.split('\n').map(line => line ? `  ${line}` : '').join('\n');
-              } else {
-                fileContent += `${section}:\n`;
-              }
-              
-              // Add nested sections with headers
-              hasNestedSections.forEach(nestedKey => {
-                if (sectionData[nestedKey] !== undefined) {
-                  fileContent += '\n' + generateSectionHeader(nestedKey, nestedLabels[nestedKey], true) + '\n';
-                  const nestedYaml = YAML.stringify({ [nestedKey]: sectionData[nestedKey] }, { indent: 2 });
-                  fileContent += nestedYaml.split('\n').map(line => line ? `  ${line}` : '').join('\n');
-                }
-              });
-            } else {
-              // Simple section without nested headers
-              fileContent += YAML.stringify({ [section]: sectionData }, { indent: 2 });
-            }
-            
-            fileContent += '\n';
-          }
-        });
+      // Analyze second-level keys
+      const secondEntries = Object.entries(topValue);
+      const complexKeys = secondEntries.filter(([_, v]) => isComplex(v));
+      const simpleKeys = secondEntries.filter(([_, v]) => !isComplex(v));
+      
+      // Determine if we should split
+      const shouldSplit = 
+        complexKeys.length > 1 || 
+        (complexKeys.length === 1 && simpleKeys.length > 0);
+      
+      //---------------------------------------------
+      // Case 1: Do NOT split (metrics, daemon, or simple sections)
+      //---------------------------------------------
+      if (!shouldSplit) {
+        const header = generateHeader(topKey, null, topValue);
+        const yamlBody = YAML.stringify(
+          { [topKey]: topValue },
+          { indent: 2, lineWidth: -1, noRefs: true }
+        );
         
         files.push({
-          fileName,
-          content: fileContent.trim(),
-          sections
+          fileName: topFileName,
+          content: header + yamlBody,
+          sections: [topKey]
+        });
+        continue;
+      }
+      
+      //---------------------------------------------
+      // Case 2: Split — keep first complex key with parent
+      //---------------------------------------------
+      const [firstComplexKey, firstComplexValue] = complexKeys[0];
+      
+      // Parent file contains simple keys + first complex key
+      const parentObj = {
+        [topKey]: {
+          ...Object.fromEntries(simpleKeys),
+          [firstComplexKey]: firstComplexValue
+        }
+      };
+      
+      const parentHeader = generateHeader(topKey, null, parentObj[topKey]);
+      const parentYaml = YAML.stringify(
+        parentObj,
+        { indent: 2, lineWidth: -1, noRefs: true }
+      );
+      
+      files.push({
+        fileName: topFileName,
+        content: parentHeader + parentYaml,
+        sections: [topKey, `${topKey}.${firstComplexKey}`]
+      });
+      
+      //---------------------------------------------
+      // Split remaining complex keys into separate files
+      //---------------------------------------------
+      for (const [secondKey, secondValue] of complexKeys.slice(1)) {
+        const filename = `config-${topKey}-${secondKey}.yaml`;
+        const obj = { [topKey]: { [secondKey]: secondValue } };
+        const header = generateHeader(topKey, secondKey, secondValue);
+        const yamlBody = YAML.stringify(
+          obj,
+          { indent: 2, lineWidth: -1, noRefs: true }
+        );
+        
+        files.push({
+          fileName: filename,
+          content: header + yamlBody,
+          sections: [`${topKey}.${secondKey}`]
         });
       }
-    });
+    }
     
     return {
       success: true,

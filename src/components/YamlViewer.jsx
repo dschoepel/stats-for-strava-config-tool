@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton, Icon } from '@chakra-ui/react';
-import { MdClose, MdFolder, MdDescription } from 'react-icons/md';
+import { MdClose, MdFolder, MdDescription, MdDownload } from 'react-icons/md';
+import { PiArrowsSplitFill, PiLinkSimpleHorizontalBold } from 'react-icons/pi';
 import { formatFileSize } from '../utils/yamlFileHandler';
 import CombineFilesModal from './CombineFilesModal';
+import SplitConfigModal from './SplitConfigModal';
+import DownloadFilesModal from './DownloadFilesModal';
 import MonacoYamlViewer from './MonacoYamlViewer';
 
 const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpdated }) => {
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
   const [showCombineModal, setShowCombineModal] = useState(false);
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [allFiles, setAllFiles] = useState(files);
 
   // Sync allFiles with files prop when it changes
@@ -65,6 +70,19 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     }
   };
 
+  const handleSplitConfig = (splitFiles) => {
+    // Add the split files to the list
+    const updatedFiles = [...allFiles, ...splitFiles];
+    setAllFiles(updatedFiles);
+    // Select the first split file
+    setSelectedFileIndex(allFiles.length);
+    setShowSplitModal(false);
+    // Notify parent component to update and save to localStorage
+    if (onFilesUpdated) {
+      onFilesUpdated(updatedFiles);
+    }
+  };
+
   const handleRemoveFile = (indexToRemove) => {
     const updatedFiles = allFiles.filter((_, index) => index !== indexToRemove);
     setAllFiles(updatedFiles);
@@ -103,7 +121,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
       shadows="md"
     >
       <Flex
-        p={{ base: 3, sm: 4 }}
+        p={{ base: 2, sm: 4 }}
         bg="#E2E8F0"
         _dark={{ bg: "#334155" }}
         borderBottomWidth="1px"
@@ -114,15 +132,17 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         minH={{ base: "auto", sm: "60px" }}
         direction={{ base: "column", sm: "row" }}
       >
-        <Flex direction={{ base: "column", sm: "row" }} gap={{ base: 1, sm: 3 }} align={{ base: "flex-start", sm: "center" }}>
-          <Heading as="h3" size={{ base: "sm", sm: "md" }} color="text" lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={2}>
-            <Icon color="primary"><MdDescription /></Icon> Config YAML Viewer
+        <Flex direction={{ base: "column", sm: "row" }} gap={{ base: 0.5, sm: 3 }} align={{ base: "flex-start", sm: "center" }}>
+          <Heading as="h3" size={{ base: "xs", sm: "md" }} color="text" lineHeight="1.2" wordBreak="break-word" display="flex" alignItems="center" gap={1.5}>
+            <Icon color="primary" boxSize={{ base: 4, sm: 5 }}><MdDescription /></Icon> 
+            <Text display={{ base: "none", sm: "inline" }}>Config YAML Viewer</Text>
+            <Text display={{ base: "inline", sm: "none" }}>YAML Viewer</Text>
           </Heading>
-          <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
-            {allFiles.length} file{allFiles.length > 1 ? 's' : ''} loaded
+          <Text fontSize="2xs" color="textMuted">
+            {allFiles.length} file{allFiles.length > 1 ? 's' : ''}
           </Text>
         </Flex>
-        <Flex gap={{ base: 1, sm: 3 }} wrap="wrap" justify={{ base: "flex-start", sm: "flex-end" }}>
+        <Flex gap={{ base: 1, sm: 3 }} wrap="wrap" justify={{ base: "flex-start", sm: "flex-end" }} align="center">
           <Button
             onClick={handleLoadMoreFiles}
             title="Load additional YAML files"
@@ -132,11 +152,45 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             colorPalette="gray"
             borderColor="border"
             _hover={{ bg: "primaryHover", color: "white" }}
-            fontSize={{ base: "xs", sm: "sm" }}
-            px={{ base: 2, sm: 3 }}
-            h={{ base: "28px", sm: "auto" }}
+            fontSize={{ base: "2xs", sm: "sm" }}
+            px={{ base: 1.5, sm: 3 }}
+            h={{ base: "24px", sm: "auto" }}
+            minW={{ base: "auto", sm: "auto" }}
           >
-            Load More
+            <Text display={{ base: "none", sm: "inline" }}>Load More</Text>
+            <Text display={{ base: "inline", sm: "none" }}>Load</Text>
+          </Button>
+          <Button
+            onClick={() => setShowDownloadModal(true)}
+            title="Download selected files"
+            size={{ base: "xs", sm: "sm" }}
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            _hover={{ bg: "primaryHover", color: "white" }}
+            fontSize={{ base: "2xs", sm: "sm" }}
+            px={{ base: 1.5, sm: 3 }}
+            h={{ base: "24px", sm: "auto" }}
+            minW={{ base: "auto", sm: "auto" }}
+          >
+            <Icon fontSize={{ base: "xs", sm: "sm" }}><MdDownload /></Icon>
+            <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Download</Text>
+          </Button>
+          <Button
+            onClick={() => setShowSplitModal(true)}
+            title="Split config file into separate sections"
+            size={{ base: "xs", sm: "sm" }}
+            variant="outline"
+            colorPalette="gray"
+            borderColor="border"
+            _hover={{ bg: "primaryHover", color: "white" }}
+            fontSize={{ base: "2xs", sm: "sm" }}
+            px={{ base: 1.5, sm: 3 }}
+            h={{ base: "24px", sm: "auto" }}
+            minW={{ base: "auto", sm: "auto" }}
+          >
+            <Icon fontSize={{ base: "xs", sm: "sm" }}><PiArrowsSplitFill /></Icon>
+            <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Split</Text>
           </Button>
           {allFiles.length > 1 && (
             <Button
@@ -147,11 +201,13 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
               colorPalette="gray"
               borderColor="border"
               _hover={{ bg: "primaryHover", color: "white" }}
-              fontSize={{ base: "xs", sm: "sm" }}
-              px={{ base: 2, sm: 3 }}
-              h={{ base: "28px", sm: "auto" }}
+              fontSize={{ base: "2xs", sm: "sm" }}
+              px={{ base: 1.5, sm: 3 }}
+              h={{ base: "24px", sm: "auto" }}
+              minW={{ base: "auto", sm: "auto" }}
             >
-              🔗 Combine
+              <Icon fontSize={{ base: "xs", sm: "sm" }}><PiLinkSimpleHorizontalBold /></Icon>
+              <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Combine</Text>
             </Button>
           )}
           <Button
@@ -160,10 +216,13 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             variant="outline"
             colorPalette="gray"
             borderColor="border"
-            px={{ base: 2, sm: 3 }}
-            h={{ base: "28px", sm: "auto" }}
+            fontSize={{ base: "2xs", sm: "sm" }}
+            px={{ base: 1.5, sm: 3 }}
+            h={{ base: "24px", sm: "auto" }}
+            minW={{ base: "auto", sm: "auto" }}
           >
-            Clear All
+            <Text display={{ base: "none", sm: "inline" }}>Clear All</Text>
+            <Text display={{ base: "inline", sm: "none" }}>Clear</Text>
           </Button>
           <IconButton
             onClick={onClose}
@@ -171,9 +230,10 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             size={{ base: "xs", sm: "sm" }}
             variant="ghost"
             colorPalette="gray"
-            minW={{ base: "28px", sm: "auto" }}
-            h={{ base: "28px", sm: "auto" }}
-            p={{ base: 1, sm: 2 }}
+            minW={{ base: "24px", sm: "auto" }}
+            h={{ base: "24px", sm: "auto" }}
+            p={{ base: 0.5, sm: 2 }}
+            fontSize={{ base: "sm", sm: "md" }}
           >
             <MdClose />
           </IconButton>
@@ -181,13 +241,13 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
       </Flex>
 
       <Flex
-        p={2}
+        p={{ base: 1, sm: 2 }}
         bg="#E2E8F0"
         _dark={{ bg: "#334155" }}
         borderBottomWidth="1px"
         borderColor="border"
         overflowX="auto"
-        gap={2}
+        gap={{ base: 1, sm: 2 }}
       >
         {allFiles.map((file, index) => (
           <Flex
@@ -196,8 +256,8 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             borderWidth="1px"
             borderColor={selectedFileIndex === index ? "primary" : "border"}
             borderRadius="md"
-            px={{ base: 2, sm: 3 }}
-            py={{ base: 1.5, sm: 2 }}
+            px={{ base: 1.5, sm: 3 }}
+            py={{ base: 1, sm: 2 }}
             cursor="pointer"
             onClick={() => setSelectedFileIndex(index)}
             position="relative"
@@ -205,19 +265,23 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             _hover={{ bg: "cardBg" }}
             transition="all 0.2s"
             align="center"
-            gap={2}
+            gap={{ base: 1, sm: 2 }}
           >
             <VStack align="start" gap={0} flex={1}>
-              <Text
-                fontSize={{ base: "xs", sm: "sm" }}
-                fontWeight={selectedFileIndex === index ? "semibold" : "normal"}
-                color="text"
-                lineHeight="1.3"
-                wordBreak="break-word"
-              >
-                {file.name.startsWith('combined_') ? '🔗 ' : ''}{file.name}
-              </Text>
-              <Text fontSize="xs" color="textMuted">
+              <Flex align="center" gap={0.5}>
+                {file.name.startsWith('combined_') && <Icon boxSize={{ base: 2.5, sm: 3 }} color="primary"><PiLinkSimpleHorizontalBold /></Icon>}
+                <Text
+                  fontSize="2xs"
+                  fontWeight={selectedFileIndex === index ? "semibold" : "normal"}
+                  color="text"
+                  lineHeight="1.2"
+                  wordBreak="break-word"
+                  noOfLines={1}
+                >
+                  {file.name}
+                </Text>
+              </Flex>
+              <Text fontSize="2xs" color="textMuted" lineHeight="1.2">
                 ({formatFileSize(file.size)})
               </Text>
             </VStack>
@@ -228,12 +292,13 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
               }}
               aria-label={`Remove ${file.name}`}
               title={`Remove ${file.name}`}
-              size="xs"
+              size="2xs"
               variant="ghost"
               colorPalette="red"
-              minW={{ base: "20px", sm: "auto" }}
-              h={{ base: "20px", sm: "auto" }}
-              p={{ base: 0.5, sm: 1 }}
+              minW={{ base: "16px", sm: "auto" }}
+              h={{ base: "16px", sm: "auto" }}
+              p={{ base: 0, sm: 1 }}
+              fontSize={{ base: "xs", sm: "sm" }}
             >
               <MdClose />
             </IconButton>
@@ -261,6 +326,19 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         isOpen={showCombineModal}
         onClose={() => setShowCombineModal(false)}
         onCombine={handleCombineFiles}
+      />
+      
+      <SplitConfigModal
+        file={currentFile}
+        isOpen={showSplitModal}
+        onClose={() => setShowSplitModal(false)}
+        onSplit={handleSplitConfig}
+      />
+      
+      <DownloadFilesModal
+        files={allFiles}
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
       />
     </VStack>
   );
