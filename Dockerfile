@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # --- Runtime Stage ---
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Install nginx + supervisor
 RUN apk add --no-cache nginx supervisor
