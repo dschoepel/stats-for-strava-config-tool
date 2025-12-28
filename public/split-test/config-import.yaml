@@ -1,0 +1,10 @@
+#===================================#
+# Import Configuration Settings
+#===================================#
+import:
+  numberOfNewActivitiesToProcessPerImport: 250
+  sportTypesToImport: []
+  activityVisibilitiesToImport: []
+  skipActivitiesRecordedBefore: null
+  activitiesToSkipDuringImport: []
+  optInToSegmentDetailImport: false
