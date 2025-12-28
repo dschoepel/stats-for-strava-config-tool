@@ -228,7 +228,7 @@ git push origin --delete copilot/merge-to-main-via-pr
 
 | Action | GitHub Web | GitHub CLI |
 |--------|------------|------------|
-| Create PR | Pull requests → New pull request | `gh pr create` |
+| Create PR | Pull requests > New pull request | `gh pr create` |
 | View PR | Click on PR in list | `gh pr view [number]` |
 | Review changes | Files changed tab | `gh pr diff [number]` |
 | Merge PR | Merge pull request button | `gh pr merge [number]` |
