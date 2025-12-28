@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Button, Input, Flex, Text, VStack, HStack, Table, Heading, Icon } from '@chakra-ui/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Box, Button, Input, Flex, Text, VStack, HStack, Table, Heading, Icon, Field } from '@chakra-ui/react';
 import { NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
-import { MdAdd, MdInfo } from 'react-icons/md';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { MdAdd, MdInfo, MdDelete } from 'react-icons/md';
 import { calculateAge, calculateMaxHeartRate, calculateDefaultZones } from '../../utils/heartRateUtils';
 import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
+import { DateInput } from '../DateInput';
 
 /**
  * HeartRateZonesEditor - Complex editor for heart rate zones configuration
@@ -21,6 +20,7 @@ const HeartRateZonesEditor = ({
 }) => {
   const [sportsList, setSportsList] = useState(initialSportsList);
   const [showSportModal, setShowSportModal] = useState(false);
+  const lastModeRef = useRef(null);
   
   const currentMode = zones?.mode || '';
   const currentZones = zones?.default || {};
@@ -45,6 +45,25 @@ const HeartRateZonesEditor = ({
     };
     loadSports();
   }, []);
+  
+  // Auto-populate zones when mode changes and zones are empty
+  useEffect(() => {
+    // Only run if mode actually changed
+    if (currentMode && currentMode !== lastModeRef.current) {
+      lastModeRef.current = currentMode;
+      
+      const existingZones = zones?.default || {};
+      const hasExistingZones = Object.keys(existingZones).length > 0;
+      
+      // Only auto-populate if we have max HR and no existing zones
+      if (calculatedMaxHR && !hasExistingZones) {
+        const defaultZones = calculateDefaultZones(calculatedMaxHR, currentMode);
+        if (defaultZones) {
+          onChange({ ...zones, default: defaultZones });
+        }
+      }
+    }
+  }, [currentMode, calculatedMaxHR, zones, onChange]);
   
   // Handle mode change
   const handleModeChange = (newMode) => {
@@ -106,24 +125,16 @@ const HeartRateZonesEditor = ({
     onChange({ ...zones, dateRanges: updated });
   };
   
-  const handleDateChange = (oldDate, selectedDate) => {
-    const newDate = selectedDate.toISOString().split('T')[0];
+  const handleDateChange = (oldDate, newDateStr) => {
+    if (!newDateStr || newDateStr === oldDate) return;
     
-    if (newDate === oldDate) return;
-    
-    const today = new Date();
-    if (selectedDate > today) {
-      alert('Date cannot be in the future. Please select today\'s date or a past date.');
-      return;
-    }
-    
-    if (dateRanges[newDate]) {
+    if (dateRanges[newDateStr]) {
       alert('A date range for this date already exists.');
       return;
     }
     
     const updated = { ...dateRanges };
-    updated[newDate] = updated[oldDate];
+    updated[newDateStr] = updated[oldDate];
     delete updated[oldDate];
     onChange({ ...zones, dateRanges: updated });
   };
@@ -204,25 +215,17 @@ const HeartRateZonesEditor = ({
     onChange({ ...zones, sportTypes: updated });
   };
   
-  const handleSportDateChange = (sportName, oldDate, selectedDate) => {
-    const newDate = selectedDate.toISOString().split('T')[0];
-    
-    if (newDate === oldDate) return;
-    
-    const today = new Date();
-    if (selectedDate > today) {
-      alert('Date cannot be in the future. Please select today\'s date or a past date.');
-      return;
-    }
+  const handleSportDateChange = (sportName, oldDate, newDateStr) => {
+    if (!newDateStr || newDateStr === oldDate) return;
     
     const sportDateRanges = sportTypes[sportName]?.dateRanges || {};
-    if (sportDateRanges[newDate]) {
+    if (sportDateRanges[newDateStr]) {
       alert('A date range for this date already exists for this sport.');
       return;
     }
     
     const updated = { ...sportTypes };
-    updated[sportName].dateRanges[newDate] = updated[sportName].dateRanges[oldDate];
+    updated[sportName].dateRanges[newDateStr] = updated[sportName].dateRanges[oldDate];
     delete updated[sportName].dateRanges[oldDate];
     onChange({ ...zones, sportTypes: updated });
   };
@@ -392,14 +395,15 @@ const HeartRateZonesEditor = ({
       </Box>
 
       {/* Default Zones */}
-      <Flex justify="space-between" align="center" mb={3}>
-        <Heading size="sm" lineHeight="1.2" wordBreak="break-word">Default Heart Rate Zones</Heading>
+      <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
+        <Heading size="sm" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">Default Heart Rate Zones</Heading>
         {calculatedMaxHR && (
           <Button
             size="sm"
             variant="outline"
             onClick={autoPopulateZones}
             title="Recalculate zones based on current age and formula"
+            flexShrink={0}
           >
             Recalculate Zones
           </Button>
@@ -411,9 +415,9 @@ const HeartRateZonesEditor = ({
 
       {/* Date Ranges Section */}
       <Box mb={6}>
-        <Flex justify="space-between" align="center" mb={3}>
-          <Heading size="sm" lineHeight="1.2" wordBreak="break-word">Date Ranges</Heading>
-          <Button onClick={handleAddDateRange} size="sm" variant="outline">
+        <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
+          <Heading size="sm" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">Date Ranges</Heading>
+          <Button onClick={handleAddDateRange} size="sm" variant="outline" flexShrink={0}>
             <MdAdd /> Add Date Range
           </Button>
         </Flex>
@@ -426,24 +430,16 @@ const HeartRateZonesEditor = ({
             .map(([date, zonesData]) => (
             <Box key={date} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
               <Flex justify="space-between" align="center" mb={3}>
-                <Box className="react-datepicker-wrapper" flex="1" maxW="200px">
-                  <DatePicker
-                    selected={new Date(date)}
-                    onChange={(selectedDate) => handleDateChange(date, selectedDate)}
-                    maxDate={new Date()}
-                    dateFormat="yyyy-MM-dd"
-                    className="date-range-input"
-                    showPopperArrow={true}
-                    popperPlacement="bottom-start"
-                    showMonthDropdown
-                    showYearDropdown
-                    dropdownMode="select"
-                    yearDropdownItemNumber={50}
-                    withPortal
+                <Field.Root maxW="200px">
+                  <Field.Label srOnly>Effective Date</Field.Label>
+                  <DateInput
+                    value={date}
+                    onChange={(newDate) => handleDateChange(date, newDate)}
+                    bg="inputBg"
                   />
-                </Box>
-                <Button onClick={() => handleRemoveDateRange(date)} size="sm" variant="outline" colorPalette="red">
-                  Remove
+                </Field.Root>
+                <Button onClick={() => handleRemoveDateRange(date)} size="sm" variant="outline" colorPalette="red" title="Remove date range">
+                  <MdDelete />
                 </Button>
               </Flex>
               {renderZoneTable(zonesData, (zoneNum, field, value) => handleDateRangeZoneChange(date, zoneNum, field, value), `date-${date}`)}
@@ -454,9 +450,9 @@ const HeartRateZonesEditor = ({
 
       {/* Sport Types Section */}
       <Box>
-        <Flex justify="space-between" align="center" mb={3}>
-          <Heading size="sm" lineHeight="1.2" wordBreak="break-word">Sport Type Overrides</Heading>
-          <Button onClick={() => setShowSportModal(true)} size="sm" variant="outline">
+        <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
+          <Heading size="sm" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">Sport Type Overrides</Heading>
+          <Button onClick={() => setShowSportModal(true)} size="sm" variant="outline" flexShrink={0}>
             <MdAdd /> Add Sport Type
           </Button>
         </Flex>
@@ -470,10 +466,10 @@ const HeartRateZonesEditor = ({
             .sort(([sportA], [sportB]) => sportA.localeCompare(sportB))
             .map(([sportName, sportData]) => (
             <Box key={sportName} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
-              <Flex justify="space-between" align="center" mb={4}>
-                <Heading size="sm" lineHeight="1.2" wordBreak="break-word">{sportName}</Heading>
-                <Button onClick={() => handleRemoveSportType(sportName)} size="sm" variant="outline" colorPalette="red">
-                  Remove Sport
+              <Flex justify="space-between" align="center" mb={4} gap={2} flexWrap="wrap">
+                <Heading size="sm" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">{sportName}</Heading>
+                <Button onClick={() => handleRemoveSportType(sportName)} size="sm" variant="outline" colorPalette="red" flexShrink={0} title="Remove sport type">
+                  <MdDelete />
                 </Button>
               </Flex>
               
@@ -485,9 +481,16 @@ const HeartRateZonesEditor = ({
               
               {/* Date ranges for this sport */}
               <Box>
-                <Flex justify="space-between" align="center" mb={2}>
-                  <Heading size="xs" lineHeight="1.2" wordBreak="break-word">Date Ranges</Heading>
-                  <Button onClick={() => handleAddSportDateRange(sportName)} size="xs" variant="outline">
+                <Flex justify="space-between" align="center" mb={2} gap={2} flexWrap="wrap">
+                  <Heading size="xs" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">Date Ranges</Heading>
+                  <Button 
+                    onClick={() => handleAddSportDateRange(sportName)} 
+                    size={{ base: "xs", sm: "xs" }} 
+                    variant="outline" 
+                    flexShrink={0}
+                    fontSize={{ base: "xs", sm: "sm" }}
+                    px={{ base: 2, sm: 3 }}
+                  >
                     <MdAdd /> Add Date Range
                   </Button>
                 </Flex>
@@ -498,26 +501,19 @@ const HeartRateZonesEditor = ({
                   {Object.entries(sportData.dateRanges || {})
                     .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
                     .map(([date, zonesData]) => (
-                    <Box key={date} p={3} borderWidth="1px" borderColor="border" borderRadius="md">
-                      <Flex justify="space-between" align="center" mb={2}>
-                        <Box className="react-datepicker-wrapper" flex="1" maxW="180px">
-                          <DatePicker
-                            selected={new Date(date)}
-                            onChange={(selectedDate) => handleSportDateChange(sportName, date, selectedDate)}
-                            maxDate={new Date()}
-                            dateFormat="yyyy-MM-dd"
-                            className="date-range-input"
-                            showPopperArrow={true}
-                            popperPlacement="bottom-start"
-                            showMonthDropdown
-                            showYearDropdown
-                            dropdownMode="select"
-                            yearDropdownItemNumber={50}
-                            withPortal
+                    <Box key={date} p={{ base: 2, sm: 3 }} borderWidth="1px" borderColor="border" borderRadius="md">
+                      <Flex justify="space-between" align="center" mb={2} gap={2} flexWrap="wrap">
+                        <Field.Root maxW={{ base: "100%", sm: "180px" }} flex="1">
+                          <Field.Label srOnly>Effective Date</Field.Label>
+                          <DateInput
+                            value={date}
+                            onChange={(newDate) => handleSportDateChange(sportName, date, newDate)}
+                            bg="inputBg"
+                            size="sm"
                           />
-                        </Box>
-                        <Button onClick={() => handleRemoveSportDateRange(sportName, date)} size="xs" variant="outline" colorPalette="red">
-                          Remove
+                        </Field.Root>
+                        <Button onClick={() => handleRemoveSportDateRange(sportName, date)} size="xs" variant="outline" colorPalette="red" flexShrink={0} title="Remove date range">
+                          <MdDelete />
                         </Button>
                       </Flex>
                       {renderZoneTable(zonesData, (zoneNum, field, value) => handleSportDateRangeZoneChange(sportName, date, zoneNum, field, value), `sport-${sportName}-date-${date}`)}

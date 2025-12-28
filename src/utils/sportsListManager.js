@@ -33,7 +33,7 @@ export const initialSportsList = {
 };
 
 // Read sports list from server via API
-export async function readSportsList(settings) {
+export async function readSportsList(settings = {}) {
   try {
     const defaultPath = settings.files?.defaultPath || '';
     const response = await fetch(`/api/sports-list?defaultPath=${encodeURIComponent(defaultPath)}`);

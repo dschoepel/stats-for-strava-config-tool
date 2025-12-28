@@ -1,10 +1,12 @@
 import React from 'react';
 import { Box, Text, Flex, Icon } from '@chakra-ui/react';
 import { MdInfo } from 'react-icons/md';
+import { Field } from '@chakra-ui/react';
 import BaseConfigEditor from './BaseConfigEditor';
 import HeartRateZonesEditor from '../config-fields/HeartRateZonesEditor';
 import WeightHistoryEditor from '../config-fields/WeightHistoryEditor';
 import FtpHistoryEditor from '../config-fields/FtpHistoryEditor';
+import { DateInput } from '../DateInput';
 import { calculateMaxHeartRate } from '../../utils/heartRateUtils';
 
 /**
@@ -32,7 +34,6 @@ const AthleteConfigEditor = ({
       const mode = getNestedValue(formData, 'heartRateZones.mode');
       if (mode === null || mode === undefined || mode === '') {
         errors['heartRateZones.mode'] = 'Zone Mode is required when heart rate zones are configured';
-        errors['heartRateZones'] = 'Zone Mode is required when heart rate zones are configured';
       }
     }
     
@@ -81,9 +82,9 @@ const AthleteConfigEditor = ({
         const maxHR = calculateMaxHeartRate(birthday, formula);
 
         return (
-          <Box p={4} bg="cardBg" borderWidth="1px" borderColor="border" borderRadius="md" shadows="md">
+          <Box p={{ base: 3, md: 4 }} bg="cardBg" borderWidth="1px" borderColor="border" borderRadius="md" shadows="md">
             <Box mb={6}>
-              <Text fontSize="lg" fontWeight="600" mb={2}>
+              <Text fontSize={{ base: "md", md: "lg" }} fontWeight="600" mb={2}>
                 Athlete Configuration
               </Text>
               <Text fontSize="sm" color="textMuted">
@@ -92,7 +93,26 @@ const AthleteConfigEditor = ({
             </Box>
 
             {/* Birthday Field */}
-            {renderBasicField('birthday', schema.properties.birthday)}
+            <Box mb={4}>
+              <Field.Root required={schema?.required?.includes('birthday')}>
+                <Field.Label fontWeight="500">
+                  Birthday
+                </Field.Label>
+                <Text fontSize="sm" color="textMuted" mb={2}>
+                  {schema.properties.birthday.description}
+                </Text>
+                <DateInput
+                  value={getNestedValue(formData, 'birthday') || ''}
+                  onChange={(value) => handleFieldChange('birthday', value)}
+                  placeholder="Select birthday"
+                  maxDate={new Date()}
+                  width={{ base: "100%", sm: "300px" }}
+                />
+                {errors?.birthday && (
+                  <Field.ErrorText>{errors.birthday}</Field.ErrorText>
+                )}
+              </Field.Root>
+            </Box>
 
             {/* Max Heart Rate Formula Field with calculated display */}
             <Box mb={4}>
@@ -111,12 +131,18 @@ const AthleteConfigEditor = ({
                 );
                 
                 return (
-                  <Flex gap={3} align="center" flexWrap="wrap">
-                    <Box flex="1" minW="200px">
+                  <Flex gap={3} align="center" flexWrap="wrap" direction={{ base: "column", sm: "row" }}>
+                    <Box flex="1" minW={{ base: "100%", sm: "200px" }}>
                       {renderBasicField('maxHeartRateFormula', stringOption, 'maxHeartRateFormula', true)}
                     </Box>
                     {maxHR && (
-                      <Box p={2} bg="blue.50" _dark={{ bg: 'blue.900/30' }} borderRadius="md">
+                      <Box 
+                        p={2} 
+                        bg="blue.50" 
+                        _dark={{ bg: 'blue.900/30' }} 
+                        borderRadius="md"
+                        width={{ base: "100%", sm: "auto" }}
+                      >
                         <Flex align="center" gap={2}>
                           <Icon fontSize="sm" color="blue.600"><MdInfo /></Icon>
                           <Text fontSize="sm" fontWeight="600" color="blue.800" _dark={{ color: 'blue.200' }}>

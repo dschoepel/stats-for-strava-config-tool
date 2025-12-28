@@ -22,7 +22,7 @@ import ZwiftConfigEditor from './components/config/ZwiftConfigEditor'
 import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
-import { useToast } from './hooks/useToast'
+import { ToastProvider, useToast } from './contexts/ToastContext'
 import { ToastContainer } from './components/Toast'
 import { ConfirmDialog } from './components/ConfirmDialog'
 

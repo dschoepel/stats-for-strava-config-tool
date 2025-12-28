@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Button, Input, Flex, Text, VStack, Table, Heading, Tabs } from '@chakra-ui/react';
-import { MdAdd } from 'react-icons/md';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { Box, Button, Input, Flex, Text, VStack, Table, Heading, Tabs, Field } from '@chakra-ui/react';
+import { MdAdd, MdDelete } from 'react-icons/md';
+import { DateInput } from '../DateInput';
 
 /**
  * FtpHistoryEditor - Inline editor for FTP (Functional Threshold Power) history
@@ -44,18 +43,10 @@ const FtpHistoryEditor = ({
     onChange(updated);
   };
   
-  const handleDateChange = (sport, oldDate, selectedDate) => {
-    const newDate = selectedDate.toISOString().split('T')[0];
+  const handleDateChange = (sport, oldDate, newDateStr) => {
+    if (!newDateStr || newDateStr === oldDate) return;
     
-    if (newDate === oldDate) return;
-    
-    const today = new Date();
-    if (selectedDate > today) {
-      alert('Date cannot be in the future. Please select today\'s date or a past date.');
-      return;
-    }
-    
-    if (history[sport]?.[newDate]) {
+    if (history[sport]?.[newDateStr]) {
       alert('An entry for this date already exists.');
       return;
     }
@@ -64,7 +55,7 @@ const FtpHistoryEditor = ({
     if (!updated[sport]) {
       updated[sport] = {};
     }
-    updated[sport][newDate] = updated[sport][oldDate];
+    updated[sport][newDateStr] = updated[sport][oldDate];
     delete updated[sport][oldDate];
     onChange(updated);
     setEditingDate(null);
@@ -88,11 +79,18 @@ const FtpHistoryEditor = ({
     
     return (
       <Box>
-        <Flex justify="space-between" align="center" mb={3}>
+        <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
           <Text fontSize="sm" color="textMuted">
             {sortedEntries.length} {sortedEntries.length === 1 ? 'entry' : 'entries'}
           </Text>
-          <Button onClick={() => handleAddEntry(sport)} size="sm" variant="outline">
+          <Button 
+            onClick={() => handleAddEntry(sport)} 
+            size={{ base: "xs", sm: "sm" }} 
+            variant="outline"
+            flexShrink={0}
+            fontSize={{ base: "xs", sm: "sm" }}
+            px={{ base: 2, sm: 3 }}
+          >
             <MdAdd /> Add Entry
           </Button>
         </Flex>
@@ -116,26 +114,15 @@ const FtpHistoryEditor = ({
                   <Table.Row key={date}>
                     <Table.Cell>
                       {editingDate === date && editingSport === sport ? (
-                        <Box className="react-datepicker-wrapper" width="150px">
-                          <DatePicker
-                            selected={new Date(date)}
-                            onChange={(selectedDate) => handleDateChange(sport, date, selectedDate)}
-                            onClickOutside={() => {
-                              setEditingDate(null);
-                              setEditingSport(null);
-                            }}
-                            maxDate={new Date()}
-                            dateFormat="yyyy-MM-dd"
-                            className="date-range-input"
-                            showPopperArrow={true}
-                            popperPlacement="bottom-start"
-                            showMonthDropdown
-                            showYearDropdown
-                            dropdownMode="select"
-                            yearDropdownItemNumber={50}
-                            withPortal
+                        <Field.Root width="150px">
+                          <Field.Label srOnly>Date</Field.Label>
+                          <DateInput
+                            value={date}
+                            onChange={(newDate) => handleDateChange(sport, date, newDate)}
+                            bg="inputBg"
+                            size="sm"
                           />
-                        </Box>
+                        </Field.Root>
                       ) : (
                         <Text 
                           cursor="pointer" 
@@ -165,11 +152,14 @@ const FtpHistoryEditor = ({
                     <Table.Cell>
                       <Button
                         onClick={() => handleRemoveEntry(sport, date)}
-                        size="sm"
+                        size={{ base: "xs", sm: "sm" }}
                         variant="outline"
                         colorPalette="red"
+                        fontSize={{ base: "xs", sm: "sm" }}
+                        px={{ base: 2, sm: 3 }}
+                        title="Remove entry"
                       >
-                        Remove
+                        <MdDelete />
                       </Button>
                     </Table.Cell>
                   </Table.Row>
@@ -185,7 +175,7 @@ const FtpHistoryEditor = ({
   return (
     <Box mb={6}>
       <Box mb={3}>
-        <Heading size="md" mb={1} lineHeight="1.2" wordBreak="break-word">FTP History</Heading>
+        <Heading size={{ base: "sm", md: "md" }} mb={1} lineHeight="1.2" wordBreak="break-word">FTP History</Heading>
         <Text fontSize="sm" color="textMuted">
           Track your Functional Threshold Power over time. Used to calculate activity stress levels.
         </Text>
@@ -198,9 +188,9 @@ const FtpHistoryEditor = ({
       )}
       
       <Tabs.Root defaultValue="cycling">
-        <Tabs.List>
-          <Tabs.Trigger value="cycling">Cycling</Tabs.Trigger>
-          <Tabs.Trigger value="running">Running</Tabs.Trigger>
+        <Tabs.List size={{ base: "sm", md: "md" }}>
+          <Tabs.Trigger value="cycling" px={{ base: 3, md: 4 }} fontSize={{ base: "sm", md: "md" }}>Cycling</Tabs.Trigger>
+          <Tabs.Trigger value="running" px={{ base: 3, md: 4 }} fontSize={{ base: "sm", md: "md" }}>Running</Tabs.Trigger>
         </Tabs.List>
         
         <Tabs.Content value="cycling" pt={4}>

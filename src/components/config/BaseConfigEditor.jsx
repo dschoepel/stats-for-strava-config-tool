@@ -15,6 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { getSchemaBySection } from '../../schemas/configSchemas';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { useToast } from '../../contexts/ToastContext';
 
 /**
  * BaseConfigEditor - Common form logic for all config section editors
@@ -35,6 +36,7 @@ const BaseConfigEditor = ({
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const schema = useMemo(() => getSchemaBySection(sectionName), [sectionName]);
+  const { showError } = useToast();
 
   // Warn user before leaving with unsaved changes
   useEffect(() => {
@@ -86,14 +88,19 @@ const BaseConfigEditor = ({
     });
     setIsDirty(true);
     
-    // Clear error for this field
-    if (errors[fieldPath]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldPath];
-        return newErrors;
+    // Clear error for this field and any nested field errors
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      // Clear exact match
+      delete newErrors[fieldPath];
+      // Clear any nested field errors (e.g., if fieldPath is 'heartRateZones', clear 'heartRateZones.mode')
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith(fieldPath + '.')) {
+          delete newErrors[key];
+        }
       });
-    }
+      return newErrors;
+    });
   };
 
   // Base validation
@@ -117,15 +124,20 @@ const BaseConfigEditor = ({
     }
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return { isValid: Object.keys(newErrors).length === 0, errors: newErrors };
   };
 
   // Form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validateForm()) {
+    const { isValid, errors: validationErrors } = validateForm();
+    if (isValid) {
       onSave(formData);
       setIsDirty(false);
+    } else {
+      // Show validation error toast
+      const errorCount = Object.keys(validationErrors).length;
+      showError(`Please fix ${errorCount} validation error${errorCount > 1 ? 's' : ''} before saving.`, 5000);
     }
   };
 

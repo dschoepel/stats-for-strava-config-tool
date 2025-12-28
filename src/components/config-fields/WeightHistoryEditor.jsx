@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Box, Button, Input, Flex, Text, VStack, Table, Heading } from '@chakra-ui/react';
-import { MdAdd } from 'react-icons/md';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { Box, Button, Input, Flex, Text, VStack, Table, Heading, Field } from '@chakra-ui/react';
+import { MdAdd, MdDelete } from 'react-icons/md';
+import { DateInput } from '../DateInput';
 
 /**
  * WeightHistoryEditor - Inline editor for weight history tracking
@@ -35,24 +34,16 @@ const WeightHistoryEditor = ({
     onChange(updated);
   };
   
-  const handleDateChange = (oldDate, selectedDate) => {
-    const newDate = selectedDate.toISOString().split('T')[0];
+  const handleDateChange = (oldDate, newDateStr) => {
+    if (!newDateStr || newDateStr === oldDate) return;
     
-    if (newDate === oldDate) return;
-    
-    const today = new Date();
-    if (selectedDate > today) {
-      alert('Date cannot be in the future. Please select today\'s date or a past date.');
-      return;
-    }
-    
-    if (history[newDate]) {
+    if (history[newDateStr]) {
       alert('An entry for this date already exists.');
       return;
     }
     
     const updated = { ...history };
-    updated[newDate] = updated[oldDate];
+    updated[newDateStr] = updated[oldDate];
     delete updated[oldDate];
     onChange(updated);
     setEditingDate(null);
@@ -71,14 +62,14 @@ const WeightHistoryEditor = ({
   
   return (
     <Box mb={6}>
-      <Flex justify="space-between" align="center" mb={3}>
-        <Box>
-          <Heading size="md" mb={1} lineHeight="1.2" wordBreak="break-word">Weight History</Heading>
+      <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
+        <Box flex="1" minW={{ base: "100%", sm: "200px" }}>
+          <Heading size={{ base: "sm", md: "md" }} mb={1} lineHeight="1.2" wordBreak="break-word">Weight History</Heading>
           <Text fontSize="sm" color="textMuted">
             Track your weight over time. Weight values depend on your unit system setting (kg or lbs).
           </Text>
         </Box>
-        <Button onClick={handleAddEntry} size="sm" variant="outline">
+        <Button onClick={handleAddEntry} size="sm" variant="outline" flexShrink={0}>
           <MdAdd /> Add Entry
         </Button>
       </Flex>
@@ -106,23 +97,15 @@ const WeightHistoryEditor = ({
                 <Table.Row key={date}>
                   <Table.Cell>
                     {editingDate === date ? (
-                      <Box className="react-datepicker-wrapper" width="150px">
-                        <DatePicker
-                          selected={new Date(date)}
-                          onChange={(selectedDate) => handleDateChange(date, selectedDate)}
-                          onClickOutside={() => setEditingDate(null)}
-                          maxDate={new Date()}
-                          dateFormat="yyyy-MM-dd"
-                          className="date-range-input"
-                          showPopperArrow={true}
-                          popperPlacement="bottom-start"
-                          showMonthDropdown
-                          showYearDropdown
-                          dropdownMode="select"
-                          yearDropdownItemNumber={50}
-                          withPortal
+                      <Field.Root width="150px">
+                        <Field.Label srOnly>Date</Field.Label>
+                        <DateInput
+                          value={date}
+                          onChange={(newDate) => handleDateChange(date, newDate)}
+                          bg="inputBg"
+                          size="sm"
                         />
-                      </Box>
+                      </Field.Root>
                     ) : (
                       <Text 
                         cursor="pointer" 
@@ -152,8 +135,9 @@ const WeightHistoryEditor = ({
                       size="sm"
                       variant="outline"
                       colorPalette="red"
-                    >
-                      Remove
+                      title="Remove entry"
+                      >
+                      <MdDelete />
                     </Button>
                   </Table.Cell>
                 </Table.Row>
