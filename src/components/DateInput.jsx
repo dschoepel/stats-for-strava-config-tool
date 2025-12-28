@@ -3,18 +3,18 @@ import DatePicker from 'react-datepicker';
 import { Input } from '@chakra-ui/react';
 import 'react-datepicker/dist/react-datepicker.css';
 
-// Add styles to fix z-index issues
-const style = document.createElement('style');
-style.textContent = `
-  .react-datepicker-popper {
-    z-index: 9999 !important;
-  }
-  .date-picker-popper {
-    z-index: 9999 !important;
-  }
-`;
+// Add styles to fix z-index issues (only on client side)
 if (typeof document !== 'undefined' && !document.getElementById('datepicker-styles')) {
+  const style = document.createElement('style');
   style.id = 'datepicker-styles';
+  style.textContent = `
+    .react-datepicker-popper {
+      z-index: 9999 !important;
+    }
+    .date-picker-popper {
+      z-index: 9999 !important;
+    }
+  `;
   document.head.appendChild(style);
 }
 

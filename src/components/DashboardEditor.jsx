@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, Flex, Heading, Text, VStack, HStack, Input, Grid, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
+import { MdClose, MdRefresh, MdWarning, MdDragIndicator, MdExpandMore, MdChevronRight, MdArrowUpward, MdArrowDownward, MdDelete, MdSave, MdBarChart, MdLightbulb } from 'react-icons/md';
 import { readWidgetDefinitions } from '../utils/widgetDefinitionsManager';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -342,7 +343,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                   minW="auto"
                   h="auto"
                 >
-                  ✕
+                  <MdClose />
                 </Button>
               </Flex>
             ))}
@@ -432,7 +433,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
             size={{ base: "xs", sm: "sm" }}
             title="Close"
           >
-            ✕
+            <MdClose />
           </Button>
         </Flex>
 
@@ -477,14 +478,17 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                     colorPalette="orange"
                     title="Clear all widgets"
                   >
-                    🔄 Reset
+                    <MdRefresh /> Reset
                   </Button>
                 )}
               </Flex>
               {isDirty && (
-                <Text fontSize="sm" color="orange.500" fontWeight="600" mt={2}>
-                  ⚠️ You have unsaved changes
-                </Text>
+                <Flex align="center" gap={1} mt={2}>
+                  <MdWarning color="var(--chakra-colors-orange-500)" />
+                  <Text fontSize="sm" color="orange.500" fontWeight="600">
+                    You have unsaved changes
+                  </Text>
+                </Flex>
               )}
             </Box>
 
@@ -499,20 +503,25 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
             >
               {!layout || layout.length === 0 ? (
                 <Box textAlign="center" py={{ base: 8, sm: 12 }} px={4} color="textMuted">
-                  <Text fontSize="3xl" mb={4} opacity={0.5}>📊</Text>
+                  <Box display="flex" justifyContent="center" mb={4}>
+                    <MdBarChart size="48px" opacity={0.5} />
+                  </Box>
                   <Heading size="sm" mb={2} color="text">No widgets in dashboard</Heading>
                   <Text fontSize="sm" mb={2}>Add widgets using the dropdown below to customize your dashboard layout.</Text>
-                  <Box
+                  <Flex
                     mt={5}
                     p={2}
                     bg="blue.500/10"
                     borderRadius="md"
-                    display="inline-block"
+                    display="inline-flex"
+                    align="center"
+                    gap={2}
                   >
+                    <MdLightbulb />
                     <Text fontSize="xs" fontStyle="italic">
-                      💡 Tip: You can reorder widgets by dragging them or using the arrow buttons.
+                      Tip: You can reorder widgets by dragging them or using the arrow buttons.
                     </Text>
-                  </Box>
+                  </Flex>
                 </Box>
               ) : (
                 layout.map((widget, index) => (
@@ -542,9 +551,9 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                       gap={{ base: 2, sm: 3 }}
                       mb={expandedWidgets[index] ? 3 : 0}
                     >
-                      <Text fontSize="xl" color="textMuted" cursor="grab" userSelect="none" title="Drag to reorder">
-                        ⋮⋮
-                      </Text>
+                      <Box fontSize="xl" color="textMuted" cursor="grab" userSelect="none" title="Drag to reorder">
+                        <MdDragIndicator />
+                      </Box>
                       <Button
                         variant="ghost"
                         size="xs"
@@ -553,7 +562,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                         px={1}
                         minW="auto"
                       >
-                        {expandedWidgets[index] ? '▼' : '▶'}
+                        {expandedWidgets[index] ? <MdExpandMore /> : <MdChevronRight />}
                       </Button>
                       <Box flex="1" minH="32px" display="flex" alignItems="center">
                         <Flex align="center" gap={2} wrap="wrap">
@@ -581,7 +590,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                           fontSize={{ base: "10px", sm: "sm" }}
                           h={{ base: "24px", sm: "auto" }}
                         >
-                          ▲
+                          <MdArrowUpward />
                         </Button>
                         <Button
                           size="xs"
@@ -594,7 +603,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                           fontSize={{ base: "10px", sm: "sm" }}
                           h={{ base: "24px", sm: "auto" }}
                         >
-                          ▼
+                          <MdArrowDownward />
                         </Button>
                         <Button
                           size="xs"
@@ -607,7 +616,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                           fontSize={{ base: "10px", sm: "sm" }}
                           h={{ base: "24px", sm: "auto" }}
                         >
-                          🗑️
+                          <MdDelete />
                         </Button>
                       </Flex>
                     </Flex>
@@ -679,7 +688,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                                 variant="outline"
                                 title="Edit configuration"
                               >
-                                {expandedConfigs[index] ? '▼' : '▶'} Edit
+                                {expandedConfigs[index] ? <MdExpandMore /> : <MdChevronRight />} Edit
                               </Button>
                             </Flex>
                           )}
@@ -783,7 +792,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                 colorPalette="blue"
                 width={{ base: "100%", sm: "auto" }}
               >
-                💾 Save Changes{isDirty ? ' *' : ''}
+                <MdSave /> Save Changes{isDirty ? ' *' : ''}
               </Button>
             </Flex>
           </>

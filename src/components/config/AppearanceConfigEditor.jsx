@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code, Checkbox, Icon } from '@chakra-ui/react';
+import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code, Checkbox, Icon, ColorPicker, Portal, parseColor } from '@chakra-ui/react';
 import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward, MdInfo, MdWarning, MdDashboard } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
@@ -615,7 +615,62 @@ const AppearanceConfigEditor = ({
                       )}
                       
                       {/* polylineColor */}
-                      {renderBasicField('heatmap.polylineColor', fieldSchema.properties.polylineColor)}
+                      <Box mb={4}>
+                        <Text fontWeight="500" mb={1}>
+                          {fieldSchema.properties.polylineColor.title || 'Polyline Color'}
+                        </Text>
+                        {fieldSchema.properties.polylineColor.description && (
+                          <Text fontSize="sm" color="textMuted" mb={2}>
+                            {fieldSchema.properties.polylineColor.description}
+                          </Text>
+                        )}
+                        {(() => {
+                          const currentColor = getNestedValue(formData, 'heatmap.polylineColor') || '#fc6719';
+                          let parsedColor;
+                          try {
+                            parsedColor = parseColor(currentColor);
+                          } catch {
+                            parsedColor = parseColor('#fc6719');
+                          }
+                          return (
+                            <ColorPicker.Root 
+                              value={parsedColor}
+                              onValueChange={(details) => {
+                                handleFieldChange('heatmap.polylineColor', details.valueAsString);
+                              }}
+                              maxW="300px"
+                            >
+                              <ColorPicker.HiddenInput />
+                              <ColorPicker.Control gap={2}>
+                                <ColorPicker.Input flex="1" />
+                                <ColorPicker.Trigger p={0} bg="transparent" border="none">
+                                  <Box 
+                                    width="40px" 
+                                    height="40px" 
+                                    borderRadius="md" 
+                                    bg={currentColor}
+                                    cursor="pointer"
+                                  />
+                                </ColorPicker.Trigger>
+                              </ColorPicker.Control>
+                              <Portal>
+                                <ColorPicker.Positioner>
+                                  <ColorPicker.Content>
+                                    <ColorPicker.Area />
+                                    <HStack>
+                                      <ColorPicker.EyeDropper size="xs" variant="outline" />
+                                      <ColorPicker.Sliders />
+                                    </HStack>
+                                  </ColorPicker.Content>
+                                </ColorPicker.Positioner>
+                              </Portal>
+                            </ColorPicker.Root>
+                          );
+                        })()}
+                        {errors['heatmap.polylineColor'] && (
+                          <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.polylineColor']}</Text>
+                        )}
+                      </Box>
                   
                   {/* tileLayerUrl - special handling for oneOf (string or array) */}
                   <Box mb={4}>

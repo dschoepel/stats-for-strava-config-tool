@@ -640,25 +640,47 @@ const NextConfigFileList = forwardRef((props, ref) => {
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
-                    {Array.from(sectionToFileMap.entries()).map(([section, fileInfo]) => {
-                      // Check if this is an array (multiple files)
-                      const isMultiple = Array.isArray(fileInfo);
-                      const files = isMultiple ? fileInfo : [fileInfo];
+                    {(() => {
+                      // Define the order to match sidebar navigation
+                      const sectionOrder = ['general', 'athlete', 'appearance', 'import', 'metrics', 'gear', 'zwift', 'integrations', 'daemon'];
                       
-                      return (
-                        <Table.Row key={section}>
-                          <Table.Cell fontWeight="medium" color="text">{section}</Table.Cell>
-                          <Table.Cell color={isMultiple ? "orange.600" : "textMuted"} _dark={{ color: isMultiple ? "orange.400" : "textMuted" }}>
-                            {files.map((f, idx) => (
-                              <Box key={idx}>
-                                {isMultiple && <Icon color="orange.500" mr={1}><MdWarning /></Icon>}
-                                {typeof f === 'string' ? f : f.fileName}
-                              </Box>
-                            ))}
-                          </Table.Cell>
-                        </Table.Row>
-                      );
-                    })}
+                      // Sort sections according to sidebar order
+                      const sortedEntries = Array.from(sectionToFileMap.entries()).sort(([sectionA], [sectionB]) => {
+                        const indexA = sectionOrder.indexOf(sectionA.toLowerCase());
+                        const indexB = sectionOrder.indexOf(sectionB.toLowerCase());
+                        
+                        // If both are in the order array, sort by their position
+                        if (indexA !== -1 && indexB !== -1) {
+                          return indexA - indexB;
+                        }
+                        // If only A is in the order, it comes first
+                        if (indexA !== -1) return -1;
+                        // If only B is in the order, it comes first
+                        if (indexB !== -1) return 1;
+                        // If neither is in the order, sort alphabetically
+                        return sectionA.localeCompare(sectionB);
+                      });
+                      
+                      return sortedEntries.map(([section, fileInfo]) => {
+                        // Check if this is an array (multiple files)
+                        const isMultiple = Array.isArray(fileInfo);
+                        const files = isMultiple ? fileInfo : [fileInfo];
+                        
+                        return (
+                          <Table.Row key={section}>
+                            <Table.Cell fontWeight="medium" color="text">{section}</Table.Cell>
+                            <Table.Cell color={isMultiple ? "orange.600" : "textMuted"} _dark={{ color: isMultiple ? "orange.400" : "textMuted" }}>
+                              {files.map((f, idx) => (
+                                <Box key={idx}>
+                                  {isMultiple && <Icon color="orange.500" mr={1}><MdWarning /></Icon>}
+                                  {typeof f === 'string' ? f : f.fileName}
+                                </Box>
+                              ))}
+                            </Table.Cell>
+                          </Table.Row>
+                        );
+                      });
+                    })()}
                   </Table.Body>
                 </Table.Root>
               </Box>
