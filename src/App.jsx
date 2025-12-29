@@ -26,6 +26,7 @@ import ZwiftConfigEditor from './components/config/ZwiftConfigEditor';
 import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
+import { initializeSportsList } from './utils/sportsListInitializer'
 import { ToastProvider, useToast } from './contexts/ToastContext'
 import { ToastContainer } from './components/Toast'
 import { ConfirmDialog } from './components/ConfirmDialog'
@@ -197,9 +198,10 @@ function App() {
     };
   }, []);
 
-  // Initialize widget definitions when config files are loaded
+  // Initialize widget definitions and sports list when config files are loaded
   useEffect(() => {
     if (hasConfigInitialized && sectionToFileMap.size > 0) {
+      // Initialize widget definitions
       initializeWidgetDefinitions(sectionToFileMap)
         .then(result => {
           if (result.success) {
@@ -210,6 +212,19 @@ function App() {
         })
         .catch(error => {
           console.error('❌ Widget definitions initialization error:', error);
+        });
+      
+      // Initialize sports list
+      initializeSportsList()
+        .then(result => {
+          if (result.success) {
+            console.log('✅ Sports list initialization complete:', result.message);
+          } else {
+            console.error('❌ Sports list initialization failed:', result.message);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Sports list initialization error:', error);
         });
     }
   }, [hasConfigInitialized, sectionToFileMap]);

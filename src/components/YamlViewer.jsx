@@ -8,6 +8,7 @@ import SplitConfigModal from './SplitConfigModal';
 import DownloadFilesModal from './DownloadFilesModal';
 import YamlEditorModal from './YamlEditorModal';
 import MonacoYamlViewer from './MonacoYamlViewer';
+import ServerFileBrowser from './ServerFileBrowser';
 
 const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpdated }) => {
   const [selectedFileIndex, setSelectedFileIndex] = useState(0);
@@ -15,6 +16,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
   const [showSplitModal, setShowSplitModal] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showServerBrowser, setShowServerBrowser] = useState(false);
   const [allFiles, setAllFiles] = useState(files);
 
   // Sync allFiles with files prop when it changes
@@ -130,6 +132,15 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     });
   };
 
+  const handleLoadServerFiles = (serverFiles) => {
+    const updatedFiles = [...allFiles, ...serverFiles];
+    setAllFiles(updatedFiles);
+    setShowServerBrowser(false);
+    if (onFilesUpdated) {
+      onFilesUpdated(updatedFiles);
+    }
+  };
+
   return (
     <VStack
       align="stretch"
@@ -167,7 +178,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         <Flex gap={{ base: 1, sm: 3 }} wrap="wrap" justify={{ base: "flex-start", sm: "flex-end" }} align="center">
           <Button
             onClick={handleLoadMoreFiles}
-            title="Load additional YAML files"
+            title="Load additional YAML files from local PC"
             leftIcon={<MdFolder />}
             size={{ base: "xs", sm: "sm" }}
             variant="outline"
@@ -179,8 +190,25 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             h={{ base: "24px", sm: "auto" }}
             minW={{ base: "auto", sm: "auto" }}
           >
-            <Text display={{ base: "none", sm: "inline" }}>Load More</Text>
-            <Text display={{ base: "inline", sm: "none" }}>Load</Text>
+            <Text display={{ base: "none", sm: "inline" }}>Load (Local)</Text>
+            <Text display={{ base: "inline", sm: "none" }}>Local</Text>
+          </Button>
+          <Button
+            onClick={() => setShowServerBrowser(true)}
+            title="Load additional YAML files from server"
+            leftIcon={<MdFolder />}
+            size={{ base: "xs", sm: "sm" }}
+            variant="outline"
+            colorPalette="blue"
+            borderColor="border"
+            _hover={{ bg: "primaryHover", color: "white" }}
+            fontSize={{ base: "2xs", sm: "sm" }}
+            px={{ base: 1.5, sm: 3 }}
+            h={{ base: "24px", sm: "auto" }}
+            minW={{ base: "auto", sm: "auto" }}
+          >
+            <Text display={{ base: "none", sm: "inline" }}>Load (Server)</Text>
+            <Text display={{ base: "inline", sm: "none" }}>Server</Text>
           </Button>
           <Button
             onClick={() => setShowDownloadModal(true)}
@@ -372,6 +400,13 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
         onClose={() => setShowEditModal(false)}
         onSave={handleSaveEdit}
         skipValidation={true}
+      />
+
+      {/* Server File Browser Modal */}
+      <ServerFileBrowser
+        isOpen={showServerBrowser}
+        onClose={() => setShowServerBrowser(false)}
+        onFilesSelected={handleLoadServerFiles}
       />
     </VStack>
   );

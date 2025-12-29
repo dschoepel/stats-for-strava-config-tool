@@ -14,11 +14,14 @@ import {
 import { MdFolder, MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 
 const FilesSettingsModal = ({ isOpen, onClose }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
+  const [originalDefaultPath, setOriginalDefaultPath] = useState('');
+  const { showSuccess, showError, showWarning } = useToast();
 
   // Expand tilde to full path
   const expandPath = async (path) => {
@@ -39,8 +42,11 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
   };
 
   useEffect(() => {
-    const loadAndExpandSettings = async () => {
-      if (isOpen) {
+    if (isOpen) {
+      // Reset dirty flag immediately when modal opens
+      setIsDirty(false);
+      
+      const loadAndExpandSettings = async () => {
         const loaded = loadSettings();
         
         // Expand the default path if it contains tilde
@@ -52,11 +58,15 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
         }
         
         setSettings(loaded);
-        setIsDirty(false);
-      }
-    };
-    
-    loadAndExpandSettings();
+        setOriginalDefaultPath(loaded.files?.defaultPath || '');
+      };
+      
+      loadAndExpandSettings();
+    } else {
+      // Reset state when modal closes to prevent stale state on next open
+      setIsDirty(false);
+      setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+    }
   }, [isOpen]);
 
   const handleClose = () => {
@@ -89,12 +99,70 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
   };
 
   const handleSave = async () => {
-    const success = await saveSettings(settings);
-    if (success) {
-      setIsDirty(false);
+    // Check if default path has changed
+    const newDefaultPath = settings.files?.defaultPath || '';
+    const pathChanged = newDefaultPath !== originalDefaultPath;
+
+    if (pathChanged) {
+      // Show confirmation dialog before updating .env
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Update Environment Variable?',
+        message: `You are changing the default file path from:\n\n"${originalDefaultPath}"\n\nto:\n\n"${newDefaultPath}"\n\nThis will update the DEFAULT_STATS_CONFIG_PATH environment variable in your .env file. The application will need to be restarted for this change to take full effect.\n\nDo you want to proceed?`,
+        confirmText: 'Proceed',
+        onConfirm: async () => {
+          setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          await performSave(newDefaultPath);
+        }
+      });
     } else {
-      alert('Failed to save settings. Please try again.');
+      await performSave();
     }
+  };
+
+  const performSave = async (newPath = null) => {
+    // Save settings
+    const success = await saveSettings(settings);
+    if (!success) {
+      showError('Failed to save settings. Please try again.');
+      return;
+    }
+
+    // If path changed, update .env file
+    if (newPath) {
+      try {
+        const response = await fetch('/api/update-env', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: 'DEFAULT_STATS_CONFIG_PATH',
+            value: newPath
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ Environment variable updated successfully');
+          showSuccess('Settings saved successfully! The DEFAULT_STATS_CONFIG_PATH environment variable has been updated. Please restart the application for the change to take full effect.', 8000);
+        } else {
+          console.error('Failed to update .env file:', result.error);
+          showWarning(`Settings saved, but failed to update .env file: ${result.error}. You may need to manually update the DEFAULT_STATS_CONFIG_PATH in your .env file.`, 8000);
+        }
+      } catch (error) {
+        console.error('Error updating .env file:', error);
+        showWarning('Settings saved, but failed to update .env file. You may need to manually update the DEFAULT_STATS_CONFIG_PATH in your .env file.', 8000);
+      }
+    } else {
+      // Show success message for regular save
+      showSuccess('Settings saved successfully!');
+    }
+
+    setIsDirty(false);
+    setOriginalDefaultPath(settings.files?.defaultPath || '');
+    
+    // Close modal after successful save
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -238,7 +306,7 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        confirmText="Leave Anyway"
+        confirmText={confirmDialog.confirmText || 'Leave Anyway'}
         confirmColorPalette="orange"
         onConfirm={confirmDialog.onConfirm || (() => {})}
         onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}

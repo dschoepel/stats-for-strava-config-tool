@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     env_file: ./.env
     volumes:
-    - ./config-manager/configs:/data/configs
+    - ./config-manager/configs:/data/statistics-for-strava/config
     - ./config-manager/settings:/data/settings
     - ./config-manager/backups:/data/backups
     ports:
@@ -14,4 +14,4 @@ services:
 #      - statistics-for-strava-network
 
  # networks:
-  #  statistics-for-strava-network 
+  #  statistics-for-strava-network

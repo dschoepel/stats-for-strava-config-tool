@@ -25,13 +25,23 @@ export async function GET(request) {
     // Get the directory from query params or use default
     const { searchParams } = new URL(request.url);
     const customDir = searchParams.get('directory');
+    const defaultPath = searchParams.get('defaultPath');
     console.log('Custom directory:', customDir);
+    console.log('Default path from settings:', defaultPath);
     
     let configPath;
     if (customDir) {
       configPath = customDir;
+    } else if (defaultPath) {
+      // Use the path from settings (frontend)
+      if (defaultPath.startsWith('~/')) {
+        configPath = path.join(os.homedir(), defaultPath.slice(2));
+      } else {
+        configPath = defaultPath;
+      }
+      console.log('Using path from settings:', configPath);
     } else {
-      // Use environment variable or default
+      // Fallback to environment variable or default
       const envPath = process.env.DEFAULT_STATS_CONFIG_PATH || '~/Documents/config/';
       console.log('Environment path:', envPath);
       

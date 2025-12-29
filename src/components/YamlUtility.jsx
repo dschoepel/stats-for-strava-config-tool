@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, VStack, Heading, Text, Button, Flex, HStack, IconButton, SimpleGrid, Icon, Input, Dialog, Portal } from '@chakra-ui/react';
 import { MdClose, MdSettings, MdWarning, MdRocket, MdStars, MdSearch, MdEdit, MdDownload, MdContentCopy, MdPalette, MdLock, MdInfo, MdAdd } from 'react-icons/md';
 import FileSelector from './FileSelector';
+import ServerFileBrowser from './ServerFileBrowser';
 import YamlViewer from './YamlViewer';
 import YamlEditorModal from './YamlEditorModal';
 import Toast from './Toast';
@@ -45,6 +46,7 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
   const [existingFilePath, setExistingFilePath] = useState('');
   const [existingFileContent, setExistingFileContent] = useState('');
   const [toast, setToast] = useState(null);
+  const [showServerBrowser, setShowServerBrowser] = useState(false);
   const existingFilePathRef = React.useRef('');
   const prevBreadcrumbsRef = React.useRef(breadcrumbs);
 
@@ -390,10 +392,29 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
         )}
 
         {!showViewer && (
-          <FileSelector 
-            onFilesSelected={handleFilesSelected}
-            onError={handleError}
-          />
+          <>
+            <FileSelector 
+              onFilesSelected={handleFilesSelected}
+              onError={handleError}
+            />
+            
+            {/* Server File Browser Button */}
+            <Box mt={4}>
+              <Button
+                onClick={() => setShowServerBrowser(true)}
+                colorPalette="blue"
+                variant="outline"
+                width="100%"
+                size="lg"
+              >
+                <Icon mr={2}><MdSearch /></Icon>
+                Browse Server Files
+              </Button>
+              <Text color="textMuted" fontSize="sm" mt={2} textAlign="center">
+                Browse and select YAML files from the server
+              </Text>
+            </Box>
+          </>
         )}
 
         {!showViewer && selectedFiles.length > 0 && (
@@ -788,6 +809,13 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Server File Browser Modal */}
+      <ServerFileBrowser
+        isOpen={showServerBrowser}
+        onClose={() => setShowServerBrowser(false)}
+        onFilesSelected={handleFilesSelected}
+      />
     </Box>
   );
 };
