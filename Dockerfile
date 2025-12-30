@@ -11,27 +11,30 @@ RUN npm run build
 # --- Runtime Stage ---
 FROM node:20-alpine
 
-# Install nginx + supervisor
-RUN apk add --no-cache nginx supervisor
+# Install required packages
+RUN apk add --no-cache nginx supervisor tzdata su-exec shadow
 
 WORKDIR /app
 
-# Copy only required build artifacts and metadata
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/app ./app
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/next.config.js ./
+# Copy built app
+COPY --from=builder /app ./
 
-# Install only production dependencies in the runtime image
-RUN npm install --production
 # Copy configs
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/entrypoint.sh /entrypoint.sh
 
-# Create persistent data directories
-RUN mkdir -p /data/configs /data/settings /data/backups
+RUN chmod +x /entrypoint.sh
+
+# Create default user (will be remapped at runtime)
+RUN addgroup -g 1000 appgroup && \
+    adduser -D -u 1000 -G appgroup appuser
+
+# Create persistent directories
+RUN mkdir -p /data/configs /data/settings /data/backups && \
+    chown -R appuser:appgroup /data
 
 EXPOSE 80
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

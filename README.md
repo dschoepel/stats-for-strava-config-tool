@@ -230,3 +230,28 @@ This tool is designed to work with the Stats for Strava application. Visit the m
 ## Support
 
 For issues, questions, or feature requests, please open an issue on the GitHub repository.
+
+## Docker Configuration Information
+### 🕒 Time Zone Configuration
+Set the timezone using the TZ environment variable:
+
+``` bash
+TZ=America/Chicago
+```
+
+This ensures logs and timestamps inside the container match your local time.
+
+👤 UID/GID Mapping
+To ensure the container writes files with the correct permissions on the host, set:
+
+```bash
+USERMAP_UID=1000
+USERMAP_GID=1000
+```
+Use your host user’s UID/GID:
+
+```bash
+id -u
+id -g
+```
+The container will remap its internal user to match these values at startup.
