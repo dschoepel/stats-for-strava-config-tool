@@ -27,8 +27,7 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Create persistent directories
-RUN mkdir -p /data/configs /data/settings /data/backups && \
-    chown -R appuser:appgroup /data
+RUN mkdir -p /data/configs /data/settings /data/backups
 
 EXPOSE 80
 

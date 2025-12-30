@@ -8,20 +8,35 @@ if [ -n "$TZ" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
+APP_USER="appuser"
+APP_GROUP="appgroup"
+
 # Remap UID/GID if provided
 if [ -n "$USERMAP_UID" ] && [ -n "$USERMAP_GID" ]; then
-    echo "Remapping appuser to UID=$USERMAP_UID GID=$USERMAP_GID"
+    echo "Configuring runtime user: UID=$USERMAP_UID GID=$USERMAP_GID"
 
-    # Update group
-    delgroup appgroup 2>/dev/null || true
-    addgroup -g "$USERMAP_GID" appgroup
+    # Create or reuse group
+    if getent group "$USERMAP_GID" >/dev/null 2>&1; then
+        APP_GROUP=$(getent group "$USERMAP_GID" | cut -d: -f1)
+        echo "Using existing group: $APP_GROUP"
+    else
+        addgroup -g "$USERMAP_GID" "$APP_GROUP"
+    fi
 
-    # Update user
-    deluser appuser 2>/dev/null || true
-    adduser -D -u "$USERMAP_UID" -G appgroup appuser
+    # Create or reuse user
+    if id -u "$USERMAP_UID" >/dev/null 2>&1; then
+        APP_USER=$(getent passwd "$USERMAP_UID" | cut -d: -f1)
+        echo "Using existing user: $APP_USER"
+    else
+        adduser -D -u "$USERMAP_UID" -G "$APP_GROUP" "$APP_USER"
+    fi
 
     # Fix permissions
-    chown -R appuser:appgroup /data
+    echo "Fixing permissions on /data"
+    chown -R "$USERMAP_UID":"$USERMAP_GID" /data
 fi
 
-exec su-exec appuser "$@"
+# Exec the main process as the mapped user
+exec su-exec "$APP_USER" "$@"
+
+
