@@ -26,10 +26,6 @@ COPY docker/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
-# Create default user (will be remapped at runtime)
-RUN addgroup -g 1000 appgroup && \
-    adduser -D -u 1000 -G appgroup appuser
-
 # Create persistent directories
 RUN mkdir -p /data/configs /data/settings /data/backups && \
     chown -R appuser:appgroup /data
