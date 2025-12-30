@@ -39,7 +39,7 @@ const Help = () => {
             </Box>
           </Box>
 
-          <Box p={6} bg="orange.50" _dark={{ bg: "orange.950" }} border="1px solid" borderColor="orange.200" _dark={{ borderColor: "orange.800" }} borderRadius="lg" mt={6}>
+          <Box p={6} bg="bg" border="1px solid" borderColor="border" borderRadius="lg" mt={6}>
             <Heading as="h4" size="md" color="text" fontWeight="semibold" mb={4} display="flex" alignItems="center" gap={2}>
               <Icon color="orange.500"><MdWarning /></Icon>
               Important: Comment Preservation
@@ -48,9 +48,9 @@ const Help = () => {
               When saving configuration changes through this editor:
             </Text>
             <Box as="ul" pl={6} color="text" opacity={0.9} lineHeight="1.6" mb={4}>
-              <li><Text as="strong" color="text">Section headers are preserved</Text> - Main comments like section titles remain intact</li>
-              <li><Text as="strong" color="text">Embedded comments may be removed</Text> - Detailed comments within YAML structures might be lost</li>
-              <li><Text as="strong" color="text">This is by design</Text> - The forms provide all necessary guidance, making embedded comments redundant</li>
+              <li><Text as="strong">Section headers are preserved</Text> - Main comments like section titles remain intact</li>
+              <li><Text as="strong">Embedded comments may be removed</Text> - Detailed comments within YAML structures might be lost</li>
+              <li><Text as="strong">This is by design</Text> - The forms provide all necessary guidance, making embedded comments redundant</li>
             </Box>
             <Text color="text" opacity={0.8} fontStyle="italic">
               If you need to preserve all comments, edit the YAML files manually instead of using this tool.
@@ -159,9 +159,9 @@ const Help = () => {
               <li><Text as="strong" color="text">Configuration splitting</Text> - Break a single config file into separate section files</li>
             </Box>
             
-            <Box p={4} bg="blue.50" _dark={{ bg: "blue.950" }} border="1px solid" borderColor="blue.200" _dark={{ borderColor: "blue.800" }} borderRadius="md">
+            <Box p={4} bg="bg" border="1px solid" borderColor="border" borderRadius="md">
               <Text color="text" opacity={0.9}>
-                <Text as="strong" color="text">Current Limitation:</Text> The YAML Utility does not support direct editing. 
+                <Text as="strong">Current Limitation:</Text> The YAML Utility does not support direct editing. 
                 For manual configuration changes, edit the files using an external text editor.
               </Text>
             </Box>
@@ -214,11 +214,11 @@ const Help = () => {
               <li><Text as="strong" color="text">Save changes</Text> - Click the Save button to write all changes to the file</li>
             </Box>
 
-            <Box p={3} bg="orange.50" _dark={{ bg: "orange.950" }} borderLeft="4px solid" borderColor="orange.400" borderRadius="md" mb={6}>
+            <Box p={3} bg="bg" borderLeft="4px solid" borderColor="orange.500" borderRadius="md" mb={6}>
               <Text color="text" opacity={0.9}>
                 <Icon display="inline" color="orange.500" mr={2}><MdWarning /></Icon>
-                <Text as="strong" color="text">Important:</Text> Individual widget changes are saved in memory only. 
-                You must click the main <Text as="strong" color="text">Save</Text> button to write all changes to the file.
+                <Text as="strong">Important:</Text> Individual widget changes are saved in memory only. 
+                You must click the main <Text as="strong">Save</Text> button to write all changes to the file.
               </Text>
             </Box>
 

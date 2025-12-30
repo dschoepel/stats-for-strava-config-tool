@@ -6,6 +6,13 @@ import * as YAML from 'yaml';
 // Configure runtime to use Node.js
 export const runtime = 'nodejs';
 
+/**
+ * Detect if a value is a complex nested object (same logic as configSplitter.js)
+ */
+const isComplex = (value) => {
+  return value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+};
+
 // Helper function to find line positions of top-level YAML sections
 function findSectionPositions(lines) {
   const positions = new Map();
@@ -148,16 +155,105 @@ export async function POST(request) {
               }
             } else {
               // Handle all non-general top-level sections
-              const sectionInfo = {
-                fileName: file.name,
-                filePath: file.path,
-                ...sectionPositions.get(key)
-              };
+              // Use the same splitting logic as configSplitter.js
+              const sectionData = yamlData[key];
               
-              if (!sectionMapping.has(key)) {
-                sectionMapping.set(key, []);
+              if (sectionData && typeof sectionData === 'object' && !Array.isArray(sectionData)) {
+                const secondEntries = Object.entries(sectionData);
+                const complexKeys = secondEntries.filter(([_, v]) => isComplex(v));
+                const simpleKeys = secondEntries.filter(([_, v]) => !isComplex(v));
+                
+                // Special case: If file contains ONLY ONE complex key (no simple keys),
+                // this is a split file containing just that one nested section
+                if (complexKeys.length === 1 && simpleKeys.length === 0) {
+                  console.log(`File ${file.name} has only one complex key under ${key}, treating as split file`);
+                  
+                  const [secondKey] = complexKeys[0];
+                  const nestedPath = `${key}.${secondKey}`;
+                  const nestedInfo = {
+                    fileName: file.name,
+                    filePath: file.path,
+                    topLevelKey: key,
+                    secondLevelKey: secondKey,
+                    isSplitSection: true,
+                    ...sectionPositions.get(key)
+                  };
+                  
+                  if (!sectionMapping.has(nestedPath)) {
+                    sectionMapping.set(nestedPath, []);
+                  }
+                  sectionMapping.get(nestedPath).push(nestedInfo);
+                  continue; // Don't map the top-level key for this file
+                }
+                
+                // Determine if this would be split in multi-file mode
+                const shouldSplit = 
+                  complexKeys.length > 1 || 
+                  (complexKeys.length === 1 && simpleKeys.length > 0);
+                
+                if (!shouldSplit) {
+                  // Case 1: Would NOT be split (metrics, daemon, or sections with only simple keys)
+                  // Map the entire top-level section
+                  const sectionInfo = {
+                    fileName: file.name,
+                    filePath: file.path,
+                    ...sectionPositions.get(key)
+                  };
+                  
+                  if (!sectionMapping.has(key)) {
+                    sectionMapping.set(key, []);
+                  }
+                  sectionMapping.get(key).push(sectionInfo);
+                } else {
+                  // Case 2: Would be split (has both simple keys and complex keys, or multiple complex keys)
+                  // Map the parent section (includes simple keys OR all complex keys if no simple keys)
+                  const parentInfo = {
+                    fileName: file.name,
+                    filePath: file.path,
+                    hasComplexKeys: true,
+                    complexKeyCount: complexKeys.length,
+                    ...sectionPositions.get(key)
+                  };
+                  
+                  if (!sectionMapping.has(key)) {
+                    sectionMapping.set(key, []);
+                  }
+                  sectionMapping.get(key).push(parentInfo);
+                  
+                  // If there are multiple complex keys in the same file, also map the additional ones as nested
+                  // (for potential future splits, but they exist in the parent for now)
+                  if (complexKeys.length > 1) {
+                    for (const [secondKey] of complexKeys.slice(1)) {
+                      const nestedPath = `${key}.${secondKey}`;
+                      const nestedInfo = {
+                        fileName: file.name,
+                        filePath: file.path,
+                        topLevelKey: key,
+                        secondLevelKey: secondKey,
+                        isAdditionalComplexKey: true,
+                        ...sectionPositions.get(key)
+                      };
+                      
+                      if (!sectionMapping.has(nestedPath)) {
+                        sectionMapping.set(nestedPath, []);
+                      }
+                      sectionMapping.get(nestedPath).push(nestedInfo);
+                    }
+                  }
+                }
+              } else {
+                // If not an object or is an array, map the top-level key directly
+                const sectionInfo = {
+                  fileName: file.name,
+                  filePath: file.path,
+                  ...sectionPositions.get(key)
+                };
+                
+                if (!sectionMapping.has(key)) {
+                  sectionMapping.set(key, []);
+                }
+                sectionMapping.get(key).push(sectionInfo);
               }
-              sectionMapping.get(key).push(sectionInfo);
             }
           }
         }

@@ -28,7 +28,10 @@ const initialSportsList = {
     'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining'
   ],
   'Mind & Body Sports': [
-    'Pilates', 'Yoga', 'Outdoor Sports', 'Golf', 'RockClimbing', 'Sail', 'Soccer'
+    'Pilates', 'Yoga'
+  ],
+  'Outdoor Sports': [
+    'Golf', 'RockClimbing', 'Sail', 'Soccer'
   ],
   'Adaptive & Inclusive Sports': [
     'Handcycle', 'Wheelchair'
@@ -37,16 +40,16 @@ const initialSportsList = {
 
 function resolveFilePath(defaultPath) {
   let basePath = defaultPath || '~/Documents/config/';
-  
+
   // Expand ~ to home directory
   if (basePath.startsWith('~/') || basePath.startsWith('~\\')) {
     basePath = path.join(os.homedir(), basePath.slice(2));
   }
-  
+
   // Ensure settings directory exists
   const settingsDir = path.join(basePath, 'settings');
   const filePath = path.join(settingsDir, 'strava-sports-by-category.yaml');
-  
+
   return { filePath, settingsDir };
 }
 
@@ -55,9 +58,9 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const defaultPath = searchParams.get('defaultPath');
-    
+
     const { filePath } = resolveFilePath(defaultPath);
-    
+
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       const sportsList = yaml.load(content);
@@ -69,8 +72,8 @@ export async function GET(request) {
     }
   } catch (error) {
     console.error('Error reading sports list:', error);
-    return NextResponse.json({ 
-      success: false, 
+    return NextResponse.json({
+      success: false,
       error: error.message,
       sportsList: initialSportsList // Fallback to initial list
     }, { status: 500 });
@@ -81,24 +84,24 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const { defaultPath, sportsList } = await request.json();
-    
+
     const { filePath, settingsDir } = resolveFilePath(defaultPath);
-    
+
     // Ensure settings directory exists
     await fs.mkdir(settingsDir, { recursive: true });
-    
+
     // Write YAML file
     const yamlStr = yaml.dump(sportsList);
     await fs.writeFile(filePath, yamlStr, 'utf-8');
-    
+
     console.log('Sports list saved to:', filePath);
-    
+
     return NextResponse.json({ success: true, message: 'Sports list saved successfully' });
   } catch (error) {
     console.error('Error writing sports list:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message 
+    return NextResponse.json({
+      success: false,
+      error: error.message
     }, { status: 500 });
   }
 }

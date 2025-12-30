@@ -5,6 +5,7 @@ import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
 import YamlEditorModal from './YamlEditorModal';
+import { getSetting } from '../utils/settingsManager';
 
 const NextConfigFileList = forwardRef((props, ref) => {
   const { 
@@ -127,7 +128,9 @@ const NextConfigFileList = forwardRef((props, ref) => {
     }
     
     try {
-      const response = await fetch('/api/config-files');
+      // Get the current default path from settings
+      const currentDefaultPath = getSetting('files.defaultPath', '~/Documents/config/');
+      const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
       const result = await response.json();
       
       if (result.success && result.files.length > 0) {
@@ -164,8 +167,11 @@ const NextConfigFileList = forwardRef((props, ref) => {
       try {
         showInfo('Checking default configuration directory...', 3000);
         
+        // Get the default path from settings
+        const currentDefaultPath = getSetting('files.defaultPath', '~/Documents/config/');
+        
         // Try to load files from default directory
-        const response = await fetch('/api/config-files');
+        const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
         const result = await response.json();
         
         if (result.success) {
@@ -220,6 +226,64 @@ const NextConfigFileList = forwardRef((props, ref) => {
     }
   }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized]);
 
+  // Listen for settings changes and reload files if default path changed
+  useEffect(() => {
+    const handleSettingsChanged = async (event) => {
+      const newSettings = event.detail;
+      const newDefaultPath = newSettings.files?.defaultPath;
+      
+      // Check if the default path has changed
+      if (newDefaultPath && newDefaultPath !== defaultPath) {
+        console.log(`Default path changed from ${defaultPath} to ${newDefaultPath}, reloading files...`);
+        showInfo('Default path changed, reloading configuration files...', 3000);
+        
+        // Reload files from new path
+        try {
+          const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(newDefaultPath)}`);
+          const result = await response.json();
+          
+          if (result.success) {
+            const fileHashes = new Map();
+            result.files.forEach(file => {
+              if (file.hash) {
+                fileHashes.set(file.name, file.hash);
+              }
+            });
+            
+            setConfigFiles(result.files);
+            setSelectedDirectory(result.directory);
+            setDefaultPath(result.directory);
+            setFileCache({
+              files: result.files,
+              fileHashes: fileHashes,
+              directory: result.directory
+            });
+            setHasConfigInitialized(true);
+            
+            await parseSections(result.files);
+            
+            if (result.files.length === 0) {
+              showWarning(`No config files found in new directory: ${result.directory}`);
+            } else {
+              showSuccess(`Loaded ${result.files.length} file${result.files.length > 1 ? 's' : ''} from new path: ${result.directory}`);
+            }
+          } else {
+            showError(`Failed to load files from new path: ${result.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error('Error reloading files after path change:', error);
+          showError('Failed to reload configuration files from new path');
+        }
+      }
+    };
+    
+    window.addEventListener('settingsChanged', handleSettingsChanged);
+    
+    return () => {
+      window.removeEventListener('settingsChanged', handleSettingsChanged);
+    };
+  }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, setFileCache, setHasConfigInitialized, parseSections]);
+
 
 
   const scanDirectory = useCallback(async (dirPath, forceRefresh = false) => {
@@ -227,9 +291,12 @@ const NextConfigFileList = forwardRef((props, ref) => {
       setIsLoading(true);
       setError(null);
       
+      // Get the current default path from settings
+      const currentDefaultPath = getSetting('files.defaultPath', '~/Documents/config/');
+      
       // Check cache first if not forcing refresh
       if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
-        const response = await fetch('/api/config-files');
+        const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
         const result = await response.json();
         
         if (result.success && result.files.length > 0) {

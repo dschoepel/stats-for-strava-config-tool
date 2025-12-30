@@ -40,6 +40,68 @@ const CRON_ACTIONS = [
 ];
 
 /**
+ * Convert cron expression to human-readable text
+ * @param {string} expression - Cron expression (e.g., "0 14 * * *")
+ * @returns {string} - Human-readable description
+ */
+const cronToHumanReadable = (expression) => {
+  if (!expression) return 'Invalid expression';
+  
+  const parts = expression.trim().split(/\s+/);
+  if (parts.length !== 5) return 'Invalid expression format';
+  
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  
+  // Helper to convert 24-hour to 12-hour format
+  const formatHour = (h) => {
+    const hourNum = parseInt(h);
+    if (isNaN(hourNum)) return h;
+    if (hourNum === 0) return '12 AM';
+    if (hourNum < 12) return `${hourNum} AM`;
+    if (hourNum === 12) return '12 PM';
+    return `${hourNum - 12} PM`;
+  };
+  
+  // Build human-readable string
+  let readable = 'Runs ';
+  
+  // Frequency (day of week and day of month)
+  if (dayOfWeek !== '*' && dayOfMonth === '*') {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayNums = dayOfWeek.split(',');
+    if (dayNums.length === 1) {
+      readable += `every ${days[parseInt(dayNums[0])]} `;
+    } else {
+      readable += `on ${dayNums.map(d => days[parseInt(d)]).join(', ')} `;
+    }
+  } else if (dayOfMonth !== '*') {
+    readable += `on day ${dayOfMonth} of each month `;
+  } else {
+    readable += 'every day ';
+  }
+  
+  // Time
+  if (hour === '*' && minute === '*') {
+    readable += 'every minute';
+  } else if (hour === '*') {
+    readable += minute === '0' ? 'every hour' : `at ${minute} minutes past every hour`;
+  } else if (minute === '0') {
+    readable += `at ${formatHour(hour)}`;
+  } else {
+    readable += `at ${formatHour(hour)}:${minute.padStart(2, '0')}`;
+  }
+  
+  // Month (if specified)
+  if (month !== '*') {
+    const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    readable += ` in ${months[parseInt(month)]}`;
+  }
+  
+  return readable;
+};
+
+/**
  * DaemonConfigEditor - Handles daemon cron job configuration
  * Manages scheduled actions and cron expressions
  */
@@ -57,26 +119,26 @@ const DaemonConfigEditor = ({
   const validateDaemonFields = (formData, getNestedValue) => {
     const errors = {};
     
-    const cronJobs = getNestedValue(formData, 'daemon.cron') || [];
+    const cronJobs = getNestedValue(formData, 'cron') || [];
     
     // Validate cron jobs
     cronJobs.forEach((job, index) => {
       if (!job.action || job.action.trim() === '') {
-        errors[`daemon.cron[${index}].action`] = 'Action is required';
+        errors[`cron[${index}].action`] = 'Action is required';
       }
       
       if (!job.expression || job.expression.trim() === '') {
-        errors[`daemon.cron[${index}].expression`] = 'Cron expression is required';
+        errors[`cron[${index}].expression`] = 'Cron expression is required';
       } else {
         // Basic cron validation (5 parts separated by spaces)
         const parts = job.expression.trim().split(/\s+/);
         if (parts.length !== 5) {
-          errors[`daemon.cron[${index}].expression`] = 'Must be a valid cron expression (5 parts)';
+          errors[`cron[${index}].expression`] = 'Must be a valid cron expression (5 parts)';
         }
       }
       
       if (job.enabled === undefined || job.enabled === null) {
-        errors[`daemon.cron[${index}].enabled`] = 'Enabled status is required';
+        errors[`cron[${index}].enabled`] = 'Enabled status is required';
       }
     });
     
@@ -99,7 +161,7 @@ const DaemonConfigEditor = ({
       customValidation={validateDaemonFields}
     >
       {({ formData, handleFieldChange, getNestedValue, errors }) => {
-        const cronJobs = getNestedValue(formData, 'daemon.cron') || [];
+        const cronJobs = getNestedValue(formData, 'cron') || [];
 
         // Get list of actions already in use
         const usedActions = cronJobs.map(job => job.action);
@@ -111,7 +173,7 @@ const DaemonConfigEditor = ({
           // Find first available action not already in use
           if (availableActions.length === 0) return;
           
-          handleFieldChange('daemon.cron', [
+          handleFieldChange('cron', [
             ...cronJobs,
             { 
               action: availableActions[0].value, 
@@ -123,7 +185,7 @@ const DaemonConfigEditor = ({
 
         const handleRemoveCronJob = (index) => {
           const updated = cronJobs.filter((_, i) => i !== index);
-          handleFieldChange('daemon.cron', updated);
+          handleFieldChange('cron', updated);
           
           const newExpanded = { ...expandedJobs };
           delete newExpanded[index];
@@ -136,13 +198,13 @@ const DaemonConfigEditor = ({
           
           const updated = [...cronJobs];
           [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
-          handleFieldChange('daemon.cron', updated);
+          handleFieldChange('cron', updated);
         };
 
         const handleUpdateCronJob = (index, field, value) => {
           const updated = [...cronJobs];
           updated[index] = { ...updated[index], [field]: value };
-          handleFieldChange('daemon.cron', updated);
+          handleFieldChange('cron', updated);
         };
 
         const handleSaveCronExpression = (newExpression) => {
@@ -314,7 +376,10 @@ const DaemonConfigEditor = ({
                                   {actionLabel}
                                 </Text>
                                 <HStack gap={2} fontSize={{ base: "xs", sm: "xs" }} color="textMuted">
-                                  <Text>Schedule: {job.expression}</Text>
+                                  <HStack gap={1}>
+                                    <Box as={MdSchedule} boxSize="12px" />
+                                    <Text>{cronToHumanReadable(job.expression)}</Text>
+                                  </HStack>
                                   <Text>•</Text>
                                   <Text color={job.enabled ? "green.500" : "red.500"}>
                                     {job.enabled ? 'Enabled' : 'Disabled'}
@@ -357,7 +422,7 @@ const DaemonConfigEditor = ({
                           {isExpanded && (
                             <VStack align="stretch" gap={3} pl={{ base: 0, sm: 6 }}>
                               {/* Action Selection */}
-                              <Field.Root invalid={!!errors[`daemon.cron[${index}].action`]}>
+                              <Field.Root invalid={!!errors[`cron[${index}].action`]}>
                                 <Field.Label fontSize={{ base: "xs", sm: "sm" }}>Action</Field.Label>
                                 <SelectRoot
                                   collection={actionCollection}
@@ -386,9 +451,9 @@ const DaemonConfigEditor = ({
                                     })}
                                   </SelectContent>
                                 </SelectRoot>
-                                {errors[`daemon.cron[${index}].action`] && (
+                                {errors[`cron[${index}].action`] && (
                                   <Field.ErrorText fontSize={{ base: "xs", sm: "sm" }}>
-                                    {errors[`daemon.cron[${index}].action`]}
+                                    {errors[`cron[${index}].action`]}
                                   </Field.ErrorText>
                                 )}
                                 <Field.HelperText fontSize={{ base: "xs", sm: "sm" }}>
@@ -399,7 +464,7 @@ const DaemonConfigEditor = ({
                               </Field.Root>
 
                               {/* Cron Expression */}
-                              <Field.Root invalid={!!errors[`daemon.cron[${index}].expression`]}>
+                              <Field.Root invalid={!!errors[`cron[${index}].expression`]}>
                                 <Field.Label fontSize={{ base: "xs", sm: "sm" }}>Cron Expression</Field.Label>
                                 <HStack gap={2}>
                                   <Input
@@ -420,11 +485,27 @@ const DaemonConfigEditor = ({
                                     Builder
                                   </Button>
                                 </HStack>
-                                {errors[`daemon.cron[${index}].expression`] && (
+                                {errors[`cron[${index}].expression`] && (
                                   <Field.ErrorText fontSize={{ base: "xs", sm: "sm" }}>
-                                    {errors[`daemon.cron[${index}].expression`]}
+                                    {errors[`cron[${index}].expression`]}
                                   </Field.ErrorText>
                                 )}
+                                {/* Human-readable schedule */}
+                                <Box 
+                                  p={2} 
+                                  bg="infoBg" 
+                                  borderRadius="md" 
+                                  border="1px solid" 
+                                  borderColor="border"
+                                  mt={1}
+                                >
+                                  <HStack gap={2}>
+                                    <Box as={MdSchedule} color="blue.500" boxSize="14px" flexShrink={0} />
+                                    <Text fontSize={{ base: "xs", sm: "sm" }} color="text" fontWeight="medium">
+                                      {cronToHumanReadable(job.expression)}
+                                    </Text>
+                                  </HStack>
+                                </Box>
                                 <Field.HelperText fontSize={{ base: "xs", sm: "sm" }}>
                                   Format: minute hour day month weekday. Test at{' '}
                                   <Link 
