@@ -27,7 +27,8 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Create persistent directories
-RUN mkdir -p /data/configs /data/settings /data/backups
+RUN mkdir -p /data/configs /data/settings /data/backups && \
+    chown -R node:node /data
 
 EXPOSE 80
 

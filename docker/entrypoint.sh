@@ -8,35 +8,29 @@ if [ -n "$TZ" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
-APP_USER="appuser"
-APP_GROUP="appgroup"
-
-# Remap UID/GID if provided
+# Remap UID/GID of the existing 'node' user
 if [ -n "$USERMAP_UID" ] && [ -n "$USERMAP_GID" ]; then
     echo "Configuring runtime user: UID=$USERMAP_UID GID=$USERMAP_GID"
 
-    # Create or reuse group
-    if getent group "$USERMAP_GID" >/dev/null 2>&1; then
-        APP_GROUP=$(getent group "$USERMAP_GID" | cut -d: -f1)
-        echo "Using existing group: $APP_GROUP"
-    else
-        addgroup -g "$USERMAP_GID" "$APP_GROUP"
+    # Update group ID
+    if [ "$(id -g node)" != "$USERMAP_GID" ]; then
+        echo "Updating node group to GID=$USERMAP_GID"
+        delgroup node 2>/dev/null || true
+        addgroup -g "$USERMAP_GID" node
     fi
 
-    # Create or reuse user
-    if id -u "$USERMAP_UID" >/dev/null 2>&1; then
-        APP_USER=$(getent passwd "$USERMAP_UID" | cut -d: -f1)
-        echo "Using existing user: $APP_USER"
-    else
-        adduser -D -u "$USERMAP_UID" -G "$APP_GROUP" "$APP_USER"
+    # Update user ID
+    if [ "$(id -u node)" != "$USERMAP_UID" ]; then
+        echo "Updating node user to UID=$USERMAP_UID"
+        deluser node 2>/dev/null || true
+        adduser -D -u "$USERMAP_UID" -G node node
     fi
 
     # Fix permissions
-    echo "Fixing permissions on /data"
-    chown -R "$USERMAP_UID":"$USERMAP_GID" /data
+    chown -R node:node /data
 fi
 
-# Exec the main process as the mapped user
-exec su-exec "$APP_USER" "$@"
+exec su-exec node "$@"
+
 
 
