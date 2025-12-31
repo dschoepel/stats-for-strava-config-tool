@@ -27,7 +27,12 @@ if [ -n "$USERMAP_UID" ] && [ -n "$USERMAP_GID" ]; then
     fi
 
     # Fix permissions
-    chown -R node:node /data
+    chown -R node:node /data /app
+fi
+
+# If no USERMAP variables set, ensure default permissions
+if [ -z "$USERMAP_UID" ]; then
+    chown -R node:node /data /app
 fi
 
 exec su-exec node "$@"
