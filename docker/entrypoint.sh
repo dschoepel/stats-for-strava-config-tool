@@ -41,7 +41,8 @@ if [ -z "$USERMAP_UID" ]; then
     [ -d /app/.next ] && chown -R node:node /app/.next
 fi
 
-exec su-exec node "$@"
+# Execute supervisord as root (it will run child processes as node user)
+exec "$@"
 
 
 
