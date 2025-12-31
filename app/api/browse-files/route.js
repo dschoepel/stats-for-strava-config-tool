@@ -12,9 +12,16 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     let dirPath = searchParams.get('path');
     
-    // If no path provided, use home directory
+    // If no path provided, use /data or root directory (/)
+    // Avoid using os.homedir() which may be /root (inaccessible to node user)
     if (!dirPath) {
-      dirPath = os.homedir();
+      // Try /data first (where volumes are mounted), fall back to root
+      try {
+        await fs.access('/data', fs.constants.R_OK);
+        dirPath = '/data';
+      } catch {
+        dirPath = '/';
+      }
     }
     
     // Expand tilde if present
