@@ -26,6 +26,9 @@ COPY --from=builder /app/next.config.js ./
 # Install production dependencies only
 RUN npm ci --only=production
 
+# Set ownership for the app directory (node user needs to read files and write to specific dirs)
+RUN chown -R node:node /app
+
 # Copy configs
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
