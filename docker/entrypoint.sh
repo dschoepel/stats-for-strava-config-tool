@@ -26,13 +26,19 @@ if [ -n "$USERMAP_UID" ] && [ -n "$USERMAP_GID" ]; then
         adduser -D -u "$USERMAP_UID" -G node node
     fi
 
-    # Fix permissions
-    chown -R node:node /data /app
+    # Fix permissions - only for directories that need write access
+    chown -R node:node /data
+    chown node:node /app
+    # Only specific subdirectories need write access
+    [ -d /app/.next ] && chown -R node:node /app/.next
+    [ -d /app/node_modules ] || true  # Skip if not present
 fi
 
 # If no USERMAP variables set, ensure default permissions
 if [ -z "$USERMAP_UID" ]; then
-    chown -R node:node /data /app
+    chown -R node:node /data
+    chown node:node /app
+    [ -d /app/.next ] && chown -R node:node /app/.next
 fi
 
 exec su-exec node "$@"
