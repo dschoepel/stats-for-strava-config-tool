@@ -1,6 +1,0 @@
-#===================================#
-# Zwift Configuration Settings
-#===================================#
-zwift:
-  level: null
-  racingScore: null
