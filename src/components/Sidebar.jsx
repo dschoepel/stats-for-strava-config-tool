@@ -8,6 +8,7 @@ import {
 import { FcDataConfiguration } from 'react-icons/fc';
 import { SiYaml } from 'react-icons/si';
 import { TbBrandZwift } from 'react-icons/tb';
+import { PiGithubLogo } from 'react-icons/pi';
 import packageJson from '../../package.json';
 
 const MenuItem = ({ icon: Icon, label, onClick, isCollapsed, isSubmenu = false, onToggleSidebar }) => (
@@ -293,18 +294,21 @@ export default function Sidebar({
       >
         {!isCollapsed ? (
           <VStack gap={1} align="flex-start">
-            <Text
-              as="a"
-              href="https://github.com/dschoepel/stats-for-strava-config-tool?tab=readme-ov-file"
-              target="_blank"
-              rel="noopener noreferrer"
-              fontSize="xs"
-              color="fg.muted"
-              _hover={{ color: "primary", textDecoration: "underline" }}
-              cursor="pointer"
-            >
-              Config Tool
-            </Text>
+            <HStack gap={2}>
+              <Box as={PiGithubLogo} fontSize="16px" color="fg.muted" />
+              <Text
+                as="a"
+                href="https://github.com/dschoepel/stats-for-strava-config-tool?tab=readme-ov-file"
+                target="_blank"
+                rel="noopener noreferrer"
+                fontSize="xs"
+                color="fg.muted"
+                _hover={{ color: "primary", textDecoration: "underline" }}
+                cursor="pointer"
+              >
+                Config Tool
+              </Text>
+            </HStack>
             <Text fontSize="xs" color="fg.subtle" fontFamily="mono">
               v{packageJson.version}
             </Text>

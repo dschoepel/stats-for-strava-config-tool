@@ -2,6 +2,7 @@
 // Uses file-based storage in {defaultPath}/settings/config-tool-settings.yaml
 
 import { getFileContent, saveFile, expandPath } from './apiClient';
+import packageJson from '../../package.json';
 
 /* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
@@ -10,7 +11,7 @@ const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 
 // Default settings structure
 const DEFAULT_SETTINGS = {
-  version: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
+  version: packageJson.version,
   ui: {
     theme: 'dark', // 'light' or 'dark'
     sidebarCollapsed: false,
@@ -101,7 +102,19 @@ export const loadSettingsFromFile = async () => {
       
       // Merge with defaults and save to localStorage cache
       const mergedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(mergedSettings, null, 2));
+      
+      // Check if version needs updating
+      if (mergedSettings.version !== packageJson.version) {
+        console.log(`Updating version from ${mergedSettings.version} to ${packageJson.version}`);
+        mergedSettings.version = packageJson.version;
+        mergedSettings.lastUpdated = new Date().toISOString();
+        
+        // Save updated version back to file
+        await saveSettings(mergedSettings);
+      } else {
+        // Just cache in localStorage
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(mergedSettings, null, 2));
+      }
       
       return mergedSettings;
     }
@@ -143,6 +156,9 @@ export const saveSettings = async (settings) => {
   try {
     // Validate settings structure
     const validatedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
+    
+    // Always update version to current from package.json
+    validatedSettings.version = packageJson.version;
     
     // Expand tilde in defaultPath if present
     if (validatedSettings.files?.defaultPath?.startsWith('~')) {
