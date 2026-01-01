@@ -306,7 +306,7 @@ export default function Sidebar({
                 _hover={{ color: "primary", textDecoration: "underline" }}
                 cursor="pointer"
               >
-                Config Tool
+                Stats for Strava Config Tool
               </Text>
             </HStack>
             <Text fontSize="xs" color="fg.subtle" fontFamily="mono">

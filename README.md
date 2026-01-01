@@ -86,13 +86,20 @@ services:
 
   config-tool:
     image: ghcr.io/dschoepel/stats-for-strava-config-tool:latest
-    container_name: 'strava-config-tool'
-    volumes:
-      - ./config/app:/app/config  # Mount your config directory
+    container_name: stats-for-strava-config-tool
+    restart: unless-stopped
+
     env_file:
       - .env  # Load environment variables from .env file
+
+    volumes: # Match these to your stats for strava config directory
+      - ./statistics-for-strava/config:/data/statistics-for-strava/config  
+      - ./statistics-for-strava/config/settings:/data/settings
+      - ./statistics-for-strava/config/backups:/data/backups
+
     ports:
       - '8092:80'  # Access at http://localhost:8092
+
     networks:
       - statistics-for-strava-network
 ```
@@ -318,7 +325,7 @@ A: No! This is just a configuration editor. You still need Stats for Strava to i
 **Container won't start**
 - Check port 8092 isn't already in use (change to `8093:80` if needed)
 - Verify volume paths exist on your host system
-- Check Docker logs: `docker logs strava-config-tool`
+- Check Docker logs: `docker logs stats-for-strava-config-tool`
 
 **Widget definitions not saving**
 - Click the main **Save** button (individual edits are held in memory)
