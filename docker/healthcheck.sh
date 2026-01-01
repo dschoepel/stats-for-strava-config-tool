@@ -40,10 +40,18 @@ if ! $SUPERVISORCTL status nextjs | grep -q "RUNNING"; then
 fi
 
 # Check if nginx is responding to HTTP requests (try root path)
-if ! wget --quiet --tries=1 --timeout=5 --spider http://localhost:80/ 2>/dev/null; then
-    echo "ERROR: nginx is not responding on port 80"
-    exit 1
-fi
+for i in 1 2 3; do
+    if wget --quiet --tries=1 --timeout=5 --spider http://localhost:80/ 2>/dev/null; then
+        break
+    fi
+    if [ $i -eq 3 ]; then
+        echo "ERROR: nginx is not responding on port 80"
+        echo "Checking if nginx process is listening..."
+        netstat -tlnp 2>/dev/null | grep :80 || echo "No process listening on port 80"
+        exit 1
+    fi
+    sleep 2
+done
 
 # Check if Next.js is responding directly
 if ! wget --quiet --tries=1 --timeout=5 --spider http://localhost:3000/ 2>/dev/null; then
