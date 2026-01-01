@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { Box, Flex, VStack, Heading, Text, Button, Input, IconButton, Badge } from '@chakra-ui/react';
 import { MdClose, MdArrowUpward, MdArrowDownward, MdExpandMore, MdChevronRight, MdInfo } from 'react-icons/md';
 import { FcIdea } from 'react-icons/fc';
 import { Tooltip } from './Tooltip';
+import { checkForDuplicateKeys, removeDuplicateKeys } from '../utils/yamlMergeUtils';
 
 const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
   const [orderedFiles, setOrderedFiles] = useState(() => [...files]);
@@ -20,282 +22,6 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
     setOrderedFiles([...files]);
     setLastFilesLength(files.length);
   }
-
-  // Parse YAML to extract second-level keys under a given top-level key
-  const parseSecondLevelKeys = (content, topLevelKey) => {
-    const normalizedContent = content.replace(/\\n/g, '\n');
-    const lines = normalizedContent.split('\n');
-    const secondLevelKeys = [];
-    let inTargetSection = false;
-    let currentIndent = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      
-      // Check if we're entering the target top-level key
-      const topLevelMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/);
-      if (topLevelMatch) {
-        if (topLevelMatch[1] === topLevelKey) {
-          inTargetSection = true;
-          currentIndent = 0;
-        } else {
-          inTargetSection = false;
-        }
-        continue;
-      }
-
-      // If we're in the target section, look for second-level keys
-      if (inTargetSection) {
-        // Check for indented keys (second-level)
-        const indentMatch = line.match(/^(\s+)([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/);
-        if (indentMatch) {
-          const indent = indentMatch[1].length;
-          const key = indentMatch[2];
-          
-          // Only capture direct children (second level)
-          if (currentIndent === 0 || indent === currentIndent) {
-            currentIndent = indent;
-            secondLevelKeys.push(key);
-          }
-        }
-      }
-    }
-
-    return secondLevelKeys;
-  };
-
-  const checkForDuplicateKeys = (files) => {
-    const allKeys = new Set();
-    const duplicates = new Set();
-    const fileKeys = {};
-    const duplicateDetails = {};
-
-    files.forEach((file, fileIndex) => {
-      const normalizedContent = file.content.replace(/\\n/g, '\n');
-      const lines = normalizedContent.split('\n');
-      const keys = [];
-      
-      lines.forEach(line => {
-        // Match top-level YAML keys (not indented, followed by colon)
-        const match = line.match(/^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/);
-        if (match) {
-          const key = match[1];
-          keys.push(key);
-          
-          if (allKeys.has(key)) {
-            duplicates.add(key);
-          } else {
-            allKeys.add(key);
-          }
-        }
-      });
-      
-      fileKeys[fileIndex] = keys;
-    });
-
-    // For each duplicate key, analyze second-level conflicts
-    duplicates.forEach(dupKey => {
-      const filesWithKey = files.map((file, idx) => ({
-        fileIndex: idx,
-        fileName: file.name,
-        hasKey: fileKeys[idx].includes(dupKey)
-      })).filter(f => f.hasKey);
-
-      // Parse second-level keys for each file
-      const secondLevelAnalysis = filesWithKey.map(fileInfo => {
-        const file = files[fileInfo.fileIndex];
-        const secondKeys = parseSecondLevelKeys(file.content, dupKey);
-        return {
-          ...fileInfo,
-          secondLevelKeys: secondKeys
-        };
-      });
-
-      // Check for second-level conflicts
-      const allSecondKeys = new Set();
-      const conflictingSecondKeys = new Set();
-      
-      secondLevelAnalysis.forEach(analysis => {
-        analysis.secondLevelKeys.forEach(key => {
-          if (allSecondKeys.has(key)) {
-            conflictingSecondKeys.add(key);
-          } else {
-            allSecondKeys.add(key);
-          }
-        });
-      });
-
-      duplicateDetails[dupKey] = {
-        files: filesWithKey,
-        secondLevelAnalysis,
-        hasSecondLevelConflicts: conflictingSecondKeys.size > 0,
-        conflictingSecondKeys: Array.from(conflictingSecondKeys),
-        canSmartMerge: conflictingSecondKeys.size === 0
-      };
-    });
-
-    return {
-      hasDuplicates: duplicates.size > 0,
-      duplicateKeys: Array.from(duplicates),
-      fileKeys,
-      duplicateDetails
-    };
-  };
-
-  const removeDuplicateKeys = (files, smartMergeSettings) => {
-    const duplicateCheck = checkForDuplicateKeys(files);
-    
-    if (!duplicateCheck.hasDuplicates) {
-      return files; // No duplicates, return original files
-    }
-
-    const processedFiles = [];
-    const contentToMerge = {}; // Track content to merge under each key
-
-    // First pass: Extract content from non-primary files that needs to be merged
-    for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
-      const file = files[fileIndex];
-      const normalizedContent = file.content.replace(/\\n/g, '\n');
-      const lines = normalizedContent.split('\n');
-      
-      duplicateCheck.duplicateKeys.forEach(key => {
-        const details = duplicateCheck.duplicateDetails[key];
-        
-        if (smartMergeSettings[key]) {
-          const primaryFileIdx = primaryFilePerKey[key];
-          
-          if (fileIndex !== primaryFileIdx && details.files.some(f => f.fileIndex === fileIndex)) {
-            // This is a non-primary file with the duplicate key - extract its content
-            if (!contentToMerge[key]) {
-              contentToMerge[key] = [];
-            }
-            
-            let inTargetSection = false;
-            let sectionContent = [];
-            
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
-              const topLevelMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/);
-              
-              if (topLevelMatch) {
-                if (topLevelMatch[1] === key) {
-                  inTargetSection = true;
-                  // Don't include the top-level key line itself
-                  continue;
-                } else if (inTargetSection) {
-                  // Hit a different top-level key, stop collecting
-                  break;
-                }
-              } else if (inTargetSection) {
-                // Collect ALL lines under the target key (including blank lines)
-                // This preserves exact indentation and spacing from the original file
-                sectionContent.push(line);
-              }
-            }
-            
-            if (sectionContent.length > 0) {
-              contentToMerge[key].push({
-                fileIndex,
-                fileName: file.name,
-                content: sectionContent
-              });
-            }
-          }
-        }
-      });
-    }
-
-    // Second pass: Process each file, removing sections or merging content
-    for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
-      const file = files[fileIndex];
-      const normalizedContent = file.content.replace(/\\n/g, '\n');
-      const lines = normalizedContent.split('\n');
-      const filteredLines = [];
-      let skipUntilNextTopLevel = false;
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const topLevelMatch = line.match(/^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/);
-        
-        if (topLevelMatch) {
-          // This is a top-level key
-          const key = topLevelMatch[1];
-          skipUntilNextTopLevel = false;
-          
-          const details = duplicateCheck.duplicateDetails[key];
-          if (details) {
-            const primaryFileIdx = primaryFilePerKey[key];
-            
-            if (smartMergeSettings[key]) {
-              // Smart merge enabled
-              if (fileIndex === primaryFileIdx) {
-                // This IS the primary file - keep the top-level key
-                filteredLines.push(line);
-                
-                // After adding the top-level key, we need to add its content
-                // We'll collect the original content and then append merged content
-                let originalContent = [];
-                let j = i + 1;
-                
-                // Collect original content under this key
-                while (j < lines.length) {
-                  const nextLine = lines[j];
-                  const nextTopLevel = nextLine.match(/^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/);
-                  
-                  if (nextTopLevel) {
-                    // Hit next top-level key
-                    break;
-                  }
-                  originalContent.push(nextLine);
-                  j++;
-                }
-                
-                // Add original content
-                filteredLines.push(...originalContent);
-                
-                // Append merged content from other files
-                if (contentToMerge[key] && contentToMerge[key].length > 0) {
-                  contentToMerge[key].forEach(mergeInfo => {
-                    // Preserve exact indentation from the source file
-                    filteredLines.push(...mergeInfo.content);
-                  });
-                }
-                
-                // Skip ahead past the content we just processed
-                i = j - 1;
-              } else {
-                // This is NOT the primary file - skip this entire section
-                skipUntilNextTopLevel = true;
-              }
-            } else {
-              // Smart merge disabled - keep first occurrence only
-              if (fileIndex === primaryFileIdx) {
-                filteredLines.push(line);
-              } else {
-                skipUntilNextTopLevel = true;
-              }
-            }
-          } else {
-            // Not a duplicate key
-            filteredLines.push(line);
-          }
-        } else {
-          // This is content under a top-level key
-          if (!skipUntilNextTopLevel) {
-            filteredLines.push(line);
-          }
-        }
-      }
-
-      processedFiles.push({
-        ...file,
-        content: filteredLines.join('\n'),
-        size: new Blob([filteredLines.join('\n')]).size
-      });
-    }
-
-    return processedFiles;
-  };
 
   // Check for duplicates when files or order changes
   const duplicateInfo = useMemo(() => {
@@ -400,7 +126,7 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
       }
       
       // Remove duplicate keys based on smart merge settings
-      filesToCombine = removeDuplicateKeys(orderedFiles, smartMergeEnabled);
+      filesToCombine = removeDuplicateKeys(orderedFiles, smartMergeEnabled, primaryFilePerKey);
     }
     
     let combinedContent = '';
@@ -932,6 +658,16 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
       </Flex>
     </Flex>
   );
+};
+
+CombineFilesModal.propTypes = {
+  files: PropTypes.arrayOf(PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    content: PropTypes.string.isRequired
+  })).isRequired,
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onCombine: PropTypes.func.isRequired
 };
 
 export default CombineFilesModal;

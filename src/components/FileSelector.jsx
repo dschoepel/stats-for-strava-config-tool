@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { Box, VStack, Heading, Text, Button, Flex, HStack, Spinner, Icon } from '@chakra-ui/react';
 import { MdFolder, MdDescription, MdInfo, MdLock } from 'react-icons/md';
 import { processYamlFiles } from '../utils/yamlFileHandler';
@@ -146,6 +147,11 @@ const FileSelector = ({ onFilesSelected, onError }) => {
       </VStack>
     </VStack>
   );
+};
+
+FileSelector.propTypes = {
+  onFilesSelected: PropTypes.func.isRequired,
+  onError: PropTypes.func.isRequired
 };
 
 export default FileSelector;

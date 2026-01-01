@@ -12,7 +12,7 @@ import { MdSave, MdFileUpload, MdFileDownload } from 'react-icons/md';
 import { FiPackage } from 'react-icons/fi';
 import { exportSettingsAsYaml, importSettingsFromYaml } from '../../utils/settingsManager';
 
-const ImportExportModal = ({ isOpen, onClose }) => {
+const ImportExportModal = ({ isOpen, onClose, embedded = false }) => {
   const [mode, setMode] = useState('export');
   const [yamlContent, setYamlContent] = useState(exportSettingsAsYaml());
 
@@ -50,6 +50,90 @@ const ImportExportModal = ({ isOpen, onClose }) => {
   };
 
   if (!isOpen) return null;
+
+  // If embedded in a tabbed dialog, render without modal wrapper
+  if (embedded) {
+    return (
+      <>
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Mode Toggle Buttons */}
+          <Flex gap={2}>
+            <Button
+              onClick={handleExport}
+              colorPalette={mode === 'export' ? 'blue' : undefined}
+              variant={mode === 'export' ? 'solid' : 'outline'}
+              size={{ base: "sm", sm: "md" }}
+              flex="1"
+            >
+              <Flex align="center" gap={2}><Icon><MdFileDownload /></Icon> Export</Flex>
+            </Button>
+            <Button
+              onClick={handleImport}
+              colorPalette={mode === 'import' ? 'blue' : undefined}
+              variant={mode === 'import' ? 'solid' : 'outline'}
+              size={{ base: "sm", sm: "md" }}
+              flex="1"
+            >
+              <Flex align="center" gap={2}><Icon><MdFileUpload /></Icon> Import</Flex>
+            </Button>
+          </Flex>
+
+          {/* YAML Content Textarea */}
+          <Textarea
+            value={yamlContent}
+            onChange={(e) => setYamlContent(e.target.value)}
+            placeholder={mode === 'import' ? 'Paste YAML settings here...' : ''}
+            readOnly={mode === 'export'}
+            minH="400px"
+            fontFamily="'Fira Code', 'Monaco', 'Consolas', monospace"
+            fontSize="0.9rem"
+            lineHeight="1.5"
+            bg="inputBg"
+            resize="vertical"
+          />
+        </VStack>
+
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={onClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Close
+          </Button>
+          {mode === 'export' ? (
+            <Button
+              onClick={downloadSettings}
+              colorPalette="blue"
+              size={{ base: "sm", sm: "md" }}
+              width={{ base: "100%", sm: "auto" }}
+            >
+              <Flex align="center" gap={2}><Icon><MdSave /></Icon> Download</Flex>
+            </Button>
+          ) : (
+            <Button
+              onClick={handleImportConfirm}
+              colorPalette="blue"
+              size={{ base: "sm", sm: "md" }}
+              width={{ base: "100%", sm: "auto" }}
+            >
+              <Flex align="center" gap={2}><Icon><MdFileUpload /></Icon> Import</Flex>
+            </Button>
+          )}
+        </Flex>
+      </>
+    );
+  }
 
   return (
     <Box

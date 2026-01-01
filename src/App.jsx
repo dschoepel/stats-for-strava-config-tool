@@ -1,28 +1,14 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
-import YamlUtility from './components/YamlUtility'
 import SettingsDropdown from './components/SettingsDropdown'
-import UISettingsModal from './components/settings/UISettingsModal'
-import FilesSettingsModal from './components/settings/FilesSettingsModal'
-import EditorSettingsModal from './components/settings/EditorSettingsModal'
-import PerformanceSettingsModal from './components/settings/PerformanceSettingsModal'
-import ImportExportModal from './components/settings/ImportExportModal'
+import SettingsDialog from './components/SettingsDialog'
 import SportsListEditor from './components/SportsListEditor'
 import WidgetDefinitionsEditor from './components/WidgetDefinitionsEditor'
-import NextConfigFileList from './components/NextConfigFileList'
-import AthleteConfigEditor from './components/config/AthleteConfigEditor'
-import GeneralConfigEditor from './components/config/GeneralConfigEditor'
-import AppearanceConfigEditor from './components/config/AppearanceConfigEditor'
-import ImportConfigEditor from './components/config/ImportConfigEditor'
-import MetricsConfigEditor from './components/config/MetricsConfigEditor'
-import GearConfigEditor from './components/config/GearConfigEditor'
-import IntegrationsConfigEditor from './components/config/IntegrationsConfigEditor';
-import DaemonConfigEditor from './components/config/DaemonConfigEditor';
-import ZwiftConfigEditor from './components/config/ZwiftConfigEditor';
+import AppRouter from './components/AppRouter'
 import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
@@ -30,6 +16,8 @@ import { initializeSportsList } from './utils/sportsListInitializer'
 import { ToastProvider, useToast } from './contexts/ToastContext'
 import { ToastContainer } from './components/Toast'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { useNavigation } from './hooks/useNavigation'
+import { useConfigData } from './hooks/useConfigData'
 
 function App() {
   const { theme, setTheme } = useTheme();
@@ -38,8 +26,7 @@ function App() {
   // Initialize settings
   const [settings, setSettings] = useState({}); // Will be loaded after hydration
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
-  const [currentPage, setCurrentPage] = useState('Configuration')
-  const [breadcrumbs, setBreadcrumbs] = useState(['Configuration'])
+  const { currentPage, breadcrumbs, navigateTo, navigateToBreadcrumb } = useNavigation()
   const [hasHydrated, setHasHydrated] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Will be set after hydration
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)
@@ -49,10 +36,16 @@ function App() {
   const [fileCache, setFileCache] = useState({ files: [], fileHashes: new Map(), directory: null })
   const [hasConfigInitialized, setHasConfigInitialized] = useState(false)
   const [sectionToFileMap, setSectionToFileMap] = useState(new Map())
-  const [sectionData, setSectionData] = useState({})
-  const [isLoadingSectionData, setIsLoadingSectionData] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [sportsListDirty, setSportsListDirty] = useState(false)
+  
+  // Use the config data hook for managing section data
+  const { 
+    sectionData, 
+    isLoadingSectionData, 
+    loadSectionData, 
+    saveSectionData 
+  } = useConfigData(fileCache, sectionToFileMap, showError, showSuccess, setHasUnsavedChanges, navigateTo)
   const [widgetDefinitionsDirty, setWidgetDefinitionsDirty] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' })
 
@@ -108,16 +101,6 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const savedPage = localStorage.getItem('stats-config-current-page');
-        const savedBreadcrumbs = localStorage.getItem('stats-config-breadcrumbs');
-        
-        if (savedPage) {
-          setCurrentPage(savedPage);
-        }
-        if (savedBreadcrumbs) {
-          setBreadcrumbs(JSON.parse(savedBreadcrumbs));
-        }
-        
         // Load settings - try from localStorage first (faster), then validate with file
         let loadedSettings = loadSettings();
         
@@ -160,16 +143,6 @@ function App() {
     // setTheme is stable from next-themes and won't cause re-renders
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Save current page and breadcrumbs to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('stats-config-current-page', currentPage);
-      localStorage.setItem('stats-config-breadcrumbs', JSON.stringify(breadcrumbs));
-    } catch (error) {
-      console.error('Error saving navigation state:', error);
-    }
-  }, [currentPage, breadcrumbs])
 
   // Handle settings changes
   const handleSettingsChange = (newSettings) => {
@@ -239,24 +212,14 @@ function App() {
         onConfirm: () => {
           setHasUnsavedChanges(false);
           setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
-          // Proceed with navigation
-          if (parentPage) {
-            setBreadcrumbs([parentPage, page])
-          } else {
-            setBreadcrumbs([page])
-          }
-          setCurrentPage(page)
+          // Proceed with navigation using navigateTo
+          navigateTo(page, parentPage, true);
         }
       });
       return;
     }
     
-    if (parentPage) {
-      setBreadcrumbs([parentPage, page])
-    } else {
-      setBreadcrumbs([page])
-    }
-    setCurrentPage(page)
+    navigateTo(page, parentPage, skipUnsavedCheck);
   }
 
   const handleBreadcrumbClick = (index) => {
@@ -269,368 +232,14 @@ function App() {
         onConfirm: () => {
           setHasUnsavedChanges(false);
           setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
-          // Proceed with navigation
-          const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
-          setBreadcrumbs(newBreadcrumbs)
-          const targetPage = newBreadcrumbs[newBreadcrumbs.length - 1]
-          setCurrentPage(targetPage)
+          // Proceed with breadcrumb navigation
+          navigateToBreadcrumb(index);
         }
       });
       return;
     }
     
-    const newBreadcrumbs = breadcrumbs.slice(0, index + 1)
-    setBreadcrumbs(newBreadcrumbs)
-    const targetPage = newBreadcrumbs[newBreadcrumbs.length - 1]
-    setCurrentPage(targetPage)
-  }
-
-  // Helper function to load a single section file
-  const loadSectionFile = async (sectionInfo, sectionKey) => {
-    let filePath = null;
-    let topLevelKey = null;
-    let secondLevelKey = null;
-    
-    if (typeof sectionInfo === 'string') {
-      filePath = `${fileCache.directory}/${sectionInfo}`;
-    } else if (sectionInfo && sectionInfo.filePath) {
-      filePath = sectionInfo.filePath;
-      topLevelKey = sectionInfo.topLevelKey;
-      secondLevelKey = sectionInfo.secondLevelKey;
-    }
-    
-    if (!filePath) return null;
-    
-    const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`);
-    const result = await response.json();
-    
-    if (!result.success) return null;
-    
-    const YAML = await import('yaml');
-    const parsedData = YAML.parse(result.content);
-    
-    // Handle split files
-    if (topLevelKey && secondLevelKey) {
-      return parsedData[topLevelKey]?.[secondLevelKey] || parsedData[topLevelKey] || {};
-    }
-    
-    // Handle nested section keys (e.g., "appearance.dashboard")
-    if (sectionKey.includes('.')) {
-      const [topKey, ...restKeys] = sectionKey.split('.');
-      let data = parsedData[topKey];
-      for (const key of restKeys) {
-        if (data && typeof data === 'object') {
-          data = data[key];
-        } else {
-          return {};
-        }
-      }
-      return data || {};
-    }
-    
-    // Return the section data for simple keys
-    return parsedData[sectionKey] || {};
-  };
-
-  // Load section data when navigating to a section page
-  const loadSectionData = useCallback(async (sectionName) => {
-    setIsLoadingSectionData(true)
-    try {
-      // Map display names to actual YAML section keys
-      const sectionKeyMap = {
-        'scheduling daemon': 'daemon',
-      };
-      
-      const sectionKey = sectionKeyMap[sectionName.toLowerCase()] || sectionName.toLowerCase();
-      
-      let sectionInfo = null
-      
-      // First try direct match
-      sectionInfo = sectionToFileMap.get(sectionKey)
-      
-      // Check for nested mappings (e.g., "appearance" might have "appearance.dashboard")
-      // This should be checked regardless of whether we found a direct match
-      if (!sectionKey.includes('.')) {
-        // Look for any nested paths that start with this key
-        const nestedMappings = Array.from(sectionToFileMap.entries())
-          .filter(([key]) => key.startsWith(`${sectionKey}.`));
-        
-        if (nestedMappings.length > 0) {
-          // Load all nested sections and combine them
-          const combinedData = {};
-          
-          // Also load parent section if it exists
-          if (sectionInfo) {
-            const parentData = await loadSectionFile(sectionInfo, sectionKey);
-            Object.assign(combinedData, parentData);
-          }
-          
-          // Load each nested section
-          for (const [nestedKey, nestedInfo] of nestedMappings) {
-            const nestedData = await loadSectionFile(nestedInfo, nestedKey);
-            // Extract the second-level key (e.g., "dashboard" from "appearance.dashboard")
-            const secondKey = nestedKey.split('.')[1];
-            if (nestedData && secondKey) {
-              combinedData[secondKey] = nestedData;
-            }
-          }
-          
-          // Set the combined data and return early
-          setSectionData(prev => ({
-            ...prev,
-            [sectionKey]: combinedData
-          }));
-          setIsLoadingSectionData(false);
-          return;
-        }
-      }
-      
-      if (!sectionInfo && sectionKey === 'athlete') {
-        // Fallback: if athlete section not found, try to use general section
-        console.log('Athlete section not found, trying to use general section as fallback')
-        sectionInfo = sectionToFileMap.get('general')
-        console.log('Using general section for athlete data:', sectionInfo)
-      }
-      
-      if (!sectionInfo) {
-        console.log(`No section info found for '${sectionKey}', available keys:`, Array.from(sectionToFileMap.keys()))
-      }
-      
-      // Handle both string filename and full object formats
-      let filePath = null
-      let topLevelKey = null
-      let secondLevelKey = null
-      
-      if (typeof sectionInfo === 'string') {
-        // API returned simple mapping with just filename
-        filePath = `${fileCache.directory}/${sectionInfo}`
-        console.log(`Constructed file path from string: ${filePath}`)
-      } else if (sectionInfo && sectionInfo.filePath) {
-        // API returned detailed mapping with full object
-        filePath = sectionInfo.filePath
-        topLevelKey = sectionInfo.topLevelKey
-        secondLevelKey = sectionInfo.secondLevelKey
-        console.log(`Using file path from object: ${filePath}`)
-        if (sectionInfo.isSplitFile) {
-          console.log(`This is a split file for ${topLevelKey}.${secondLevelKey}`)
-        }
-      }
-      
-      if (filePath) {
-        console.log('Found section info, using file path:', filePath)
-        const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`)
-        const result = await response.json()
-        
-        if (result.success) {
-          // Parse YAML and extract the section data
-          const YAML = await import('yaml')
-          const parsedData = YAML.parse(result.content)
-          console.log('Parsed YAML data:', parsedData)
-          
-          let sectionContent = {}
-          
-          // Handle split files differently
-          if (topLevelKey && secondLevelKey) {
-            // This is a split file - the content is under topLevelKey.secondLevelKey
-            sectionContent = parsedData[topLevelKey]?.[secondLevelKey] || parsedData[topLevelKey] || {}
-            console.log(`Extracted split file data for ${topLevelKey}.${secondLevelKey}:`, sectionContent)
-          } else if (sectionKey === 'athlete') {
-            // Athlete data comes from general.athlete
-            sectionContent = parsedData.general?.athlete || {}
-          } else if (sectionKey === 'general') {
-            // General section excludes athlete data
-            const { athlete: _athlete, ...generalData } = parsedData.general || {}
-            sectionContent = generalData
-            console.log('Extracted general data:', sectionContent)
-          } else {
-            // Other sections are top-level - use sectionKey not sectionName
-            sectionContent = parsedData[sectionKey] || {}
-            console.log('Extracted section data:', sectionContent)
-          }
-          
-          setSectionData(prev => ({
-            ...prev,
-            [sectionKey]: sectionContent
-          }))
-        } else {
-          console.error('Failed to load file content:', result.error)
-          setSectionData(prev => ({
-            ...prev,
-            [sectionKey]: {}
-          }))
-        }
-      } else {
-        console.error('Section info not found for:', sectionKey)
-        console.log('Available sections:', Array.from(sectionToFileMap.keys()))
-        
-        // Show user-friendly error message
-        showError(
-          `Configuration section "${sectionName}" not found in your config files. The section may be missing or in multiple files causing a conflict. Please check your configuration files.`,
-          7000
-        )
-        
-        // Set empty object so the editor can still open
-        setSectionData(prev => ({
-          ...prev,
-          [sectionKey]: {}
-        }))
-      }
-    } catch (error) {
-      console.error('Error loading section data:', error)
-      // Set empty object on error so editor can open
-      const sectionKeyMap = {
-        'scheduling daemon': 'daemon',
-      };
-      const sectionKey = sectionKeyMap[sectionName.toLowerCase()] || sectionName.toLowerCase();
-      setSectionData(prev => ({
-        ...prev,
-        [sectionKey]: {}
-      }))
-    } finally {
-      setIsLoadingSectionData(false)
-    }
-  }, [sectionToFileMap, fileCache.directory, showError])
-
-  // Save section data
-  const saveSectionData = async (sectionName, data) => {
-    setIsLoadingSectionData(true)
-    try {
-      const sectionKey = sectionName.toLowerCase()
-      let sectionInfo = sectionToFileMap.get(sectionKey)
-      
-      // Check if there are nested mappings for this section
-      const nestedMappings = Array.from(sectionToFileMap.entries())
-        .filter(([key]) => key.startsWith(`${sectionKey}.`));
-      
-      // If we have nested mappings (split files), save each nested key to its respective file
-      if (nestedMappings.length > 0) {
-        const savePromises = [];
-        
-        // Save parent section data (keys that aren't split out)
-        const parentInfo = sectionToFileMap.get(sectionKey);
-        if (parentInfo) {
-          // Extract keys that belong in parent file (not in any nested mapping)
-          const nestedKeys = nestedMappings.map(([key]) => key.split('.')[1]);
-          const parentData = {};
-          for (const [key, value] of Object.entries(data)) {
-            if (!nestedKeys.includes(key)) {
-              parentData[key] = value;
-            }
-          }
-          
-          if (Object.keys(parentData).length > 0) {
-            savePromises.push(
-              saveSingleSection(parentInfo, sectionKey, parentData, sectionKey === 'athlete')
-            );
-          }
-        }
-        
-        // Save each nested section to its split file
-        for (const [nestedKey, nestedInfo] of nestedMappings) {
-          const secondKey = nestedKey.split('.')[1];
-          if (data[secondKey]) {
-            savePromises.push(
-              saveSingleSection(nestedInfo, nestedKey, data[secondKey], false)
-            );
-          }
-        }
-        
-        // Wait for all saves to complete
-        const results = await Promise.all(savePromises);
-        const allSuccessful = results.every(r => r.success);
-        
-        if (allSuccessful) {
-          await loadSectionData(sectionName);
-          showSuccess('Configuration saved successfully!');
-          setHasUnsavedChanges(false);
-          handleNavClick('Configuration', null, true);
-        } else {
-          throw new Error('Some files failed to save');
-        }
-        
-        setIsLoadingSectionData(false);
-        return;
-      }
-      
-      // Fallback: if athlete section not found, try to use general section
-      if (!sectionInfo && sectionKey === 'athlete') {
-        sectionInfo = sectionToFileMap.get('general')
-      }
-      
-      // Handle both string filename and full object formats
-      let filePath = null
-      if (typeof sectionInfo === 'string') {
-        filePath = `${fileCache.directory}/${sectionInfo}`
-      } else if (sectionInfo && sectionInfo.filePath) {
-        filePath = sectionInfo.filePath
-      }
-      
-      if (filePath) {
-        const response = await fetch('/api/update-section', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filePath: filePath,
-            sectionName: sectionName.toLowerCase(),
-            sectionData: data,
-            isAthlete: sectionName.toLowerCase() === 'athlete'
-          })
-        })
-        
-        const result = await response.json()
-        if (result.success) {
-          // Reload section data to ensure form reflects actual saved data
-          await loadSectionData(sectionName)
-          
-          showSuccess('Configuration saved successfully!')
-          
-          // Clear unsaved changes flag and navigate back to Configuration
-          setHasUnsavedChanges(false)
-          
-          // Navigate back to Configuration (skip unsaved check since we just saved)
-          handleNavClick('Configuration', null, true)
-        } else {
-          throw new Error(result.error)
-        }
-      } else {
-        // Section info not found - cannot save
-        const errorMsg = `Cannot save "${sectionName}" configuration: section mapping not found. The section may exist in multiple config files causing a conflict, or the files may need to be rescanned.`
-        showError(errorMsg, 8000)
-        throw new Error(errorMsg)
-      }
-    } catch (error) {
-      console.error('Error saving section data:', error)
-      showError(`Failed to save configuration: ${error.message}`, 7000)
-    } finally {
-      setIsLoadingSectionData(false)
-    }
-  }
-
-  // Helper function to save a single section to a file
-  const saveSingleSection = async (sectionInfo, sectionKey, data, isAthlete = false) => {
-    let filePath = null;
-    if (typeof sectionInfo === 'string') {
-      filePath = `${fileCache.directory}/${sectionInfo}`;
-    } else if (sectionInfo && sectionInfo.filePath) {
-      filePath = sectionInfo.filePath;
-    }
-    
-    if (!filePath) {
-      return { success: false, error: 'No file path found' };
-    }
-    
-    const response = await fetch('/api/update-section', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filePath: filePath,
-        sectionName: sectionKey,
-        sectionData: data,
-        isAthlete: isAthlete
-      })
-    });
-    
-    return await response.json();
+    navigateToBreadcrumb(index);
   }
 
   // Load section data when navigating to section pages
@@ -639,37 +248,6 @@ function App() {
       loadSectionData(currentPage)
     }
   }, [currentPage, sectionToFileMap, loadSectionData])
-
-  // Determine configuration mode based on available files
-  const detectConfigurationMode = (files) => {
-    const hasMainConfig = files.some(f => f.name === 'config.yaml')
-    const hasConfigFiles = files.some(f => f.name.startsWith('config-') && f.name.endsWith('.yaml'))
-    const totalFiles = files.length
-    
-    // config.yaml must always be present
-    if (!hasMainConfig) {
-      return 'invalid' // Missing required config.yaml
-    }
-    
-    if (totalFiles === 1 && hasMainConfig) {
-      return 'single-file'
-    } else if (hasMainConfig && hasConfigFiles) {
-      return 'multi-file'
-    } else {
-      return 'unknown'
-    }
-  }
-
-  // Calculate configuration mode based on current files
-  const configMode = useMemo(() => {
-    if (fileCache.files && fileCache.files.length > 0) {
-      const mode = detectConfigurationMode(fileCache.files)
-      console.log(`Configuration mode detected: ${mode}`);
-      console.log('Files:', fileCache.files.map(f => f.name));
-      return mode
-    }
-    return null
-  }, [fileCache.files])
 
   return (
     <Flex direction="column" h="100vh" w="full" bg="bg" color="text">
@@ -729,135 +307,31 @@ function App() {
             </Breadcrumb.List>
           </Breadcrumb.Root>
           <Box p={8} color="text">
-            {currentPage === 'YAML Utility' ? (
-              <YamlUtility setBreadcrumbs={setBreadcrumbs} breadcrumbs={breadcrumbs} />
-            ) : currentPage === 'Configuration' ? (
-              <>
-                <h2>{currentPage}</h2>
-                <NextConfigFileList 
-                  ref={configListRef}
-                  fileCache={fileCache}
-                  setFileCache={setFileCache}
-                  hasConfigInitialized={hasConfigInitialized}
-                  setHasConfigInitialized={setHasConfigInitialized}
-                  configMode={configMode}
-                  sectionToFileMap={sectionToFileMap}
-                  setSectionToFileMap={setSectionToFileMap}
-                />
-              </>
-            ) : currentPage === 'General' ? (
-              <GeneralConfigEditor
-                key={JSON.stringify(sectionData.general)}
-                initialData={sectionData.general || {}}
-                onSave={(data) => saveSectionData('general', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Athlete' ? (
-              <AthleteConfigEditor
-                key={JSON.stringify(sectionData.athlete)}
-                initialData={sectionData.athlete || {}}
-                onSave={(data) => saveSectionData('athlete', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Appearance' ? (
-              <AppearanceConfigEditor
-                key={JSON.stringify(sectionData.appearance)}
-                initialData={sectionData.appearance || {}}
-                onSave={(data) => saveSectionData('appearance', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Import' ? (
-              <ImportConfigEditor
-                key={JSON.stringify(sectionData.import)}
-                initialData={sectionData.import || {}}
-                onSave={(data) => saveSectionData('import', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Metrics' ? (
-              <MetricsConfigEditor
-                key={JSON.stringify(sectionData.metrics)}
-                initialData={sectionData.metrics || {}}
-                onSave={(data) => saveSectionData('metrics', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Gear' ? (
-              <GearConfigEditor
-                key={JSON.stringify(sectionData.gear)}
-                initialData={sectionData.gear || {}}
-                onSave={(data) => saveSectionData('gear', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Integrations' ? (
-              <IntegrationsConfigEditor
-                key={JSON.stringify(sectionData.integrations)}
-                initialData={sectionData.integrations || {}}
-                onSave={(data) => saveSectionData('integrations', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Scheduling Daemon' ? (
-              <DaemonConfigEditor
-                key={JSON.stringify(sectionData.daemon)}
-                initialData={sectionData.daemon || {}}
-                onSave={(data) => saveSectionData('daemon', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Zwift' ? (
-              <ZwiftConfigEditor
-                key={JSON.stringify(sectionData.zwift)}
-                initialData={sectionData.zwift || {}}
-                onSave={(data) => saveSectionData('zwift', data)}
-                onCancel={() => handleNavClick('Configuration')}
-                isLoading={isLoadingSectionData}
-                onDirtyChange={setHasUnsavedChanges}
-              />
-            ) : currentPage === 'Help & Documentation' ? (
-              <Help />
-            ) : (
-              <>
-                <h2>{currentPage}</h2>
-                {/* Content for {currentPage} will be displayed here */}
-              </>
-            )}
+            <AppRouter
+              currentPage={currentPage}
+              settings={settings}
+              sectionData={sectionData}
+              isLoadingSectionData={isLoadingSectionData}
+              configListRef={configListRef}
+              fileCache={fileCache}
+              hasConfigInitialized={hasConfigInitialized}
+              sectionToFileMap={sectionToFileMap}
+              onNavigate={handleNavClick}
+              onSaveSectionData={saveSectionData}
+              onUnsavedChangesChange={setHasUnsavedChanges}
+              onConfigInitializedChange={setHasConfigInitialized}
+              onFileCacheChange={setFileCache}
+              onSectionToFileMapChange={setSectionToFileMap}
+            />
           </Box>
         </Box>
       </Flex>
       
-      {/* Individual Settings Modals */}
-      <UISettingsModal
-        isOpen={activeSettingsModal === 'ui'}
+      {/* Unified Settings Dialog */}
+      <SettingsDialog
+        isOpen={['ui', 'files', 'editor', 'validation', 'importExport'].includes(activeSettingsModal)}
         onClose={() => setActiveSettingsModal(null)}
-      />
-      <FilesSettingsModal
-        isOpen={activeSettingsModal === 'files'}
-        onClose={() => setActiveSettingsModal(null)}
-      />
-      <EditorSettingsModal
-        isOpen={activeSettingsModal === 'editor'}
-        onClose={() => setActiveSettingsModal(null)}
-      />
-      <PerformanceSettingsModal
-        isOpen={activeSettingsModal === 'performance'}
-        onClose={() => setActiveSettingsModal(null)}
-      />
-      <ImportExportModal
-        isOpen={activeSettingsModal === 'importExport'}
-        onClose={() => setActiveSettingsModal(null)}
+        initialTab={activeSettingsModal || 'ui'}
       />
       
       {/* Sports List and Widget Definitions as full-screen modals */}

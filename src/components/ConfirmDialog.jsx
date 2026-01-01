@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Dialog, Portal, Button } from '@chakra-ui/react';
 import { MdClose } from 'react-icons/md';
 
@@ -101,4 +102,15 @@ export const ConfirmDialog = ({
       </Portal>
     </Dialog.Root>
   );
+};
+
+ConfirmDialog.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  message: PropTypes.string.isRequired,
+  confirmText: PropTypes.string,
+  cancelText: PropTypes.string,
+  confirmColorPalette: PropTypes.string
 };

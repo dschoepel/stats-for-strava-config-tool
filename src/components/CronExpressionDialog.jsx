@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -16,6 +16,41 @@ import 'react-js-cron/dist/styles.css';
  */
 const CronExpressionDialog = ({ isOpen, onClose, initialValue, onSave }) => {
   const [cronExpression, setCronExpression] = useState(initialValue || '0 14 * * *');
+
+  // Suppress known warnings from react-js-cron library (uses deprecated antd props)
+  useEffect(() => {
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    
+    console.error = (...args) => {
+      const message = args[0]?.toString() || '';
+      // Suppress known react-js-cron antd warnings
+      if (
+        message.includes('popupClassName') ||
+        message.includes('dropdownAlign')
+      ) {
+        return;
+      }
+      originalError.apply(console, args);
+    };
+    
+    console.warn = (...args) => {
+      const message = args[0]?.toString() || '';
+      // Suppress known react-js-cron antd warnings
+      if (
+        message.includes('popupClassName') ||
+        message.includes('dropdownAlign')
+      ) {
+        return;
+      }
+      originalWarn.apply(console, args);
+    };
+
+    return () => {
+      console.error = originalError;
+      console.warn = originalWarn;
+    };
+  }, [isOpen]);
 
   const handleSave = () => {
     onSave(cronExpression);

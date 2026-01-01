@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Icon, IconButton, Textarea } from '@chakra-ui/react';
-import { MdClose, MdSave, MdRefresh, MdFileUpload, MdFileDownload, MdPalette, MdFolder, MdEdit, MdSpeed, MdSportsBasketball, MdWidgets, MdSettings } from 'react-icons/md';
+import { MdClose, MdSave, MdRefresh, MdFileUpload, MdFileDownload, MdPalette, MdFolder, MdEdit, MdVerifiedUser, MdSportsBasketball, MdWidgets, MdSettings } from 'react-icons/md';
 import { NativeSelectField, NativeSelectRoot } from '@chakra-ui/react';
 import { Field } from '@chakra-ui/react';
 import { Checkbox } from '@chakra-ui/react';
@@ -149,7 +149,7 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
     { id: 'ui', label: 'User Interface', icon: MdPalette },
     { id: 'files', label: 'Files', icon: MdFolder },
     { id: 'editor', label: 'Editor', icon: MdEdit },
-    { id: 'performance', label: 'Performance', icon: MdSpeed },
+    { id: 'validation', label: 'Validation', icon: MdVerifiedUser },
     { id: 'sportsList', label: 'Sports List', icon: MdSportsBasketball },
     { id: 'widgetDefinitions', label: 'Widgets', icon: MdWidgets }
   ];
@@ -413,25 +413,6 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                   >
                     Validate YAML syntax on file load
                   </Checkbox>
-
-                  <Field.Root>
-                    <Field.Label color="text" fontWeight="medium">Maximum recent files</Field.Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={settings.files?.maxRecentFiles || 10}
-                      onChange={(e) => handleSettingChange('files.maxRecentFiles', parseInt(e.target.value))}
-                      bg="inputBg"
-                      border="1px solid"
-                      borderColor="border"
-                      color="text"
-                      _focus={{
-                        borderColor: "primary",
-                        boxShadow: "0 0 0 3px rgba(252, 82, 0, 0.2)"
-                      }}
-                    />
-                  </Field.Root>
                 </VStack>
               )}
 
@@ -499,20 +480,24 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                 </VStack>
               )}
 
-              {activeTab === 'performance' && (
+              {activeTab === 'validation' && (
                 <VStack align="stretch" gap={6}>
                   <Heading as="h3" size="md" color="text" fontWeight="semibold">
-                    Performance Settings
+                    Validation Settings
                   </Heading>
                   
+                  <Text fontSize="sm" color="textMuted">
+                    Configure validation limits that may change in the future. These values affect schema validation when editing configuration files.
+                  </Text>
+
                   <Field.Root>
-                    <Field.Label color="text" fontWeight="medium">Maximum file size (MB)</Field.Label>
+                    <Field.Label color="text" fontWeight="medium">Maximum Zwift Level</Field.Label>
                     <Input
                       type="number"
                       min={1}
-                      max={100}
-                      value={Math.round((settings.performance?.maxFileSize || 10485760) / 1024 / 1024)}
-                      onChange={(e) => handleSettingChange('performance.maxFileSize', parseInt(e.target.value) * 1024 * 1024)}
+                      max={200}
+                      value={settings.validation?.maxZwiftLevel || 100}
+                      onChange={(e) => handleSettingChange('validation.maxZwiftLevel', parseInt(e.target.value))}
                       bg="inputBg"
                       border="1px solid"
                       borderColor="border"
@@ -522,46 +507,9 @@ const SettingsModal = ({ isOpen, onClose, onSettingsChange }) => {
                         boxShadow: "0 0 0 3px rgba(252, 82, 0, 0.2)"
                       }}
                     />
-                  </Field.Root>
-
-                  <Field.Root>
-                    <Field.Label color="text" fontWeight="medium">Search timeout (ms)</Field.Label>
-                    <Input
-                      type="number"
-                      min={100}
-                      max={2000}
-                      step={100}
-                      value={settings.performance?.searchTimeout || 500}
-                      onChange={(e) => handleSettingChange('performance.searchTimeout', parseInt(e.target.value))}
-                      bg="inputBg"
-                      border="1px solid"
-                      borderColor="border"
-                      color="text"
-                      _focus={{
-                        borderColor: "primary",
-                        boxShadow: "0 0 0 3px rgba(252, 82, 0, 0.2)"
-                      }}
-                    />
-                  </Field.Root>
-
-                  <Field.Root>
-                    <Field.Label color="text" fontWeight="medium">Auto-save interval (seconds)</Field.Label>
-                    <Input
-                      type="number"
-                      min={10}
-                      max={300}
-                      step={10}
-                      value={Math.round((settings.performance?.autoSaveInterval || 30000) / 1000)}
-                      onChange={(e) => handleSettingChange('performance.autoSaveInterval', parseInt(e.target.value) * 1000)}
-                      bg="inputBg"
-                      border="1px solid"
-                      borderColor="border"
-                      color="text"
-                      _focus={{
-                        borderColor: "primary",
-                        boxShadow: "0 0 0 3px rgba(252, 82, 0, 0.2)"
-                      }}
-                    />
+                    <Field.HelperText color="textMuted" fontSize="sm" mt={1}>
+                      The maximum allowed Zwift level. Currently capped at {settings.validation?.maxZwiftLevel || 100}. Zwift may increase this limit in the future.
+                    </Field.HelperText>
                   </Field.Root>
                 </VStack>
               )}

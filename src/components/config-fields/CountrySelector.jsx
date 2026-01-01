@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { 
   Box, Flex, Input, Button, Grid, Icon, Heading, Text, VStack, HStack,
   DialogRoot, DialogBackdrop, DialogContent, DialogHeader, DialogBody, DialogCloseTrigger 
@@ -250,6 +251,12 @@ const CountrySelector = ({ value, onChange, onClose }) => {
       </DialogContent>
     </DialogRoot>
   );
+};
+
+CountrySelector.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired
 };
 
 export default CountrySelector;

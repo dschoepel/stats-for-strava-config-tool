@@ -16,7 +16,8 @@ const HeartRateZonesEditor = ({
   birthday,
   formula,
   errors = {},
-  required = false
+  required = false,
+  needsRecalculation = false
 }) => {
   const [sportsList, setSportsList] = useState(initialSportsList);
   const [showSportModal, setShowSportModal] = useState(false);
@@ -404,8 +405,9 @@ const HeartRateZonesEditor = ({
             onClick={autoPopulateZones}
             title="Recalculate zones based on current age and formula"
             flexShrink={0}
+            colorPalette={needsRecalculation ? "orange" : undefined}
           >
-            Recalculate Zones
+            Recalculate Zones{needsRecalculation && ' *'}
           </Button>
         )}
       </Flex>

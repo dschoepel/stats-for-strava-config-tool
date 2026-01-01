@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
-import { Box, VStack, HStack, Heading, Text, Button, SimpleGrid, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
-import { MdFolder, MdRefresh, MdVisibility, MdEdit, MdClose, MdExpandMore, MdChevronRight, MdDescription, MdSettings, MdWarning, MdLightbulb, MdError, MdHelp } from 'react-icons/md';
+import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
+import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
 import YamlEditorModal from './YamlEditorModal';
+import ConfigFileGrid from './config-files/ConfigFileGrid';
+import SectionMappingTable from './config-files/SectionMappingTable';
 import { getSetting } from '../utils/settingsManager';
+import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
 
-const NextConfigFileList = forwardRef((props, ref) => {
+const ConfigFileList = forwardRef((props, ref) => {
   const { 
     fileCache, 
     setFileCache, 
@@ -502,19 +505,6 @@ const NextConfigFileList = forwardRef((props, ref) => {
     handleCloseEditor();
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-  };
-
   return (
     <Box p={6}>
       <VStack align="stretch" gap={6}>
@@ -698,43 +688,7 @@ const NextConfigFileList = forwardRef((props, ref) => {
               <Box as={isSectionMappingExpanded ? MdExpandMore : MdChevronRight} fontSize="20px" color="text" />
             </Flex>
             {isSectionMappingExpanded && (
-              <Box p={4} pt={0} overflowX="auto">
-                <Table.Root size="sm" variant="outline">
-                  <Table.Header>
-                    <Table.Row bg="tableHeaderBg">
-                      <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">Section</Table.ColumnHeader>
-                      <Table.ColumnHeader color="tableHeaderText" fontWeight="bold">File(s)</Table.ColumnHeader>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {(() => {
-                      // Use the order from the backend API (already sorted with nested sections grouped)
-                      // The backend ensures parent sections are followed by their children
-                      const sortedEntries = Array.from(sectionToFileMap.entries());
-                      
-                      return sortedEntries.map(([section, fileInfo]) => {
-                        // Check if this is an array (multiple files)
-                        const isMultiple = Array.isArray(fileInfo);
-                        const files = isMultiple ? fileInfo : [fileInfo];
-                        
-                        return (
-                          <Table.Row key={section}>
-                            <Table.Cell fontWeight="medium" color="text">{section}</Table.Cell>
-                            <Table.Cell color={isMultiple ? "orange.600" : "textMuted"} _dark={{ color: isMultiple ? "orange.400" : "textMuted" }}>
-                              {files.map((f, idx) => (
-                                <Box key={idx}>
-                                  {isMultiple && <Icon color="orange.500" mr={1}><MdWarning /></Icon>}
-                                  {typeof f === 'string' ? f : f.fileName}
-                                </Box>
-                              ))}
-                            </Table.Cell>
-                          </Table.Row>
-                        );
-                      });
-                    })()}
-                  </Table.Body>
-                </Table.Root>
-              </Box>
+              <SectionMappingTable sectionToFileMap={sectionToFileMap} />
             )}
           </Box>
         )}
@@ -813,90 +767,12 @@ const NextConfigFileList = forwardRef((props, ref) => {
       )}
 
       {configFiles.length > 0 && (
-        <Box>
-          <Flex align="center" gap={2} mb={4} flexWrap="wrap">
-            <Heading as="h4" size="md" color="text">
-              Found {configFiles.length} configuration file{configFiles.length > 1 ? 's' : ''} in directory:
-            </Heading>
-            <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text" fontSize="sm">
-              {selectedDirectory}
-            </Code>
-          </Flex>
-          
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
-            {configFiles.map((file, index) => (
-              <Box
-                key={index}
-                p={4}
-                bg="cardBg"
-                borderRadius="md"
-                border="2px solid"
-                borderColor={file.isMainConfig ? "primary" : "border"}
-                boxShadow="sm"
-                transition="all 0.2s"
-                _hover={{ boxShadow: "md", transform: "translateY(-2px)" }}
-              >
-                <VStack align="stretch" gap={3}>
-                  <Flex align="center" justify="space-between">
-                    <Text fontSize="lg" color={file.isMainConfig ? 'primary' : 'text'}>
-                      <Icon>{file.isMainConfig ? <MdSettings /> : <MdDescription />}</Icon>
-                    </Text>
-                    {file.isMainConfig && (
-                      <Box
-                        px={2}
-                        py={1}
-                        bg="primary"
-                        color="white"
-                        fontSize="xs"
-                        fontWeight="bold"
-                        borderRadius="md"
-                      >
-                        Primary Config
-                      </Box>
-                    )}
-                  </Flex>
-                  
-                  <Box>
-                    <Text fontWeight="bold" color="text" fontSize="md" mb={1}>
-                      {file.name}
-                    </Text>
-                    <HStack gap={3} fontSize="xs" color="textMuted">
-                      <Text>{formatFileSize(file.size)}</Text>
-                      <Text>•</Text>
-                      <Text>{formatDate(file.lastModified)}</Text>
-                    </HStack>
-                  </Box>
-                  
-                  <HStack gap={2}>
-                    <Button
-                      leftIcon={<MdVisibility />}
-                      onClick={() => handleViewFile(file)}
-                      size="sm"
-                      variant="outline"
-                      colorPalette="gray"
-                      borderColor="border"
-                      flex={1}
-                      _hover={{ bg: "primaryHover", color: "white" }}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      leftIcon={<MdEdit />}
-                      onClick={() => handleEditFile(file)}
-                      size="sm"
-                      bg="primary"
-                      color="white"
-                      flex={1}
-                      _hover={{ bg: "primaryHover" }}
-                    >
-                      Edit
-                    </Button>
-                  </HStack>
-                </VStack>
-              </Box>
-            ))}
-          </SimpleGrid>
-        </Box>
+        <ConfigFileGrid
+          files={configFiles}
+          selectedDirectory={selectedDirectory}
+          onView={handleViewFile}
+          onEdit={handleEditFile}
+        />
       )}
 
       {!isLoading && !error && configFiles.length === 0 && selectedDirectory && (
@@ -952,6 +828,6 @@ const NextConfigFileList = forwardRef((props, ref) => {
   );
 });
 
-NextConfigFileList.displayName = 'NextConfigFileList';
+ConfigFileList.displayName = 'ConfigFileList';
 
-export default NextConfigFileList;
+export default ConfigFileList;

@@ -14,7 +14,7 @@ import { MdSave, MdEdit } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 
-const EditorSettingsModal = ({ isOpen, onClose }) => {
+const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
@@ -69,6 +69,128 @@ const EditorSettingsModal = ({ isOpen, onClose }) => {
   };
 
   if (!isOpen) return null;
+
+  // If embedded in a tabbed dialog, render without modal wrapper
+  if (embedded) {
+    return (
+      <>
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Font Size Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Font size</Field.Label>
+            <Input
+              type="number"
+              min="10"
+              max="24"
+              value={settings.editor?.fontSize || 14}
+              onChange={(e) => handleChange('editor.fontSize', parseInt(e.target.value))}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
+            />
+          </Field.Root>
+
+          {/* Tab Size Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Tab size</Field.Label>
+            <Input
+              type="number"
+              min="2"
+              max="8"
+              value={settings.editor?.tabSize || 2}
+              onChange={(e) => handleChange('editor.tabSize', parseInt(e.target.value))}
+              bg="inputBg"
+              width={{ base: "100%", sm: "150px" }}
+            />
+          </Field.Root>
+
+          {/* Word Wrap Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.editor?.wordWrap !== false}
+              onCheckedChange={(e) => handleChange('editor.wordWrap', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Enable word wrap</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+
+          {/* Show Line Numbers Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.ui?.showLineNumbers !== false}
+              onCheckedChange={(e) => handleChange('ui.showLineNumbers', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Show line numbers</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+
+          {/* Highlight Search Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.editor?.highlightSearch !== false}
+              onCheckedChange={(e) => handleChange('editor.highlightSearch', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Highlight search matches</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+        </VStack>
+
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            colorPalette="blue"
+            disabled={!isDirty}
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            <Flex align="center" gap={2}><Icon><MdSave /></Icon> Save{isDirty && ' *'}</Flex>
+          </Button>
+        </Flex>
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText="Leave Anyway"
+          confirmColorPalette="orange"
+          onConfirm={confirmDialog.onConfirm || (() => {})}
+          onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+        />
+      </>
+    );
+  }
 
   return (
     <Box

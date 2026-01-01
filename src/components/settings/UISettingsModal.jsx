@@ -16,7 +16,7 @@ import { MdSave, MdPalette } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 
-const UISettingsModal = ({ isOpen, onClose }) => {
+const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
@@ -71,6 +71,115 @@ const UISettingsModal = ({ isOpen, onClose }) => {
   };
 
   if (!isOpen) return null;
+
+  // If embedded in a tabbed dialog, render without modal wrapper
+  if (embedded) {
+    return (
+      <>
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Theme Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Theme</Field.Label>
+            <NativeSelectRoot>
+              <NativeSelectField
+                value={settings.ui?.theme || 'dark'}
+                onChange={(e) => handleChange('ui.theme', e.target.value)}
+                bg="inputBg"
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </NativeSelectField>
+            </NativeSelectRoot>
+          </Field.Root>
+
+          {/* Sidebar Collapsed Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.ui?.sidebarCollapsed || false}
+              onCheckedChange={(e) => handleChange('ui.sidebarCollapsed', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Start with sidebar collapsed</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+
+          {/* Auto-save Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.ui?.autoSave !== false}
+              onCheckedChange={(e) => handleChange('ui.autoSave', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Auto-save changes</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+
+          {/* Show Line Numbers Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.ui?.showLineNumbers !== false}
+              onCheckedChange={(e) => handleChange('ui.showLineNumbers', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Show line numbers in YAML viewer</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+        </VStack>
+
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            colorPalette="blue"
+            disabled={!isDirty}
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            <Flex align="center" gap={2}><Icon><MdSave /></Icon> Save{isDirty && ' *'}</Flex>
+          </Button>
+        </Flex>
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText="Leave Anyway"
+          confirmColorPalette="orange"
+          onConfirm={confirmDialog.onConfirm || (() => {})}
+          onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+        />
+      </>
+    );
+  }
 
   return (
     <Box
