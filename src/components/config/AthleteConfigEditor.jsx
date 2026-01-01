@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text, Flex, Icon } from '@chakra-ui/react';
-import { MdInfo } from 'react-icons/md';
+import { MdInfo, MdWarning } from 'react-icons/md';
 import { Field } from '@chakra-ui/react';
 import BaseConfigEditor from './BaseConfigEditor';
 import HeartRateZonesEditor from '../config-fields/HeartRateZonesEditor';
@@ -20,6 +20,9 @@ const AthleteConfigEditor = ({
   isLoading,
   onDirtyChange 
 }) => {
+  const [showRecalculateReminder, setShowRecalculateReminder] = useState(false);
+  const initialBirthdayRef = useRef(initialData?.birthday);
+  const initialFormulaRef = useRef(initialData?.maxHeartRateFormula);
   // Custom validation for athlete fields
   const validateAthleteFields = (formData, getNestedValue) => {
     const errors = {};
@@ -80,6 +83,26 @@ const AthleteConfigEditor = ({
         const birthday = getNestedValue(formData, 'birthday');
         const formula = getNestedValue(formData, 'maxHeartRateFormula');
         const maxHR = calculateMaxHeartRate(birthday, formula);
+        const zoneMode = getNestedValue(formData, 'heartRateZones.mode');
+        
+        // Check if birthday or formula changed and zone mode is absolute
+        const birthdayChanged = birthday !== initialBirthdayRef.current;
+        const formulaChanged = formula !== initialFormulaRef.current;
+        const shouldShowReminder = zoneMode === 'absolute' && (birthdayChanged || formulaChanged);
+        
+        // Update reminder visibility when relevant fields change
+        useEffect(() => {
+          if (shouldShowReminder && !showRecalculateReminder) {
+            setShowRecalculateReminder(true);
+          } else if (!shouldShowReminder && showRecalculateReminder) {
+            setShowRecalculateReminder(false);
+          }
+        }, [shouldShowReminder, showRecalculateReminder]);
+        
+        // Custom field change handler that tracks birthday/formula changes
+        const handleFieldChangeWithTracking = (fieldPath, value) => {
+          handleFieldChange(fieldPath, value);
+        };
 
         return (
           <Box p={{ base: 3, md: 4 }} bg="cardBg" borderWidth="1px" borderColor="border" borderRadius="md" shadows="md">
@@ -103,7 +126,7 @@ const AthleteConfigEditor = ({
                 </Text>
                 <DateInput
                   value={getNestedValue(formData, 'birthday') || ''}
-                  onChange={(value) => handleFieldChange('birthday', value)}
+                  onChange={(value) => handleFieldChangeWithTracking('birthday', value)}
                   placeholder="Select birthday"
                   maxDate={new Date()}
                   width={{ base: "100%", sm: "300px" }}
@@ -130,10 +153,19 @@ const AthleteConfigEditor = ({
                   option => option.type === 'string' && option.enum
                 );
                 
+                // Create a custom wrapper for renderBasicField to track changes
+                const formulaValue = getNestedValue(formData, 'maxHeartRateFormula');
+                const handleFormulaChange = (path, value) => {
+                  handleFieldChangeWithTracking(path, value);
+                };
+                
                 return (
                   <Flex gap={3} align="center" flexWrap="wrap" direction={{ base: "column", sm: "row" }}>
                     <Box flex="1" minW={{ base: "100%", sm: "200px" }}>
-                      {renderBasicField('maxHeartRateFormula', stringOption, 'maxHeartRateFormula', true)}
+                      {/* Render the field but intercept the onChange */}
+                      <Box>
+                        {renderBasicField('maxHeartRateFormula', stringOption, 'maxHeartRateFormula', true, handleFormulaChange)}
+                      </Box>
                     </Box>
                     {maxHR && (
                       <Box 
@@ -155,6 +187,30 @@ const AthleteConfigEditor = ({
                 );
               })()}
             </Box>
+            
+            {/* Recalculate Zones Reminder */}
+            {showRecalculateReminder && (
+              <Flex
+                align="flex-start"
+                gap={2}
+                p={3}
+                bg="orange.50"
+                _dark={{ bg: 'orange.900/30' }}
+                borderRadius="md"
+                mb={4}
+              >
+                <Icon fontSize="lg" color="orange.500" mt={0.5}><MdWarning /></Icon>
+                <Box>
+                  <Text fontSize="sm" fontWeight="600" color="orange.800" _dark={{ color: 'orange.200' }}>
+                    Heart Rate Zones May Need Updating
+                  </Text>
+                  <Text fontSize="sm" color="orange.700" _dark={{ color: 'orange.300' }}>
+                    You've changed your {birthdayChanged && formulaChanged ? 'birthday and formula' : birthdayChanged ? 'birthday' : 'formula'}.
+                    Since your zones are in <strong>Absolute (BPM)</strong> mode, click the <strong>"Recalculate Zones"</strong> button below to update them based on the new calculated max heart rate.
+                  </Text>
+                </Box>
+              </Flex>
+            )}
 
             {/* Heart Rate Zones Editor */}
             <HeartRateZonesEditor
@@ -164,6 +220,7 @@ const AthleteConfigEditor = ({
               formula={formula}
               errors={errors}
               required={schema?.required?.includes('heartRateZones')}
+              needsRecalculation={showRecalculateReminder}
             />
 
             {/* Weight History Editor */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { Box, Flex, Text, IconButton, Icon } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { MdInfo, MdCheckCircle, MdWarning, MdError } from 'react-icons/md';
@@ -75,6 +76,13 @@ const Toast = ({ message, type = 'info', duration = 5000, onClose }) => {
   );
 };
 
+Toast.propTypes = {
+  message: PropTypes.string.isRequired,
+  type: PropTypes.oneOf(['info', 'success', 'warning', 'error']),
+  duration: PropTypes.number,
+  onClose: PropTypes.func.isRequired
+};
+
 export const ToastContainer = ({ toasts, removeToast }) => {
   return (
     <Box
@@ -100,6 +108,16 @@ export const ToastContainer = ({ toasts, removeToast }) => {
       ))}
     </Box>
   );
+};
+
+ToastContainer.propTypes = {
+  toasts: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    message: PropTypes.string.isRequired,
+    type: PropTypes.oneOf(['info', 'success', 'warning', 'error']),
+    duration: PropTypes.number
+  })).isRequired,
+  removeToast: PropTypes.func.isRequired
 };
 
 export default Toast;

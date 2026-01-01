@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { Box, Flex, Heading, Text, Button, IconButton } from '@chakra-ui/react';
 import { MdClose } from 'react-icons/md';
 import { FaSave } from 'react-icons/fa';
@@ -426,6 +427,17 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
       />
     </Flex>
   );
+};
+
+YamlEditorModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  fileName: PropTypes.string.isRequired,
+  fileContent: PropTypes.string.isRequired,
+  filePath: PropTypes.string.isRequired,
+  onSave: PropTypes.func.isRequired,
+  isNewFile: PropTypes.bool,
+  skipValidation: PropTypes.bool
 };
 
 export default YamlEditorModal;

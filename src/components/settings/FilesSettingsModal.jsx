@@ -16,7 +16,7 @@ import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 
-const FilesSettingsModal = ({ isOpen, onClose }) => {
+const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
@@ -167,6 +167,97 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  // If embedded in a tabbed dialog, render without modal wrapper
+  if (embedded) {
+    return (
+      <>
+        {/* Modal Body */}
+        <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
+          {/* Default File Path Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Default file path</Field.Label>
+            <Input
+              type="text"
+              value={settings.files?.defaultPath || ''}
+              onChange={(e) => handleChange('files.defaultPath', e.target.value)}
+              placeholder="~/Documents/strava-config-tool/"
+              bg="inputBg"
+            />
+          </Field.Root>
+
+          {/* Auto Backup Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.files?.autoBackup !== false}
+              onCheckedChange={(e) => handleChange('files.autoBackup', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Create automatic backups</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+
+          {/* Validate On Load Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.files?.validateOnLoad !== false}
+              onCheckedChange={(e) => handleChange('files.validateOnLoad', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Validate YAML syntax on file load</Switch.Label>
+            </Switch.Root>
+          </Field.Root>
+        </VStack>
+
+        {/* Modal Footer */}
+        <Flex
+          direction={{ base: "column-reverse", sm: "row" }}
+          justify="flex-end"
+          gap={3}
+          p={{ base: 3, sm: 4 }}
+          borderTopWidth="1px"
+          borderColor="border"
+        >
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            colorPalette="blue"
+            disabled={!isDirty}
+            size={{ base: "sm", sm: "md" }}
+            width={{ base: "100%", sm: "auto" }}
+          >
+            <Flex align="center" gap={2}><Icon><MdSave /></Icon> Save{isDirty && ' *'}</Flex>
+          </Button>
+        </Flex>
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText || 'Leave Anyway'}
+          confirmColorPalette="orange"
+          onConfirm={confirmDialog.onConfirm || (() => {})}
+          onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+        />
+      </>
+    );
+  }
+
   return (
     <Box
       position="fixed"
@@ -255,20 +346,6 @@ const FilesSettingsModal = ({ isOpen, onClose }) => {
               </Switch.Control>
               <Switch.Label>Validate YAML syntax on file load</Switch.Label>
             </Switch.Root>
-          </Field.Root>
-
-          {/* Maximum Recent Files Setting */}
-          <Field.Root>
-            <Field.Label fontWeight="500" mb={2}>Maximum recent files</Field.Label>
-            <Input
-              type="number"
-              min="1"
-              max="50"
-              value={settings.files?.maxRecentFiles || 10}
-              onChange={(e) => handleChange('files.maxRecentFiles', parseInt(e.target.value))}
-              bg="inputBg"
-              width={{ base: "100%", sm: "150px" }}
-            />
           </Field.Root>
         </VStack>
 

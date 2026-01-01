@@ -8,6 +8,7 @@ import {
 import { FcDataConfiguration } from 'react-icons/fc';
 import { SiYaml } from 'react-icons/si';
 import { TbBrandZwift } from 'react-icons/tb';
+import packageJson from '../../package.json';
 
 const MenuItem = ({ icon: Icon, label, onClick, isCollapsed, isSubmenu = false, onToggleSidebar }) => (
   <Flex
@@ -150,6 +151,8 @@ export default function Sidebar({
           base: isCollapsed ? "translateX(-100%)" : "translateX(0)", 
           md: "translateX(0)" 
         }}
+        display="flex"
+        flexDirection="column"
       >
       <Flex
         justify={isCollapsed ? "center" : "space-between"}
@@ -179,7 +182,7 @@ export default function Sidebar({
         </IconButton>
       </Flex>
 
-      <VStack gap={0} align="stretch" py={2}>
+      <VStack gap={0} align="stretch" py={2} flex="1" overflowY="auto">
         <MenuItemWithSubmenu
           icon={FcDataConfiguration}
           label="Configuration"
@@ -278,6 +281,40 @@ export default function Sidebar({
           onToggleSidebar={onToggle}
         />
       </VStack>
+
+      {/* Version Footer */}
+      <Box
+        pt={4}
+        pb={2}
+        px={4}
+        borderTop="1px solid"
+        borderColor="border"
+        flexShrink={0}
+      >
+        {!isCollapsed ? (
+          <VStack gap={1} align="flex-start">
+            <Text
+              as="a"
+              href="https://github.com/dschoepel/stats-for-strava-config-tool?tab=readme-ov-file"
+              target="_blank"
+              rel="noopener noreferrer"
+              fontSize="xs"
+              color="fg.muted"
+              _hover={{ color: "primary", textDecoration: "underline" }}
+              cursor="pointer"
+            >
+              Config Tool
+            </Text>
+            <Text fontSize="xs" color="fg.subtle" fontFamily="mono">
+              v{packageJson.version}
+            </Text>
+          </VStack>
+        ) : (
+          <Text fontSize="xs" color="fg.muted" textAlign="center" title={`Version ${packageJson.version}`}>
+            v{packageJson.version}
+          </Text>
+        )}
+      </Box>
     </Box>
     </>
   );

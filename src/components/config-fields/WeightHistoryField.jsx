@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -189,6 +190,14 @@ const WeightHistoryField = ({
       {hasError && <span className="field-error">{hasError}</span>}
     </div>
   );
+};
+
+WeightHistoryField.propTypes = {
+  value: PropTypes.object,
+  onChange: PropTypes.func.isRequired,
+  unitSystem: PropTypes.oneOf(['metric', 'imperial', null]),
+  fieldSchema: PropTypes.object,
+  hasError: PropTypes.bool
 };
 
 export default WeightHistoryField;

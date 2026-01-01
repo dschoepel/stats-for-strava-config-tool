@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Box, Button, VStack, HStack, Text, Icon } from '@chakra-ui/react';
 import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { 
-  MdSettings, MdPalette, MdFolder, MdEdit, MdSpeed, 
+  MdSettings, MdPalette, MdFolder, MdEdit, MdVerifiedUser, 
   MdSportsSoccer, MdWidgets, MdImportExport 
 } from 'react-icons/md';
 
@@ -14,7 +14,7 @@ const SettingsDropdown = ({ onSelectSetting }) => {
     { id: 'ui', label: 'User Interface', icon: MdPalette },
     { id: 'files', label: 'Files', icon: MdFolder },
     { id: 'editor', label: 'Editor', icon: MdEdit },
-    { id: 'performance', label: 'Performance', icon: MdSpeed },
+    { id: 'validation', label: 'Validation', icon: MdVerifiedUser },
     { id: 'sportsList', label: 'Sports List', icon: MdSportsSoccer },
     { id: 'widgetDefinitions', label: 'Widgets', icon: MdWidgets },
     { id: 'importExport', label: 'Import/Export', icon: MdImportExport }

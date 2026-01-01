@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Text, Input, Flex, VStack, Heading, Icon } from '@chakra-ui/react';
 import { MdInfo } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
+import { loadSettings } from '../../utils/settingsManager';
 
 /**
  * ZwiftConfigEditor - Handles Zwift integration configuration fields
@@ -14,6 +15,16 @@ const ZwiftConfigEditor = ({
   isLoading,
   onDirtyChange 
 }) => {
+  const [maxZwiftLevel, setMaxZwiftLevel] = useState(100);
+
+  // Load max Zwift level from settings
+  useEffect(() => {
+    queueMicrotask(() => {
+      const settings = loadSettings();
+      setMaxZwiftLevel(settings.validation?.maxZwiftLevel || 100);
+    });
+  }, []);
+
   // Custom validation for Zwift fields
   const validateZwiftFields = (formData, getNestedValue) => {
     const errors = {};
@@ -24,8 +35,8 @@ const ZwiftConfigEditor = ({
     // Validate level range if provided
     if (level !== null && level !== undefined && level !== '') {
       const levelNum = parseInt(level);
-      if (isNaN(levelNum) || levelNum < 1 || levelNum > 100) {
-        errors['level'] = 'Zwift level must be between 1 and 100';
+      if (isNaN(levelNum) || levelNum < 1 || levelNum > maxZwiftLevel) {
+        errors['level'] = `Zwift level must be between 1 and ${maxZwiftLevel}`;
       }
     }
     
@@ -81,15 +92,15 @@ const ZwiftConfigEditor = ({
                   </Text>
                 </Flex>
                 <Text fontSize="sm" color="textMuted" mb={2}>
-                  Your Zwift level (1 - 100). Will be used to render your Zwift badge. Leave empty to disable this feature.
+                  Your Zwift level (1 - {maxZwiftLevel}). Will be used to render your Zwift badge. Leave empty to disable this feature.
                 </Text>
                 <Input
                   type="number"
                   value={levelValue === null || levelValue === undefined ? '' : levelValue}
                   onChange={(e) => handleFieldChange('level', e.target.value === '' ? null : parseInt(e.target.value))}
-                  placeholder="Enter your Zwift level (1-100)"
+                  placeholder={`Enter your Zwift level (1-${maxZwiftLevel})`}
                   min="1"
-                  max="100"
+                  max={maxZwiftLevel}
                   borderColor={errors['level'] ? 'red.500' : 'border'}
                   bg="inputBg"
                 />

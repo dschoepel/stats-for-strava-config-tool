@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Button, Input, Flex, Text, Grid, VStack, HStack, Code, Checkbox, Icon, ColorPicker, Portal, parseColor } from '@chakra-ui/react';
-import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward, MdInfo, MdWarning, MdDashboard } from 'react-icons/md';
+import React, { useState, useRef } from 'react';
+import { Box, Button, Flex, Text, VStack, HStack, Icon, ColorPicker, Portal, parseColor, Input, Code, Badge } from '@chakra-ui/react';
+import { MdInfo, MdWarning, MdDashboard, MdExpandMore, MdChevronRight } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
 import CountrySelector from '../config-fields/CountrySelector';
 import DashboardEditor from '../DashboardEditor';
+import SportTypeMultiSelect from './appearance/SportTypeMultiSelect';
+import SportTypeSortingOrder from './appearance/SportTypeSortingOrder';
+import CollapsibleSection from './appearance/CollapsibleSection';
+import { useAppearanceConfig } from './appearance/useAppearanceConfig';
 
 /**
  * AppearanceConfigEditor - Handles appearance-specific configuration fields
@@ -17,7 +20,7 @@ const AppearanceConfigEditor = ({
   isLoading,
   onDirtyChange 
 }) => {
-  const [sportsList, setSportsList] = useState(initialSportsList);
+  const { sportsList, validateAppearanceFields } = useAppearanceConfig();
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showDashboardEditor, setShowDashboardEditor] = useState(false);
   const [dashboardJustSaved, setDashboardJustSaved] = useState(false);
@@ -32,7 +35,6 @@ const AppearanceConfigEditor = ({
     photos: false,
     sportTypesSortingOrder: false
   });
-  const [expandedSportCategories, setExpandedSportCategories] = useState({});
 
   const toggleGroup = (groupName) => {
     setExpandedGroups(prev => ({
@@ -63,297 +65,34 @@ const AppearanceConfigEditor = ({
     });
   };
 
-  // Load sports list for sport type selection
-  useEffect(() => {
-    async function loadSports() {
-      try {
-        const settings = JSON.parse(localStorage.getItem('config-tool-settings') || '{}');
-        const list = await readSportsList(settings);
-        setSportsList(list);
-      } catch (error) {
-        console.error('Error loading sports list:', error);
-      }
-    }
-    loadSports();
-  }, []);
-
-  // Get flat array of all sport types
-  const getAllSportTypes = () => {
-    const allSports = [];
-    Object.values(sportsList).forEach(categoryArray => {
-      if (Array.isArray(categoryArray)) {
-        allSports.push(...categoryArray);
-      }
-    });
-    return allSports;
-  };
-
-  // Custom validation for appearance fields
-  const validateAppearanceFields = (formData, getNestedValue) => {
-    const errors = {};
-    
-    // Validate polyline color format
-    const polylineColor = getNestedValue(formData, 'heatmap.polylineColor');
-    if (polylineColor && !polylineColor.match(/^(#[0-9A-Fa-f]{3,6}|rgb|rgba|hsl|hsla|[a-z]+)/)) {
-      errors['heatmap.polylineColor'] = 'Must be a valid CSS color (e.g., #fc6719, red, rgb(252, 103, 25))';
-    }
-
-    // Validate country code format if provided
-    const countryCode = getNestedValue(formData, 'photos.defaultEnabledFilters.countryCode');
-    if (countryCode && countryCode !== null && !countryCode.match(/^[A-Z]{2}$/)) {
-      errors['photos.defaultEnabledFilters.countryCode'] = 'Must be a 2-letter uppercase ISO2 country code (e.g., US, GB, FR)';
-    }
-
-    return errors;
-  };
-
-  // Render sport type multi-select
-  const renderSportTypeMultiSelect = (fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError) => {
-    const selectedSports = Array.isArray(value) ? value : [];
-
-    const handleSportToggle = (sport) => {
-      const newSelection = selectedSports.includes(sport)
-        ? selectedSports.filter(s => s !== sport)
-        : [...selectedSports, sport];
-      handleFieldChange(fieldPath, newSelection);
-    };
-
-    const toggleSportCategory = (category) => {
-      setExpandedSportCategories(prev => ({
-        ...prev,
-        [category]: !prev[category]
-      }));
-    };
-
+  // Render sport type multi-select - now uses extracted component
+  const renderSportTypeMultiSelect = (fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError, subsectionKey) => {
     return (
-      <Box key={fieldPath} mb={4}>
-        <Text fontWeight="500" mb={1}>
-          {fieldSchema.title || fieldName}
-        </Text>
-        {fieldSchema.description && (
-          <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
-        )}
-        <Box>
-          {Object.keys(sportsList).length === 0 ? (
-            <Text fontSize="sm" color="textMuted">
-              No sports configured. Add sports in Settings → Sports List.
-            </Text>
-          ) : (
-            <VStack align="stretch" gap={2}>
-              {Object.entries(sportsList).map(([category, sports]) => (
-                <Box key={category} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
-                  <Button
-                    onClick={() => toggleSportCategory(category)}
-                    width="100%"
-                    justifyContent="flex-start"
-                    variant="ghost"
-                    size="sm"
-                    bg="cardBg"
-                    color="text"
-                  >
-                    <Box as={expandedSportCategories[category] !== false ? MdExpandMore : MdChevronRight} mr={2} />
-                    {category}
-                  </Button>
-                  {expandedSportCategories[category] !== false && (
-                    <Grid templateColumns="repeat(auto-fill, minmax(150px, 1fr))" gap={2} p={3}>
-                      {sports.map(sport => (
-                        <Checkbox.Root
-                          key={sport}
-                          checked={selectedSports.includes(sport)}
-                          onCheckedChange={() => handleSportToggle(sport)}
-                          colorPalette="orange"
-                        >
-                          <Checkbox.HiddenInput />
-                          <Checkbox.Control>
-                            <Checkbox.Indicator />
-                          </Checkbox.Control>
-                          <Checkbox.Label fontSize="sm">
-                            {sport}
-                          </Checkbox.Label>
-                        </Checkbox.Root>
-                      ))}
-                    </Grid>
-                  )}
-                </Box>
-              ))}
-            </VStack>
-          )}
-        </Box>
-        {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
-      </Box>
+      <SportTypeMultiSelect
+        fieldName={fieldName}
+        fieldSchema={fieldSchema}
+        fieldPath={fieldPath}
+        value={value}
+        onChange={handleFieldChange}
+        hasError={hasError}
+        sportsList={sportsList}
+        subsectionKey={subsectionKey}
+      />
     );
   };
 
-  // Render sport type sorting order (drag and drop or list)
+  // Render sport type sorting order - now uses extracted component
   const renderSportTypeSortingOrder = (fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError) => {
-    const allSports = getAllSportTypes();
-    const sortingOrder = Array.isArray(value) ? value : [];
-
-    const handleAddSport = (sport) => {
-      if (!sortingOrder.includes(sport)) {
-        handleFieldChange(fieldPath, [...sortingOrder, sport]);
-      }
-    };
-
-    const handleRemoveSport = (sport) => {
-      handleFieldChange(fieldPath, sortingOrder.filter(s => s !== sport));
-    };
-
-    const handleMoveUp = (index) => {
-      if (index > 0) {
-        const newOrder = [...sortingOrder];
-        [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
-        handleFieldChange(fieldPath, newOrder);
-      }
-    };
-
-    const handleMoveDown = (index) => {
-      if (index < sortingOrder.length - 1) {
-        const newOrder = [...sortingOrder];
-        [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
-        handleFieldChange(fieldPath, newOrder);
-      }
-    };
-
-    const availableSports = allSports.filter(sport => !sortingOrder.includes(sport));
-
     return (
-      <Box key={fieldPath} mb={4}>
-        <Text fontWeight="500" mb={1}>
-          {fieldSchema.title || fieldName}
-        </Text>
-        {fieldSchema.description && (
-          <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
-        )}
-        
-        <VStack align="stretch" gap={4}>
-          {sortingOrder.length > 0 && (
-            <Box>
-              <Text fontWeight="500" fontSize="sm" mb={2}>Current Sort Order:</Text>
-              <VStack align="stretch" gap={1}>
-                {sortingOrder.map((sport, index) => (
-                  <Flex
-                    key={sport}
-                    direction={{ base: "column", sm: "row" }}
-                    align={{ base: "stretch", sm: "center" }}
-                    gap={2}
-                    p={2}
-                    bg="cardBg"
-                    borderWidth="1px"
-                    borderColor="border"
-                    borderRadius="md"
-                  >
-                    <Flex align="center" gap={2} flex="1">
-                      <Text fontSize="sm" fontWeight="500" minWidth="30px">
-                        {index + 1}.
-                      </Text>
-                      <Text flex="1" fontSize="sm">{sport}</Text>
-                    </Flex>
-                    <HStack gap={{ base: 0.5, sm: 1 }} justifyContent={{ base: "center", sm: "flex-end" }}>
-                      <Button
-                        onClick={() => handleMoveUp(index)}
-                        disabled={index === 0}
-                        size={{ base: "xs", sm: "sm" }}
-                        variant="ghost"
-                        title="Move up"
-                        minW={{ base: "24px", sm: "auto" }}
-                        h={{ base: "24px", sm: "auto" }}
-                        p={{ base: 1, sm: 2 }}
-                      >
-                        <Box as={MdArrowUpward} boxSize={{ base: "14px", sm: "16px" }} />
-                      </Button>
-                      <Button
-                        onClick={() => handleMoveDown(index)}
-                        disabled={index === sortingOrder.length - 1}
-                        size={{ base: "xs", sm: "sm" }}
-                        variant="ghost"
-                        title="Move down"
-                        minW={{ base: "24px", sm: "auto" }}
-                        h={{ base: "24px", sm: "auto" }}
-                        p={{ base: 1, sm: 2 }}
-                      >
-                        <Box as={MdArrowDownward} boxSize={{ base: "14px", sm: "16px" }} />
-                      </Button>
-                      <Button
-                        onClick={() => handleRemoveSport(sport)}
-                        size={{ base: "xs", sm: "sm" }}
-                        variant="ghost"
-                        colorPalette="red"
-                        title="Remove"
-                        minW={{ base: "24px", sm: "auto" }}
-                        h={{ base: "24px", sm: "auto" }}
-                        p={{ base: 1, sm: 2 }}
-                      >
-                        <Box as={MdClose} boxSize={{ base: "14px", sm: "16px" }} />
-                      </Button>
-                    </HStack>
-                  </Flex>
-                ))}
-              </VStack>
-            </Box>
-          )}
-
-          {availableSports.length > 0 && (
-            <Box>
-              <Text fontWeight="500" fontSize="sm" mb={2}>Add Sport to Order:</Text>
-              <VStack align="stretch" gap={2}>
-                {Object.entries(sportsList).map(([category, categoryArray]) => {
-                  const availableInCategory = categoryArray.filter(sport => !sortingOrder.includes(sport));
-                  if (availableInCategory.length === 0) return null;
-                  
-                  return (
-                    <Box key={category} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
-                      <Button
-                        onClick={() => setExpandedSportCategories(prev => ({
-                          ...prev,
-                          [`sorting_${category}`]: !prev[`sorting_${category}`]
-                        }))}
-                        width="100%"
-                        justifyContent="flex-start"
-                        variant="ghost"
-                        size="sm"
-                        bg="cardBg"
-                        color="text"
-                        whiteSpace="normal"
-                        textAlign="left"
-                        height="auto"
-                        py={2}
-                        wordBreak="break-word"
-                      >
-                        <Box as={expandedSportCategories[`sorting_${category}`] !== false ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
-                        {category}
-                      </Button>
-                      {expandedSportCategories[`sorting_${category}`] !== false && (
-                        <Grid templateColumns="repeat(auto-fill, minmax(140px, 1fr))" gap={2} p={3}>
-                          {availableInCategory.map(sport => (
-                            <Button
-                              key={sport}
-                              onClick={() => handleAddSport(sport)}
-                              size={{ base: "xs", sm: "sm" }}
-                              variant="outline"
-                              whiteSpace="normal"
-                              wordBreak="break-word"
-                              height="auto"
-                              py={{ base: 1, sm: 2 }}
-                              px={{ base: 1.5, sm: 2 }}
-                              fontSize={{ base: "xs", sm: "sm" }}
-                              lineHeight="1.3"
-                              textAlign="left"
-                            >
-                              <Box as={MdAdd} boxSize={{ base: "12px", sm: "16px" }} mr={1} flexShrink={0} /> {sport}
-                            </Button>
-                          ))}
-                        </Grid>
-                      )}
-                    </Box>
-                  );
-                })}
-              </VStack>
-            </Box>
-          )}
-        </VStack>
-        {hasError && <Text color="red.500" fontSize="sm" mt={1}>{hasError}</Text>}
-      </Box>
+      <SportTypeSortingOrder
+        fieldName={fieldName}
+        fieldSchema={fieldSchema}
+        fieldPath={fieldPath}
+        value={value}
+        onChange={handleFieldChange}
+        hasError={hasError}
+        sportsList={sportsList}
+      />
     );
   };
 
@@ -512,6 +251,19 @@ const AppearanceConfigEditor = ({
                           Leave as <Code fontSize="sm">null</Code> to use the default layout.
                         </Text>
                       </Flex>
+                      
+                      {/* Widget count indicator */}
+                      <Flex align="center" gap={2} mb={3}>
+                        <Text fontSize="sm" fontWeight="500">Current Layout:</Text>
+                        {dashboardLayout === null || dashboardLayout === undefined || dashboardLayout.length === 0 ? (
+                          <Badge colorScheme="gray" fontSize="xs">Default (null)</Badge>
+                        ) : (
+                          <Badge colorScheme="blue" fontSize="xs">
+                            {dashboardLayout.length} {dashboardLayout.length === 1 ? 'widget' : 'widgets'} selected
+                          </Badge>
+                        )}
+                      </Flex>
+                      
                       {dashboardJustSaved && (
                         <Flex
                           align="flex-start"
@@ -789,49 +541,58 @@ const AppearanceConfigEditor = ({
                     'photos.hidePhotosForSportTypes',
                     getNestedValue(formData, 'photos.hidePhotosForSportTypes'),
                     handleFieldChange,
-                    errors['photos.hidePhotosForSportTypes']
+                    errors['photos.hidePhotosForSportTypes'],
+                    'hidePhotosForSportTypes'
                   )}
 
-                  {/* defaultEnabledFilters.sportTypes */}
-                  {renderSportTypeMultiSelect(
-                    'sportTypes',
-                    fieldSchema.properties.defaultEnabledFilters.properties.sportTypes,
-                    'photos.defaultEnabledFilters.sportTypes',
-                    getNestedValue(formData, 'photos.defaultEnabledFilters.sportTypes'),
-                    handleFieldChange,
-                    errors['photos.defaultEnabledFilters.sportTypes']
-                  )}
-
-                  {/* defaultEnabledFilters.countryCode */}
+                  {/* defaultEnabledFilters - heading only */}
                   <Box mb={4}>
-                    <Text fontWeight="500" mb={1}>
-                      Country Code
+                    <Text fontWeight="600" mb={3} fontSize="md">
+                      Default Enabled Filters
                     </Text>
-                    {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description && (
-                      <Text fontSize="sm" color="textMuted" mb={2}>
-                        {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description}
+
+                    {/* sportTypes within defaultEnabledFilters - collapsible */}
+                    {renderSportTypeMultiSelect(
+                      'sportTypes',
+                      fieldSchema.properties.defaultEnabledFilters.properties.sportTypes,
+                      'photos.defaultEnabledFilters.sportTypes',
+                      getNestedValue(formData, 'photos.defaultEnabledFilters.sportTypes'),
+                      handleFieldChange,
+                      errors['photos.defaultEnabledFilters.sportTypes'],
+                      'defaultEnabledFilters'
+                    )}
+
+                    {/* defaultEnabledFilters.countryCode */}
+                    <Box mt={3}>
+                      <Text fontWeight="500" mb={1} fontSize="sm">
+                        Country Code
                       </Text>
-                    )}
-                    <Flex gap={2} direction={{ base: "column", sm: "row" }}>
-                      <Input
-                        value={getNestedValue(formData, 'photos.defaultEnabledFilters.countryCode') || ''}
-                        readOnly
-                        placeholder="Click button to select country"
-                        flex="1"
-                        borderColor={errors['photos.defaultEnabledFilters.countryCode'] ? 'red.500' : 'border'}
-                      />
-                      <Button
-                        onClick={() => setShowCountrySelector(true)}
-                        size={{ base: "xs", sm: "md" }}
-                        width={{ base: "100%", sm: "auto" }}
-                        whiteSpace="normal"
-                      >
-                        Select Country
-                      </Button>
-                    </Flex>
-                    {errors['photos.defaultEnabledFilters.countryCode'] && (
-                      <Text color="red.500" fontSize="sm" mt={1}>{errors['photos.defaultEnabledFilters.countryCode']}</Text>
-                    )}
+                      {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description && (
+                        <Text fontSize="sm" color="textMuted" mb={2}>
+                          {fieldSchema.properties.defaultEnabledFilters.properties.countryCode.description}
+                        </Text>
+                      )}
+                      <Flex gap={2} direction={{ base: "column", sm: "row" }}>
+                        <Input
+                          value={getNestedValue(formData, 'photos.defaultEnabledFilters.countryCode') || ''}
+                          readOnly
+                          placeholder="Click button to select country"
+                          flex="1"
+                          borderColor={errors['photos.defaultEnabledFilters.countryCode'] ? 'red.500' : 'border'}
+                        />
+                        <Button
+                          onClick={() => setShowCountrySelector(true)}
+                          size={{ base: "xs", sm: "md" }}
+                          width={{ base: "100%", sm: "auto" }}
+                          whiteSpace="normal"
+                        >
+                          Select Country
+                        </Button>
+                      </Flex>
+                      {errors['photos.defaultEnabledFilters.countryCode'] && (
+                        <Text color="red.500" fontSize="sm" mt={1}>{errors['photos.defaultEnabledFilters.countryCode']}</Text>
+                      )}
+                    </Box>
                   </Box>
                     </Box>
                   )}

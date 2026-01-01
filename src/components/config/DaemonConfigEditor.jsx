@@ -18,6 +18,7 @@ import {
   SelectItem,
   SelectValueText,
 } from '@chakra-ui/react';
+import { Tooltip } from '../Tooltip';
 import { 
   MdAdd, 
   MdDelete, 
@@ -281,18 +282,23 @@ const DaemonConfigEditor = ({
                     <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
                       {cronJobs.length} task{cronJobs.length === 1 ? '' : 's'} configured
                       {availableActions.length > 0 && ` • ${availableActions.length} action${availableActions.length === 1 ? '' : 's'} available`}
+                      {allActionsUsed && ' • All tasks scheduled'}
                     </Text>
                   </Box>
-                  <Button
-                    onClick={handleAddCronJob}
-                    colorPalette="blue"
-                    size={{ base: "sm", sm: "sm" }}
-                    width={{ base: "100%", sm: "auto" }}
-                    leftIcon={<MdAdd />}
-                    isDisabled={allActionsUsed}
-                  >
-                    Add Task
-                  </Button>
+                  <Tooltip content={allActionsUsed ? "All available tasks have been scheduled" : "Add a new scheduled task"}>
+                    <Button
+                      onClick={handleAddCronJob}
+                      colorPalette="blue"
+                      size={{ base: "sm", sm: "sm" }}
+                      width={{ base: "100%", sm: "auto" }}
+                      leftIcon={<MdAdd />}
+                      disabled={allActionsUsed}
+                      opacity={allActionsUsed ? 0.5 : 1}
+                      cursor={allActionsUsed ? "not-allowed" : "pointer"}
+                    >
+                      {allActionsUsed ? 'All Tasks Scheduled' : 'Add Task'}
+                    </Button>
+                  </Tooltip>
                 </Flex>
 
                 {/* Info Box */}
@@ -361,13 +367,15 @@ const DaemonConfigEditor = ({
                           borderColor="border"
                         >
                           {/* Job Header */}
-                          <Flex justify="space-between" align="center" gap={2} mb={isExpanded ? 3 : 0}>
-                            <HStack gap={2} flex={1} minW={0}>
+                          <Box>
+                            {/* Main content row */}
+                            <Flex gap={2} align="center" mb={{ base: 2, sm: 0 }}>
                               <IconButton
                                 size="xs"
                                 variant="ghost"
                                 onClick={() => toggleExpanded(index)}
                                 aria-label={isExpanded ? "Collapse" : "Expand"}
+                                flexShrink={0}
                               >
                                 {isExpanded ? <MdExpandMore /> : <MdChevronRight />}
                               </IconButton>
@@ -375,19 +383,59 @@ const DaemonConfigEditor = ({
                                 <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" color="text" noOfLines={1}>
                                   {actionLabel}
                                 </Text>
-                                <HStack gap={2} fontSize={{ base: "xs", sm: "xs" }} color="textMuted">
+                                <HStack gap={2} fontSize={{ base: "2xs", sm: "xs" }} color="textMuted" flexWrap="wrap">
                                   <HStack gap={1}>
                                     <Box as={MdSchedule} boxSize="12px" />
-                                    <Text>{cronToHumanReadable(job.expression)}</Text>
+                                    <Text noOfLines={1}>{cronToHumanReadable(job.expression)}</Text>
                                   </HStack>
-                                  <Text>•</Text>
+                                  <Text display={{ base: "none", sm: "block" }}>•</Text>
                                   <Text color={job.enabled ? "green.500" : "red.500"}>
                                     {job.enabled ? 'Enabled' : 'Disabled'}
                                   </Text>
                                 </HStack>
                               </VStack>
-                            </HStack>
-                            <HStack gap={1}>
+                              {/* Action buttons - show on larger screens only */}
+                              <HStack gap={1} flexShrink={0} display={{ base: "none", sm: "flex" }}>
+                                <IconButton
+                                  size="xs"
+                                  variant="ghost"
+                                  onClick={() => handleMoveCronJob(index, 'up')}
+                                  isDisabled={index === 0}
+                                  aria-label="Move up"
+                                >
+                                  <MdArrowUpward />
+                                </IconButton>
+                                <IconButton
+                                  size="xs"
+                                  variant="ghost"
+                                  onClick={() => handleMoveCronJob(index, 'down')}
+                                  isDisabled={index === cronJobs.length - 1}
+                                  aria-label="Move down"
+                                >
+                                  <MdArrowDownward />
+                                </IconButton>
+                                <IconButton
+                                  size="xs"
+                                  variant="ghost"
+                                  colorPalette="red"
+                                  onClick={() => handleRemoveCronJob(index)}
+                                  aria-label="Delete"
+                                >
+                                  <MdDelete />
+                                </IconButton>
+                              </HStack>
+                            </Flex>
+                            
+                            {/* Action buttons - show on mobile screens only, below content */}
+                            <Flex 
+                              gap={1} 
+                              justify="flex-end" 
+                              display={{ base: "flex", sm: "none" }}
+                              pt={1}
+                              borderTop={{ base: "1px solid", sm: "none" }}
+                              borderColor={{ base: "border", sm: "transparent" }}
+                              mt={1}
+                            >
                               <IconButton
                                 size="xs"
                                 variant="ghost"
@@ -415,12 +463,12 @@ const DaemonConfigEditor = ({
                               >
                                 <MdDelete />
                               </IconButton>
-                            </HStack>
-                          </Flex>
+                            </Flex>
+                          </Box>
 
                           {/* Expanded Content */}
                           {isExpanded && (
-                            <VStack align="stretch" gap={3} pl={{ base: 0, sm: 6 }}>
+                            <VStack align="stretch" gap={3} pl={{ base: 0, sm: 6 }} mt={3}>
                               {/* Action Selection */}
                               <Field.Root invalid={!!errors[`cron[${index}].action`]}>
                                 <Field.Label fontSize={{ base: "xs", sm: "sm" }}>Action</Field.Label>

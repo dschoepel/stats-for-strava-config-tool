@@ -1,3 +1,5 @@
+import { getSportsList, saveSportsList } from './apiClient';
+
 // Initial sports list grouped by category (used as fallback)
 export const initialSportsList = {
   Cycling: [

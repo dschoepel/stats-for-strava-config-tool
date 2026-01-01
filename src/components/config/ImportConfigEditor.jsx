@@ -22,6 +22,7 @@ import BaseConfigEditor from './BaseConfigEditor';
 import { Tooltip } from '../Tooltip';
 import { generateRandomString } from '../../utils/stringUtils';
 import { initialSportsList } from '../../utils/sportsListManager';
+import SportTypeMultiSelect from './appearance/SportTypeMultiSelect';
 
 /**
  * ImportConfigEditor - Handles import configuration fields
@@ -229,51 +230,12 @@ const ImportConfigEditor = ({
           );
         };
 
-        // Custom renderer for sport types - dropdown with categories
+        // Custom renderer for sport types - using SportTypeMultiSelect component
         const renderSportTypesSelect = (fieldName, fieldSchema) => {
           const value = getNestedValue(formData, fieldName) || [];
-          
-          // Create collection from sports list
-          const sportsItems = [];
-          Object.entries(initialSportsList).forEach(([category, sports]) => {
-            sports.forEach(sport => {
-              sportsItems.push({
-                label: sport,
-                value: sport,
-                category: category
-              });
-            });
-          });
-          
-          const collection = createListCollection({ items: sportsItems });
-          const categories = Object.entries(
-            sportsItems.reduce((acc, item) => {
-              if (!acc[item.category]) acc[item.category] = [];
-              acc[item.category].push(item);
-              return acc;
-            }, {})
-          );
-
-          const handleSelectSport = (details) => {
-            if (details.value && details.value.length > 0) {
-              const selectedSport = details.value[0];
-              if (!value.includes(selectedSport)) {
-                handleFieldChange(fieldName, [...value, selectedSport]);
-              }
-            }
-          };
-
-          const handleRemoveItem = (sport) => {
-            const updatedArray = value.filter(s => s !== sport);
-            handleFieldChange(fieldName, updatedArray);
-          };
 
           return (
             <Box key={fieldName}>
-              <Text fontSize="sm" fontWeight="medium" mb={2} color="text">
-                {fieldSchema.title || fieldName}
-              </Text>
-              
               {/* Warning message */}
               <Box 
                 p={3} 
@@ -291,93 +253,17 @@ const ImportConfigEditor = ({
                 </HStack>
               </Box>
 
-              {/* Selected sports display */}
-              {value.length > 0 && (
-                <Grid 
-                  templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }}
-                  gap={2} 
-                  mb={3}
-                >
-                  {value.map((sport) => (
-                    <Flex
-                      key={sport}
-                      p={2}
-                      px={3}
-                      bg="cardBg"
-                      border="1px solid"
-                      borderColor="border"
-                      borderRadius="md"
-                      align="center"
-                      justify="space-between"
-                      gap={2}
-                      _hover={{ borderColor: "primary" }}
-                    >
-                      <Text fontSize="sm" color="text" flex="1" noOfLines={1}>
-                        {sport}
-                      </Text>
-                      <IconButton
-                        size="sm"
-                        variant="ghost"
-                        colorPalette="red"
-                        onClick={() => handleRemoveItem(sport)}
-                        aria-label="Remove sport"
-                        flexShrink={0}
-                      >
-                        <MdClose />
-                      </IconButton>
-                    </Flex>
-                  ))}
-                </Grid>
-              )}
-
-              {/* Select dropdown */}
-              <Select.Root
-                collection={collection}
-                size="sm"
-                onValueChange={handleSelectSport}
-                positioning={{ sameWidth: true }}
-              >
-                <Select.HiddenSelect />
-                <Select.Control>
-                  <Select.Trigger>
-                    <Select.ValueText placeholder="Select a sport type to add" />
-                  </Select.Trigger>
-                  <Select.IndicatorGroup>
-                    <Select.Indicator />
-                  </Select.IndicatorGroup>
-                </Select.Control>
-                <Portal>
-                  <Select.Positioner>
-                    <Select.Content 
-                      bg="cardBg" 
-                      borderRadius="md" 
-                      boxShadow="lg" 
-                      border="1px solid" 
-                      borderColor="border"
-                    >
-                      {categories.map(([category, items]) => (
-                        <Select.ItemGroup key={category}>
-                          <Select.ItemGroupLabel color="textMuted">
-                            {category}
-                          </Select.ItemGroupLabel>
-                          {items.map((item) => (
-                            <Select.Item item={item} key={item.value} color="text">
-                              {item.label}
-                              <Select.ItemIndicator />
-                            </Select.Item>
-                          ))}
-                        </Select.ItemGroup>
-                      ))}
-                    </Select.Content>
-                  </Select.Positioner>
-                </Portal>
-              </Select.Root>
-
-              {fieldSchema.description && (
-                <Text fontSize="xs" color="textMuted" mt={2}>
-                  {fieldSchema.description}
-                </Text>
-              )}
+              {/* Sport Type Multi-Select */}
+              <SportTypeMultiSelect
+                fieldName={fieldName}
+                fieldSchema={fieldSchema}
+                fieldPath={fieldName}
+                value={value}
+                onChange={handleFieldChange}
+                hasError={errors[fieldName]}
+                sportsList={initialSportsList}
+                subsectionKey="import"
+              />
               
               {value.length === 0 && (
                 <Text fontSize="sm" color="textMuted" mt={2} fontStyle="italic">

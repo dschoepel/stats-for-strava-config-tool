@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import {
   Box,
   VStack,
@@ -369,6 +370,17 @@ const BaseConfigEditor = ({
       />
     </Box>
   );
+};
+
+BaseConfigEditor.propTypes = {
+  sectionName: PropTypes.string.isRequired,
+  initialData: PropTypes.object,
+  onSave: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool,
+  onDirtyChange: PropTypes.func,
+  children: PropTypes.node,
+  customFieldRenderers: PropTypes.object
 };
 
 export default BaseConfigEditor;

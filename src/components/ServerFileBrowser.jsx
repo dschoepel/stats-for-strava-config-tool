@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import {
   Box,
   VStack,
@@ -314,6 +315,12 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
       </Box>
     </Box>
   );
+};
+
+ServerFileBrowser.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onFilesSelected: PropTypes.func.isRequired
 };
 
 export default ServerFileBrowser;

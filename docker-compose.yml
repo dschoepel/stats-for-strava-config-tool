@@ -10,8 +10,9 @@ services:
     - ./config-manager/backups:/data/backups
     ports:
     - "8092:80"
-#    networks:
-#      - statistics-for-strava-network
+    networks:
+      - statistics-for-strava-network
 
- # networks:
-  #  statistics-for-strava-network
+networks:
+  statistics-for-strava-network:
+    driver: bridge

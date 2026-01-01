@@ -1,6 +1,8 @@
 // Settings utility for Stats for Strava Config Tool
 // Uses file-based storage in {defaultPath}/settings/config-tool-settings.yaml
 
+import { getFileContent, saveFile, expandPath } from './apiClient';
+
 /* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
 const DEFAULT_SETTINGS_PATH = process.env.NEXT_PUBLIC_DEFAULT_STATS_CONFIG_PATH || '~/Documents/strava-config-tool/';
@@ -18,7 +20,6 @@ const DEFAULT_SETTINGS = {
   files: {
     defaultPath: DEFAULT_SETTINGS_PATH,
     autoBackup: true,
-    maxRecentFiles: 10,
     validateOnLoad: true,
   },
   editor: {
@@ -27,10 +28,8 @@ const DEFAULT_SETTINGS = {
     wordWrap: true,
     highlightSearch: true,
   },
-  performance: {
-    maxFileSize: 10 * 1024 * 1024, // 10MB
-    searchTimeout: 500, // ms
-    autoSaveInterval: 30000, // 30 seconds
+  validation: {
+    maxZwiftLevel: 100, // Maximum Zwift level (can increase in future)
   }
 };
 

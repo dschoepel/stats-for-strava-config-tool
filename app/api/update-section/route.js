@@ -8,13 +8,18 @@ export const runtime = 'nodejs';
 
 export async function POST(request) {
   try {
-    const { filePath, sectionName, sectionData, isAthlete } = await request.json();
+    const { filePath, sectionName, sectionData, isAthlete, preserveNestedKeys = [] } = await request.json();
     
     if (!filePath || !sectionName || sectionData === undefined) {
       return NextResponse.json({
         success: false,
         error: 'Missing required parameters: filePath, sectionName, sectionData'
       }, { status: 400 });
+    }
+    
+    console.log('Updating section:', sectionName);
+    if (preserveNestedKeys.length > 0) {
+      console.log('Will preserve nested keys:', preserveNestedKeys);
     }
 
     // Check if this is a nested section (e.g., "appearance.dashboard")
@@ -27,6 +32,15 @@ export async function POST(request) {
 
     // Read the existing YAML file
     const content = await fs.readFile(filePath, 'utf8');
+    
+    // Validate file is not empty
+    if (!content || content.trim().length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Configuration file is empty. Please restore from backup before saving.'
+      }, { status: 400 });
+    }
+    
     console.log('Original file has comments:', content.includes('#'));
     console.log('Original content preview:', content.substring(0, 200) + '...');
     
@@ -252,11 +266,13 @@ export async function POST(request) {
           } else {
             // Handle top-level sections (original logic)
             const baseIndent = ' '.repeat(sectionIndent + 2);
+            
+            // First, add the data fields we're updating
             Object.entries(sectionData).forEach(([key, value]) => {
               addYamlField(result, baseIndent, key, value);
             });
             
-            // Skip original section content
+            // Skip original section content, BUT preserve nested keys that we should keep
             i++;
             while (i < lines.length) {
               const nextLine = lines[i];
@@ -267,6 +283,34 @@ export async function POST(request) {
               if (nextTrimmed && nextIndent <= sectionIndent && !nextTrimmed.startsWith('#')) {
                 break;
               }
+              
+              // Check if this is a nested key we should preserve
+              if (preserveNestedKeys.length > 0 && nextIndent === sectionIndent + 2) {
+                const match = nextTrimmed.match(/^(\w+):/);
+                if (match && preserveNestedKeys.includes(match[1])) {
+                  // This is a nested key we need to preserve - copy it and its content
+                  result.push(nextLine);
+                  const nestedKeyIndent = nextIndent;
+                  i++;
+                  
+                  // Copy all content under this nested key
+                  while (i < lines.length) {
+                    const nestedLine = lines[i];
+                    const nestedTrimmed = nestedLine.trim();
+                    const nestedLineIndent = nestedLine.length - nestedLine.trimStart().length;
+                    
+                    // Stop if we hit same-level or higher
+                    if (nestedTrimmed && nestedLineIndent <= nestedKeyIndent && !nestedTrimmed.startsWith('#')) {
+                      break;
+                    }
+                    
+                    result.push(nestedLine);
+                    i++;
+                  }
+                  continue;
+                }
+              }
+              
               i++;
             }
           }
@@ -313,6 +357,17 @@ export async function POST(request) {
     }
     
     updatedYaml = result.join('\n');
+    
+    // Safety check: don't save if result is empty or too short
+    if (!updatedYaml || updatedYaml.trim().length < 10) {
+      console.error('Generated YAML is empty or too short, aborting save');
+      console.error('Result array length:', result.length);
+      console.error('Result preview:', result.slice(0, 10));
+      return NextResponse.json({
+        success: false,
+        error: 'Generated YAML is invalid (too short). This is a bug - please report it.'
+      }, { status: 500 });
+    }
 
     // Write the updated YAML back to the file
     await fs.writeFile(filePath, updatedYaml, 'utf8');
