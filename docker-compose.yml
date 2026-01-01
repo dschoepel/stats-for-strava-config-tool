@@ -1,15 +1,19 @@
 services:
   config-manager:
-    image: stats-config-manager:latest
-    container_name: stats-config-manager
+    image: ghcr.io/dschoepel/stats-for-strava-config-tool:latest
+    container_name: stats-for-strava-config-tool
     restart: unless-stopped
-    env_file: ./.env
-    volumes:
-    - ./config-manager/configs:/data/statistics-for-strava/config
-    - ./config-manager/settings:/data/settings
-    - ./config-manager/backups:/data/backups
+    env_file:
+      - .env  # Load environment variables from .env file
+
+    volumes: # Match these folders to your stats for strava config directory
+      - ./statistics-for-strava/config:/data/statistics-for-strava/config  
+      - ./statistics-for-strava/config/settings:/data/settings
+      - ./statistics-for-strava/config/backups:/data/backups
+
     ports:
-    - "8092:80"
+      - "8092:80"  # Access at http://localhost:8092
+
     networks:
       - statistics-for-strava-network
 
