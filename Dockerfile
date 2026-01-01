@@ -12,7 +12,7 @@ RUN npm run build
 FROM node:20-alpine
 
 # Install required packages
-RUN apk add --no-cache nginx supervisor tzdata su-exec shadow
+RUN apk add --no-cache nginx supervisor tzdata su-exec shadow wget busybox-extras
 
 WORKDIR /app
 
