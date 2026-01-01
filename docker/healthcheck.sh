@@ -5,11 +5,25 @@ set -e
 # supervisorctl needs to know where the config file is
 SUPERVISORCTL="supervisorctl -c /etc/supervisord.conf"
 
-# Check if supervisord is running
-if ! $SUPERVISORCTL status > /dev/null 2>&1; then
-    echo "ERROR: supervisord is not responding"
+# Check if supervisord socket exists
+if [ ! -S /tmp/supervisor.sock ]; then
+    echo "ERROR: supervisord socket not found at /tmp/supervisor.sock"
+    echo "Supervisord may not be running yet"
     exit 1
 fi
+
+# Check if supervisord is running with retry
+for i in 1 2 3; do
+    if $SUPERVISORCTL status > /dev/null 2>&1; then
+        break
+    fi
+    if [ $i -eq 3 ]; then
+        echo "ERROR: supervisord is not responding after 3 attempts"
+        echo "Socket exists but supervisord not responding"
+        exit 1
+    fi
+    sleep 1
+done
 
 # Check if nginx is running via supervisord
 if ! $SUPERVISORCTL status nginx | grep -q "RUNNING"; then
