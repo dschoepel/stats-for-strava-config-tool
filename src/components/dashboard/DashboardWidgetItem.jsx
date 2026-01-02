@@ -151,10 +151,10 @@ const DashboardWidgetItem = ({
                   bg="inputBg"
                   size="sm"
                 >
-                  <option value="33">33%</option>
-                  <option value="50">50%</option>
-                  <option value="66">66%</option>
-                  <option value="100">100%</option>
+                  <option key="33" value="33">33%</option>
+                  <option key="50" value="50">50%</option>
+                  <option key="66" value="66">66%</option>
+                  <option key="100" value="100">100%</option>
                 </NativeSelectField>
               </NativeSelectRoot>
             </Flex>
@@ -175,7 +175,7 @@ const DashboardWidgetItem = ({
           </Flex>
 
           {/* Widget Configuration */}
-          {widgetDef?.hasConfig && widget.config && Object.keys(widget.config).length > 0 && (
+          {widgetDef?.hasConfig && widget.config !== undefined && (
             <Box mt={3} pt={3} borderTopWidth="1px" borderColor="border">
               <Button
                 variant="ghost"
@@ -189,7 +189,40 @@ const DashboardWidgetItem = ({
 
               {expandedConfigs[index] && (
                 <VStack align="stretch" gap={3} pl={4}>
-                  {Object.entries(widget.config).map(([key, value]) => (
+                  {/* Configuration Template Display */}
+                  {widgetDef && (widgetDef.configTemplate || widgetDef.defaultConfig) && (
+                    <Box mb={3} pb={3} borderBottomWidth="1px" borderColor="border">
+                      <Text fontSize="xs" fontWeight="600" color="textSecondary" mb={2}>
+                        Configuration Schema:
+                      </Text>
+                      <Box
+                        as="pre"
+                        bg="inputBg"
+                        p={3}
+                        borderRadius="md"
+                        border="1px solid"
+                        borderColor="border"
+                        fontSize="xs"
+                        overflowX="auto"
+                        color="text"
+                        fontFamily="monospace"
+                        whiteSpace="pre-wrap"
+                      >
+                        {widgetDef.configTemplate || JSON.stringify(widgetDef.defaultConfig, null, 2)}
+                      </Box>
+                    </Box>
+                  )}
+                  
+                  <Text fontSize="xs" fontWeight="600" color="textSecondary" mb={1}>
+                    Current Values:
+                  </Text>
+                  
+                  {Object.keys(widget.config).length === 0 ? (
+                    <Text fontSize="xs" color="textMuted" fontStyle="italic">
+                      No configuration values set. Add values based on the schema above.
+                    </Text>
+                  ) : (
+                    Object.entries(widget.config).map(([key, value]) => (
                     <Flex
                       key={key}
                       align="flex-start"
@@ -274,7 +307,8 @@ const DashboardWidgetItem = ({
                         )}
                       </Box>
                     </Flex>
-                  ))}
+                  ))
+                  )}
                 </VStack>
               )}
             </Box>

@@ -10,6 +10,7 @@ import { validateWidgetForm } from '../utils/widgetValidation';
 
 export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState([]);
+  const [initialSnapshot, setInitialSnapshot] = useState(() => JSON.stringify([]));
   const [expandedWidgets, setExpandedWidgets] = useState({});
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
@@ -27,7 +28,8 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
     description: '',
     allowMultiple: false,
     hasConfig: false,
-    configTemplate: ''
+    configTemplate: '',
+    defaultConfig: ''
   });
 
   useEffect(() => {
@@ -35,18 +37,22 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       const definitions = await readWidgetDefinitions(settings);
       // Convert object to array
       const definitionsArray = Object.values(definitions);
+      const snapshot = JSON.stringify(definitionsArray);
       setWidgetDefinitions(definitionsArray);
+      setInitialSnapshot(snapshot);
       setIsDirty(false);
       if (onDirtyChange) onDirtyChange(false);
     }
     load();
   }, [settings, onDirtyChange]);
 
+  // Track changes by comparing current state to initial snapshot
   useEffect(() => {
-    if (onDirtyChange) {
-      onDirtyChange(isDirty);
-    }
-  }, [isDirty, onDirtyChange]);
+    const currentSnapshot = JSON.stringify(widgetDefinitions);
+    const hasChanges = currentSnapshot !== initialSnapshot;
+    setIsDirty(hasChanges);
+    if (onDirtyChange) onDirtyChange(hasChanges);
+  }, [widgetDefinitions, initialSnapshot, onDirtyChange]);
 
   const showMessage = (msg, type = 'success') => {
     setMessage(msg);
@@ -78,7 +84,8 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       description: '',
       allowMultiple: false,
       hasConfig: false,
-      configTemplate: ''
+      configTemplate: '',
+      defaultConfig: ''
     });
     setModalError('');
   };
@@ -90,17 +97,28 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       return;
     }
 
+    // Parse defaultConfig if provided
+    let parsedDefaultConfig = null;
+    if (formData.hasConfig && formData.defaultConfig) {
+      try {
+        parsedDefaultConfig = JSON.parse(formData.defaultConfig);
+      } catch {
+        setModalError('Invalid JSON in Default Config field');
+        return;
+      }
+    }
+
     const newWidget = {
       name: formData.name,
       displayName: formData.displayName,
       description: formData.description || '',
       allowMultiple: formData.allowMultiple,
       hasConfig: formData.hasConfig,
-      ...(formData.hasConfig && formData.configTemplate ? { configTemplate: formData.configTemplate } : {})
+      ...(formData.hasConfig && formData.configTemplate ? { configTemplate: formData.configTemplate } : {}),
+      ...(parsedDefaultConfig ? { defaultConfig: parsedDefaultConfig } : {})
     };
 
     setWidgetDefinitions([...widgetDefinitions, newWidget]);
-    setIsDirty(true);
     setShowAddWidgetModal(false);
     resetForm();
     showMessage('Widget definition added successfully');
@@ -115,13 +133,25 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       return;
     }
 
+    // Parse defaultConfig if provided
+    let parsedDefaultConfig = null;
+    if (formData.hasConfig && formData.defaultConfig) {
+      try {
+        parsedDefaultConfig = JSON.parse(formData.defaultConfig);
+      } catch {
+        setModalError('Invalid JSON in Default Config field');
+        return;
+      }
+    }
+
     const updatedWidget = {
       name: formData.name,
       displayName: formData.displayName,
       description: formData.description || '',
       allowMultiple: formData.allowMultiple,
       hasConfig: formData.hasConfig,
-      ...(formData.hasConfig && formData.configTemplate ? { configTemplate: formData.configTemplate } : {})
+      ...(formData.hasConfig && formData.configTemplate ? { configTemplate: formData.configTemplate } : {}),
+      ...(parsedDefaultConfig ? { defaultConfig: parsedDefaultConfig } : {})
     };
 
     const updatedDefinitions = widgetDefinitions.map(w =>
@@ -129,7 +159,6 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
     );
 
     setWidgetDefinitions(updatedDefinitions);
-    setIsDirty(true);
     setShowEditWidgetModal(false);
     setEditingWidget(null);
     resetForm();
@@ -144,7 +173,6 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       onConfirm: () => {
         const updatedDefinitions = widgetDefinitions.filter(w => w.name !== name);
         setWidgetDefinitions(updatedDefinitions);
-        setIsDirty(true);
         showMessage('Widget definition deleted successfully');
         setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
       }
@@ -159,6 +187,8 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
         return obj;
       }, {});
       await writeWidgetDefinitions(definitionsObject);
+      const snapshot = JSON.stringify(widgetDefinitions);
+      setInitialSnapshot(snapshot);
       setIsDirty(false);
       showMessage('Widget definitions saved successfully');
     } catch (err) {
@@ -176,7 +206,6 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
         // Convert initial definitions object to array
         const initialArray = Object.values(initialWidgetDefinitions);
         setWidgetDefinitions(initialArray);
-        setIsDirty(true);
         showMessage('Widget definitions reset to defaults');
         setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
       }
@@ -191,7 +220,8 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
       description: widget.description || '',
       allowMultiple: widget.allowMultiple || false,
       hasConfig: widget.hasConfig || false,
-      configTemplate: widget.configTemplate || ''
+      configTemplate: widget.configTemplate || '',
+      defaultConfig: widget.defaultConfig ? JSON.stringify(widget.defaultConfig, null, 2) : ''
     });
     setShowEditWidgetModal(true);
   };
@@ -258,7 +288,7 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
 
           <Button
             onClick={handleSave}
-            isDisabled={!isDirty}
+            disabled={!isDirty}
             title={isDirty ? 'Save changes to widget definitions' : 'No changes to save'}
             bg="primary"
             color="white"

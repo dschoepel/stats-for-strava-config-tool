@@ -61,7 +61,7 @@ async function sportsListFileExists() {
     const response = await fetch('/api/check-file-exists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: filePath })
+      body: JSON.stringify({ filePath: filePath })
     });
     const result = await response.json();
     return result.exists;

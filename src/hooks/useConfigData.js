@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { getFileContent, updateSection } from '../utils/apiClient';
+import { getFileContent, updateSection, backupConfig } from '../utils/apiClient';
+import { loadSettings } from '../utils/settingsManager';
 
 /**
  * Custom hook to manage configuration data loading and saving
@@ -253,6 +254,33 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     console.log('Data preview:', JSON.stringify(data).substring(0, 200));
     if (preserveNestedKeys.length > 0) {
       console.log('Preserving nested keys:', preserveNestedKeys);
+    }
+    
+    // Create backup before saving if autoBackup is enabled
+    const settings = loadSettings();
+    if (settings.files?.autoBackup !== false) {
+      try {
+        // Use backupsDir setting for backup location
+        const backupBaseDir = typeof settings.files?.backupsDir === 'string' 
+          ? settings.files.backupsDir 
+          : (typeof settings.files?.defaultPath === 'string' 
+            ? settings.files.defaultPath 
+            : '/data/statistics-for-strava/config');
+        const backupDir = `${backupBaseDir}/backups`;
+        
+        const backupResult = await backupConfig({
+          filePath,
+          backupDirectory: backupDir
+        });
+        if (backupResult.success) {
+          console.log('Backup created:', backupResult.backupPath);
+        } else {
+          console.warn('Backup failed:', backupResult.error);
+        }
+      } catch (backupError) {
+        console.warn('Backup error (continuing with save):', backupError);
+        // Don't fail the save if backup fails
+      }
     }
     
     const result = await updateSection({

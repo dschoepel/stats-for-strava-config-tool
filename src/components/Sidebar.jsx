@@ -112,6 +112,8 @@ export default function Sidebar({
   onToggle, 
   isMainConfigExpanded,
   setIsMainConfigExpanded,
+  isHelpExpanded,
+  setIsHelpExpanded,
   setIsSidebarCollapsed,
   handleNavClick 
 }) {
@@ -274,13 +276,62 @@ export default function Sidebar({
           isCollapsed={isCollapsed}
           onToggleSidebar={onToggle}
         />
-        <MenuItem 
-          icon={MdHelp} 
-          label="Help & Documentation" 
-          onClick={(e) => { e.preventDefault(); handleNavClick('Help & Documentation'); }}
+        
+        <MenuItemWithSubmenu
+          icon={MdHelp}
+          label="Documentation"
+          isExpanded={isHelpExpanded}
           isCollapsed={isCollapsed}
           onToggleSidebar={onToggle}
-        />
+          onClick={(e) => {
+            e.preventDefault();
+            handleNavClick('Documentation');
+            if (isCollapsed) {
+              setIsSidebarCollapsed(false);
+              setIsHelpExpanded(true);
+            } else {
+              setIsHelpExpanded(!isHelpExpanded);
+            }
+          }}
+          onToggle={() => setIsHelpExpanded(!isHelpExpanded)}
+        >
+          <MenuItem 
+            label="Overview" 
+            onClick={(e) => { e.preventDefault(); handleNavClick('Documentation'); }}
+            isSubmenu
+            onToggleSidebar={onToggle}
+          />
+          <MenuItem 
+            label="Dashboard Editor" 
+            onClick={(e) => { e.preventDefault(); handleNavClick('Dashboard Editor Help', 'Documentation'); }}
+            isSubmenu
+            onToggleSidebar={onToggle}
+          />
+          <MenuItem 
+            label="Sports List Editor" 
+            onClick={(e) => { e.preventDefault(); handleNavClick('Sports List Editor Help', 'Documentation'); }}
+            isSubmenu
+            onToggleSidebar={onToggle}
+          />
+          <MenuItem 
+            label="Widget Definitions" 
+            onClick={(e) => { e.preventDefault(); handleNavClick('Widget Definitions Help', 'Documentation'); }}
+            isSubmenu
+            onToggleSidebar={onToggle}
+          />
+          <MenuItem 
+            label="Settings Management" 
+            onClick={(e) => { e.preventDefault(); handleNavClick('Settings Management Help', 'Documentation'); }}
+            isSubmenu
+            onToggleSidebar={onToggle}
+          />
+          <MenuItem 
+            label="Configuration Examples" 
+            onClick={(e) => { e.preventDefault(); handleNavClick('Configuration Examples Help', 'Documentation'); }}
+            isSubmenu
+            onToggleSidebar={onToggle}
+          />
+        </MenuItemWithSubmenu>
       </VStack>
 
       {/* Version Footer */}

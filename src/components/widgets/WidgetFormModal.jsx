@@ -1,5 +1,107 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Flex, Box, Heading, VStack, Button, Field, Input, Textarea, Checkbox } from '@chakra-ui/react';
+import { MdAutoFixHigh } from 'react-icons/md';
+
+/**
+ * Simple YAML to JSON converter for config templates
+ */
+const yamlToJson = (yamlText) => {
+  const lines = yamlText.trim().split('\n');
+  const result = {};
+  const stack = [{ obj: result, indent: -1 }];
+
+  for (const line of lines) {
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+
+    const indent = line.search(/\S/);
+    const trimmed = line.trim();
+
+    // Handle array items
+    if (trimmed.startsWith('- ')) {
+      const value = trimmed.substring(2).trim();
+      const parent = stack[stack.length - 1];
+      if (!Array.isArray(parent.currentArray)) {
+        parent.currentArray = [];
+        parent.obj[parent.currentKey] = parent.currentArray;
+      }
+      // Parse value
+      if (value.startsWith('"') && value.endsWith('"')) {
+        parent.currentArray.push(value.slice(1, -1));
+      } else if (value.startsWith("'") && value.endsWith("'")) {
+        parent.currentArray.push(value.slice(1, -1));
+      } else if (value === 'true') {
+        parent.currentArray.push(true);
+      } else if (value === 'false') {
+        parent.currentArray.push(false);
+      } else if (!isNaN(value) && value !== '') {
+        parent.currentArray.push(Number(value));
+      } else {
+        parent.currentArray.push(value);
+      }
+      continue;
+    }
+
+    // Handle key: value pairs
+    const match = trimmed.match(/^([^:]+):\s*(.*)$/);
+    if (match) {
+      const [, key, value] = match;
+
+      // Pop stack to correct level
+      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+        stack.pop();
+      }
+
+      const parent = stack[stack.length - 1];
+
+      if (value === '' || value === '[]') {
+        // Empty value or empty array
+        if (value === '[]') {
+          parent.obj[key] = [];
+        } else {
+          // Nested object coming
+          parent.obj[key] = {};
+          stack.push({ obj: parent.obj[key], indent, currentKey: key });
+        }
+      } else {
+        // Parse value
+        if (value.startsWith('[') && value.endsWith(']')) {
+          // Inline array like ['a', 'b', 'c']
+          const arrayContent = value.slice(1, -1);
+          if (arrayContent.trim() === '') {
+            parent.obj[key] = [];
+          } else {
+            parent.obj[key] = arrayContent.split(',').map(item => {
+              const trimmed = item.trim();
+              if (trimmed.startsWith('"') && trimmed.endsWith('"')) return trimmed.slice(1, -1);
+              if (trimmed.startsWith("'") && trimmed.endsWith("'")) return trimmed.slice(1, -1);
+              if (trimmed === 'true') return true;
+              if (trimmed === 'false') return false;
+              if (!isNaN(trimmed) && trimmed !== '') return Number(trimmed);
+              return trimmed;
+            });
+          }
+        } else if (value.startsWith('"') && value.endsWith('"')) {
+          parent.obj[key] = value.slice(1, -1);
+        } else if (value.startsWith("'") && value.endsWith("'")) {
+          parent.obj[key] = value.slice(1, -1);
+        } else if (value === 'true') {
+          parent.obj[key] = true;
+        } else if (value === 'false') {
+          parent.obj[key] = false;
+        } else if (!isNaN(value) && value !== '') {
+          parent.obj[key] = Number(value);
+        } else {
+          parent.obj[key] = value;
+        }
+      }
+
+      parent.currentKey = key;
+      parent.currentArray = null;
+    }
+  }
+
+  return result;
+};
 
 /**
  * WidgetFormModal - Modal for adding/editing widget definitions
@@ -13,10 +115,30 @@ const WidgetFormModal = ({
   onClose, 
   error 
 }) => {
+  const [convertError, setConvertError] = useState('');
+
   if (!isOpen) return null;
 
   const handleFormChange = (field, value) => {
     onChange(field, value);
+  };
+
+  const handleGenerateDefaultConfig = () => {
+    if (!formData.configTemplate) {
+      setConvertError('Please enter a Config Template first');
+      setTimeout(() => setConvertError(''), 3000);
+      return;
+    }
+
+    try {
+      const parsed = yamlToJson(formData.configTemplate);
+      const json = JSON.stringify(parsed, null, 2);
+      handleFormChange('defaultConfig', json);
+      setConvertError('');
+    } catch (err) {
+      setConvertError('Failed to convert YAML to JSON. Check your Config Template syntax.');
+      setTimeout(() => setConvertError(''), 3000);
+    }
   };
 
   return (
@@ -126,18 +248,61 @@ const WidgetFormModal = ({
             </Checkbox.Root>
 
             {formData.hasConfig && (
-              <Field.Root>
-                <Field.Label color="text">Config Template (YAML)</Field.Label>
-                <Textarea
-                  placeholder="key: value"
-                  value={formData.configTemplate}
-                  onChange={e => handleFormChange('configTemplate', e.target.value)}
-                  rows={5}
-                  bg="inputBg"
-                  fontFamily="monospace"
-                  fontSize="sm"
-                />
-              </Field.Root>
+              <>
+                <Field.Root>
+                  <Field.Label color="text">Config Template (YAML)</Field.Label>
+                  <Field.HelperText fontSize="xs" color="textMuted">Schema/documentation shown in dashboard editor</Field.HelperText>
+                  <Textarea
+                    placeholder="key: value"
+                    value={formData.configTemplate}
+                    onChange={e => handleFormChange('configTemplate', e.target.value)}
+                    rows={4}
+                    bg="inputBg"
+                    fontFamily="monospace"
+                    fontSize="sm"
+                  />
+                </Field.Root>
+
+                <Flex justify="center" py={2}>
+                  <Button
+                    onClick={handleGenerateDefaultConfig}
+                    variant="outline"
+                    size="sm"
+                    colorPalette="blue"
+                    leftIcon={<MdAutoFixHigh />}
+                  >
+                    Generate Default Config from Template
+                  </Button>
+                </Flex>
+
+                {convertError && (
+                  <Box
+                    p={2}
+                    borderRadius="md"
+                    bg={{ base: "#fff3cd", _dark: "#7f6000" }}
+                    color={{ base: "#856404", _dark: "#ffc107" }}
+                    border="1px solid"
+                    borderColor={{ base: "#ffeeba", _dark: "#997400" }}
+                    fontSize="sm"
+                  >
+                    {convertError}
+                  </Box>
+                )}
+
+                <Field.Root>
+                  <Field.Label color="text">Default Config (JSON)</Field.Label>
+                  <Field.HelperText fontSize="xs" color="textMuted">Initial values when widget is added to dashboard</Field.HelperText>
+                  <Textarea
+                    placeholder='{"key": "value"}'
+                    value={formData.defaultConfig}
+                    onChange={e => handleFormChange('defaultConfig', e.target.value)}
+                    rows={4}
+                    bg="inputBg"
+                    fontFamily="monospace"
+                    fontSize="sm"
+                  />
+                </Field.Root>
+              </>
             )}
           </VStack>
         </Box>

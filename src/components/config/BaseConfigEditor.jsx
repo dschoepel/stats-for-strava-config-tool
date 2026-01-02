@@ -33,11 +33,27 @@ const BaseConfigEditor = ({
   customValidation
 }) => {
   const [formData, setFormData] = useState(() => initialData);
+  const [initialSnapshot, setInitialSnapshot] = useState(() => JSON.stringify(initialData));
   const [errors, setErrors] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const schema = useMemo(() => getSchemaBySection(sectionName), [sectionName]);
   const { showError } = useToast();
+
+  // Update formData when initialData changes (e.g., after save or navigation)
+  useEffect(() => {
+    const newSnapshot = JSON.stringify(initialData);
+    setFormData(initialData);
+    setInitialSnapshot(newSnapshot);
+    setIsDirty(false);
+  }, [initialData]);
+
+  // Check if current formData differs from initial snapshot
+  useEffect(() => {
+    const currentSnapshot = JSON.stringify(formData);
+    const hasChanges = currentSnapshot !== initialSnapshot;
+    setIsDirty(hasChanges);
+  }, [formData, initialSnapshot]);
 
   // Warn user before leaving with unsaved changes
   useEffect(() => {
@@ -87,7 +103,6 @@ const BaseConfigEditor = ({
       setNestedValue(newData, fieldPath, value);
       return newData;
     });
-    setIsDirty(true);
     
     // Clear error for this field and any nested field errors
     setErrors(prev => {
@@ -134,7 +149,7 @@ const BaseConfigEditor = ({
     const { isValid, errors: validationErrors } = validateForm();
     if (isValid) {
       onSave(formData);
-      setIsDirty(false);
+      // isDirty will be reset by useEffect when initialData updates after save
     } else {
       // Show validation error toast
       const errorCount = Object.keys(validationErrors).length;
@@ -334,7 +349,7 @@ const BaseConfigEditor = ({
         >
           <Button
             onClick={handleCancelWithConfirm}
-            isDisabled={isLoading}
+            disabled={isLoading}
             variant="outline"
             colorPalette="gray"
             width={{ base: "100%", sm: "auto" }}
@@ -343,7 +358,7 @@ const BaseConfigEditor = ({
           </Button>
           <Button
             type="submit"
-            isDisabled={isLoading || !isDirty}
+            disabled={isLoading || !isDirty}
             isLoading={isLoading}
             bg="primary"
             color="white"

@@ -6,6 +6,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 
 export default function SportsListEditor({ settings, onDirtyChange }) {
   const [sportsList, setSportsList] = useState(initialSportsList);
+  const [initialSnapshot, setInitialSnapshot] = useState(() => JSON.stringify(initialSportsList));
   const [expandedCategories, setExpandedCategories] = useState({});
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
@@ -24,7 +25,9 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
   useEffect(() => {
     async function load() {
       const list = await readSportsList(settings);
+      const snapshot = JSON.stringify(list);
       setSportsList(list);
+      setInitialSnapshot(snapshot);
       setIsDirty(false);
       if (onDirtyChange) onDirtyChange(false);
       // Collapse all categories by default
@@ -35,6 +38,14 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings]);
+
+  // Track changes by comparing current state to initial snapshot
+  useEffect(() => {
+    const currentSnapshot = JSON.stringify(sportsList);
+    const hasChanges = currentSnapshot !== initialSnapshot;
+    setIsDirty(hasChanges);
+    if (onDirtyChange) onDirtyChange(hasChanges);
+  }, [sportsList, initialSnapshot, onDirtyChange]);
 
   const showMessage = (msg, type) => {
     setMessage(msg);
@@ -77,8 +88,6 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
     const categoryName = inputValue.trim();
     setSportsList({ ...sportsList, [categoryName]: [] });
     setExpandedCategories(prev => ({ ...prev, [categoryName]: true }));
-    setIsDirty(true);
-    if (onDirtyChange) onDirtyChange(true);
     setShowAddCategoryModal(false);
     setInputValue('');
     setModalError('');
@@ -104,8 +113,6 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
       ...sportsList,
       [selectedCategory]: [...sports, sportName]
     });
-    setIsDirty(true);
-    if (onDirtyChange) onDirtyChange(true);
     setShowAddSportModal(false);
     setInputValue('');
     setModalError('');
@@ -130,8 +137,6 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
       ...sportsList,
       [selectedCategory]: sports.map(s => s === selectedSport ? inputValue.trim() : s)
     });
-    setIsDirty(true);
-    if (onDirtyChange) onDirtyChange(true);
     setShowEditSportModal(false);
     setInputValue('');
     setModalError('');
@@ -149,8 +154,6 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
           ...sportsList,
           [selectedCategory]: sportsList[selectedCategory].filter(s => s !== selectedSport)
         });
-        setIsDirty(true);
-        if (onDirtyChange) onDirtyChange(true);
         setShowEditSportModal(false);
         showMessage(`Sport "${selectedSport}" deleted from ${selectedCategory}`, 'success');
         setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
@@ -167,8 +170,6 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
       onConfirm: () => {
         const { [cat]: _, ...rest } = sportsList;
         setSportsList(rest);
-        setIsDirty(true);
-        if (onDirtyChange) onDirtyChange(true);
         showMessage(`Category "${cat}" deleted`, 'success');
         setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
       }
@@ -179,6 +180,8 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
   const handleSave = async () => {
     try {
       await writeSportsList(settings, sportsList);
+      const snapshot = JSON.stringify(sportsList);
+      setInitialSnapshot(snapshot);
       setIsDirty(false);
       if (onDirtyChange) onDirtyChange(false);
       showMessage('✅ Saved successfully!', 'success');
@@ -245,7 +248,7 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
           </Button>
           <Button
             onClick={handleSave}
-            isDisabled={!isDirty}
+            disabled={!isDirty}
             title={isDirty ? 'Save changes to sports list' : 'No changes to save'}
             bg="primary"
             color="white"

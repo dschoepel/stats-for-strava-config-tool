@@ -9,7 +9,6 @@ import SettingsDialog from './components/SettingsDialog'
 import SportsListEditor from './components/SportsListEditor'
 import WidgetDefinitionsEditor from './components/WidgetDefinitionsEditor'
 import AppRouter from './components/AppRouter'
-import Help from './components/Help'
 import { loadSettings, loadSettingsFromFile, saveSettings, getSetting } from './utils/settingsManager'
 import { initializeWidgetDefinitions } from './utils/widgetDefinitionsInitializer'
 import { initializeSportsList } from './utils/sportsListInitializer'
@@ -26,6 +25,7 @@ function App() {
   // Initialize settings
   const [settings, setSettings] = useState({}); // Will be loaded after hydration
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
+  const [isHelpExpanded, setIsHelpExpanded] = useState(false)
   const { currentPage, breadcrumbs, navigateTo, navigateToBreadcrumb } = useNavigation()
   const [hasHydrated, setHasHydrated] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false) // Will be set after hydration
@@ -265,6 +265,8 @@ function App() {
           onToggle={toggleSidebar}
           isMainConfigExpanded={isMainConfigExpanded}
           setIsMainConfigExpanded={setIsMainConfigExpanded}
+          isHelpExpanded={isHelpExpanded}
+          setIsHelpExpanded={setIsHelpExpanded}
           setIsSidebarCollapsed={setIsSidebarCollapsed}
           handleNavClick={handleNavClick}
         />

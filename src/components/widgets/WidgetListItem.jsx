@@ -78,7 +78,7 @@ const WidgetListItem = ({ widget, isExpanded, onToggle, onEdit, onDelete }) => {
           <VStack align="stretch" gap={2}>
             <HStack>
               <Text fontWeight="bold" color="text">Name:</Text>
-              <Code bg="inputBg" px={2} py={1} borderRadius="sm">{widget.name}</Code>
+              <Code bg="inputBg" color="text" px={2} py={1} borderRadius="sm">{widget.name}</Code>
             </HStack>
             <HStack align="flex-start">
               <Text fontWeight="bold" color="text">Description:</Text>

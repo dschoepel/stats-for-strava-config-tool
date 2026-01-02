@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   VStack,
+  HStack,
   Heading,
   Text,
   Button,
@@ -173,9 +174,9 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
       <>
         {/* Modal Body */}
         <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
-          {/* Default File Path Setting */}
+          {/* Default Configuration File Path Setting */}
           <Field.Root>
-            <Field.Label fontWeight="500" mb={2}>Default file path</Field.Label>
+            <Field.Label fontWeight="500" mb={2}>Default configuration file path</Field.Label>
             <Input
               type="text"
               value={settings.files?.defaultPath || ''}
@@ -183,6 +184,32 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               placeholder="~/Documents/strava-config-tool/"
               bg="inputBg"
             />
+            <Text fontSize="sm" color="gray.500" mt={1}>Where your configuration files are stored</Text>
+          </Field.Root>
+
+          {/* Backup Directory Path Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Backup directory path</Field.Label>
+            <HStack gap={2} align="stretch" width="100%">
+              <Input
+                type="text"
+                value={settings.files?.backupsDir || ''}
+                onChange={(e) => handleChange('files.backupsDir', e.target.value)}
+                placeholder={settings.files?.defaultPath || '~/Documents/strava-config-tool/'}
+                bg="inputBg"
+                flex={1}
+              />
+              <Button
+                onClick={() => handleChange('files.backupsDir', settings.files?.defaultPath || '')}
+                variant="outline"
+                size="sm"
+                flexShrink={0}
+                title="Reset to default config path"
+              >
+                Reset
+              </Button>
+            </HStack>
+            <Text fontSize="sm" color="gray.500" mt={1}>Backups are saved to a 'backups' subfolder in this directory</Text>
           </Field.Root>
 
           {/* Auto Backup Setting */}
@@ -306,9 +333,9 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
 
         {/* Modal Body */}
         <VStack align="stretch" gap={4} p={{ base: 3, sm: 4 }}>
-          {/* Default File Path Setting */}
+          {/* Default Configuration File Path Setting */}
           <Field.Root>
-            <Field.Label fontWeight="500" mb={2}>Default file path</Field.Label>
+            <Field.Label fontWeight="500" mb={2}>Default configuration file path</Field.Label>
             <Input
               type="text"
               value={settings.files?.defaultPath || ''}
@@ -316,6 +343,32 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               placeholder="~/Documents/strava-config-tool/"
               bg="inputBg"
             />
+            <Text fontSize="sm" color="gray.500" mt={1}>Where your configuration files are stored</Text>
+          </Field.Root>
+
+          {/* Backup Directory Path Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Backup directory path</Field.Label>
+            <HStack gap={2} align="stretch" width="100%">
+              <Input
+                type="text"
+                value={settings.files?.backupsDir || ''}
+                onChange={(e) => handleChange('files.backupsDir', e.target.value)}
+                placeholder={settings.files?.defaultPath || '~/Documents/strava-config-tool/'}
+                bg="inputBg"
+                flex={1}
+              />
+              <Button
+                onClick={() => handleChange('files.backupsDir', settings.files?.defaultPath || '')}
+                variant="outline"
+                size="sm"
+                flexShrink={0}
+                title="Reset to default config path"
+              >
+                Reset
+              </Button>
+            </HStack>
+            <Text fontSize="sm" color="gray.500" mt={1}>Backups are saved to a 'backups' subfolder in this directory</Text>
           </Field.Root>
 
           {/* Auto Backup Setting */}
