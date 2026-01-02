@@ -6,10 +6,11 @@ services:
     env_file:
       - .env  # Load environment variables from .env file
 
-    volumes: # Match these folders to your stats for strava config directory
-      - ./statistics-for-strava/config:/data/statistics-for-strava/config  
-      - ./statistics-for-strava/config/settings:/data/settings
-      - ./statistics-for-strava/config/backups:/data/backups
+    volumes: 
+      - ./statistics-for-strava/config:/data/statistics-for-strava/config  #Match this to your stats for strava config directory
+      - ./statistics-for-strava/config/settings:/data/settings # Config tool settings
+      - ./statistics-for-strava/config/backups:/data/backups # Config tool backups when editing files
+      - ./statistics-for-strava/logs:/data/logs  # Application and service logs
 
     ports:
       - "8092:80"  # Access at http://localhost:8092

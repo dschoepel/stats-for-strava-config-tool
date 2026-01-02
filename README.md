@@ -92,11 +92,11 @@ services:
     env_file:
       - .env  # Load environment variables from .env file
 
-    volumes: # Match these to your stats for strava config directory
-      - ./statistics-for-strava/config:/data/statistics-for-strava/config  
-      - ./statistics-for-strava/config/settings:/data/settings
-      - ./statistics-for-strava/config/backups:/data/backups
-
+    volumes: 
+      - ./statistics-for-strava/config:/data/statistics-for-strava/config  #Match this to your stats for strava config directory
+      - ./statistics-for-strava/config/settings:/data/settings # Config tool settings
+      - ./statistics-for-strava/config/backups:/data/backups # Config tool backups when editing files
+      - ./statistics-for-strava/logs:/data/logs  # Application and service logs
     ports:
       - '8092:80'  # Access at http://localhost:8092
 
@@ -163,9 +163,10 @@ Open your browser to `http://localhost:8092`
 #### Important Notes
 
 **Volume Mounting**
-- Mount your Stats for Strava config directory to `/app/config` in the container
+- The tool uses 4 persistent volumes: config files, settings, backups, and logs
+- Mount your Stats for Strava config directory to the container
 - The tool needs read/write access to edit your configuration files
-- Example: `./config/app:/app/config` mounts the `config/app` directory from your host
+- All 4 volumes should be mounted to preserve data between container restarts
 
 **Port Configuration**
 - The container runs nginx on port 80 internally
