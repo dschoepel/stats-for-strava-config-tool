@@ -13,7 +13,7 @@ import GearConfigEditor from './config/GearConfigEditor';
 import IntegrationsConfigEditor from './config/IntegrationsConfigEditor';
 import DaemonConfigEditor from './config/DaemonConfigEditor';
 import ZwiftConfigEditor from './config/ZwiftConfigEditor';
-import Help from './Help';
+import MarkdownHelp from './MarkdownHelp';
 
 /**
  * AppRouter component handles page routing and renders the appropriate component
@@ -178,8 +178,28 @@ const AppRouter = ({
     );
   }
 
-  if (currentPage === 'Help & Documentation') {
-    return <Help />;
+  if (currentPage === 'Documentation') {
+    return <MarkdownHelp filePath="overview.md" />;
+  }
+
+  if (currentPage === 'Dashboard Editor Help') {
+    return <MarkdownHelp filePath="dashboard-editor.md" />;
+  }
+
+  if (currentPage === 'Sports List Editor Help') {
+    return <MarkdownHelp filePath="sports-list-editor.md" />;
+  }
+
+  if (currentPage === 'Widget Definitions Help') {
+    return <MarkdownHelp filePath="widget-definitions.md" />;
+  }
+
+  if (currentPage === 'Settings Management Help') {
+    return <MarkdownHelp filePath="settings-management.md" />;
+  }
+
+  if (currentPage === 'Configuration Examples Help') {
+    return <MarkdownHelp filePath="configuration-examples.md" />;
   }
 
   // Default/fallback page

@@ -168,8 +168,8 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
       enabled: true
     };
 
-    if (widgetDef.hasConfig && widgetDef.defaultConfig) {
-      newWidget.config = { ...widgetDef.defaultConfig };
+    if (widgetDef.hasConfig) {
+      newWidget.config = widgetDef.defaultConfig ? { ...widgetDef.defaultConfig } : {};
     }
 
     setLayout([...layout, newWidget]);
@@ -182,7 +182,11 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     return Object.values(widgetDefinitions).filter(def => {
       if (def.allowMultiple) return true;
       return !widgetsInLayout.includes(def.name);
-    }).sort((a, b) => a.displayName.localeCompare(b.displayName));
+    }).sort((a, b) => {
+      const nameA = a.displayName || a.name || '';
+      const nameB = b.displayName || b.name || '';
+      return nameA.localeCompare(nameB);
+    });
   };
 
   return (

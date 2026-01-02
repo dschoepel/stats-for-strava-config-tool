@@ -12,7 +12,8 @@ import LoadedFilesList from './yaml-utility/LoadedFilesList';
 import GettingStartedGuide from './yaml-utility/GettingStartedGuide';
 import { useYamlUtilityFiles } from '../hooks/useYamlUtilityFiles';
 import { useYamlUtilityDialogs } from '../hooks/useYamlUtilityDialogs';
-import { getSetting } from '../utils/settingsManager';
+import { getSetting, loadSettings } from '../utils/settingsManager';
+import { backupConfig } from '../utils/apiClient';
 
 const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
   const [toast, setToast] = useState(null);
@@ -125,6 +126,35 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
   const handleSaveNewFile = async (apiResult) => {
     try {
       console.log('handleSaveNewFile called with:', apiResult);
+      
+      // Create backup before saving if autoBackup is enabled and file already exists
+      if (apiResult && apiResult.path) {
+        const settings = loadSettings();
+        if (settings.files?.autoBackup !== false) {
+          try {
+            // Use backupsDir setting for backup location
+            const backupBaseDir = typeof settings.files?.backupsDir === 'string' 
+              ? settings.files.backupsDir 
+              : (typeof settings.files?.defaultPath === 'string' 
+                ? settings.files.defaultPath 
+                : '/data/statistics-for-strava/config');
+            const backupDir = `${backupBaseDir}/backups`;
+            
+            const backupResult = await backupConfig({
+              filePath: apiResult.path,
+              backupDirectory: backupDir
+            });
+            if (backupResult.success) {
+              console.log('Backup created before YAML Utility save:', backupResult.backupPath);
+            } else {
+              console.warn('Backup failed:', backupResult.error);
+            }
+          } catch (backupError) {
+            console.warn('Backup error (continuing with save):', backupError);
+            // Don't fail the save if backup fails
+          }
+        }
+      }
       
       if (apiResult && apiResult.success) {
         if (!apiResult.content) {

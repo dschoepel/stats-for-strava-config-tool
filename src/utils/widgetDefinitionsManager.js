@@ -68,7 +68,12 @@ function toYAML(definitions) {
     yaml += `${key}:\n`;
     yaml += `  name: "${widget.name}"\n`;
     yaml += `  displayName: "${widget.displayName}"\n`;
-    yaml += `  description: "${widget.description}"\n`;
+    
+    // Handle multi-line descriptions by escaping newlines
+    const description = widget.description || '';
+    const escapedDescription = description.replace(/\n/g, '\\n').replace(/\r/g, '');
+    yaml += `  description: "${escapedDescription}"\n`;
+    
     yaml += `  allowMultiple: ${widget.allowMultiple}\n`;
     yaml += `  hasConfig: ${widget.hasConfig}\n`;
     
@@ -276,7 +281,9 @@ function fromYAML(yamlContent) {
         } else if (value === 'false') {
           currentWidget[key] = false;
         } else if (value.startsWith('"') && value.endsWith('"')) {
-          currentWidget[key] = value.slice(1, -1);
+          // Unescape newlines when reading descriptions
+          const unescaped = value.slice(1, -1).replace(/\\n/g, '\n');
+          currentWidget[key] = unescaped;
         } else {
           currentWidget[key] = value;
         }

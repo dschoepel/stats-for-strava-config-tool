@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS = {
   files: {
     defaultPath: DEFAULT_SETTINGS_PATH,
     autoBackup: true,
+    backupsDir: DEFAULT_SETTINGS_PATH, // Directory where backups folder will be created
     validateOnLoad: true,
   },
   editor: {
@@ -443,6 +444,11 @@ export const importSettingsFromYaml = (yamlContent) => {
  * @returns {Object} Merged settings
  */
 const mergeSettings = (defaults, override) => {
+  // Handle null/undefined override
+  if (!override || typeof override !== 'object') {
+    return { ...defaults };
+  }
+  
   const result = { ...defaults };
   
   for (const [key, value] of Object.entries(override)) {

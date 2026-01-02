@@ -187,13 +187,15 @@ export async function splitConfigFile(directory) {
 
 /**
  * Backup config files
- * @param {string} directory - The directory to backup
+ * @param {Object} params - Backup parameters
+ * @param {string} params.filePath - The file path to backup
+ * @param {string} params.backupDirectory - Optional backup directory
  * @returns {Promise<Object>} { success, backupPath, error }
  */
-export async function backupConfig(directory) {
+export async function backupConfig({ filePath, backupDirectory }) {
   return fetchAPI('/api/backup-config', {
     method: 'POST',
-    body: JSON.stringify({ directory }),
+    body: JSON.stringify({ filePath, backupDirectory }),
   });
 }
 
