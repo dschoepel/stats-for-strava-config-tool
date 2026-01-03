@@ -5,7 +5,11 @@ export const metadata = {
   title: 'Stats for Strava Config Tool',
   description: 'Configuration file manager for Stats for Strava',
   icons: {
-    icon: '/logo.svg',
+    icon: [
+      { url: '/logo.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
 }
 
