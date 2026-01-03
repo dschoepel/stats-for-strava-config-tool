@@ -44,32 +44,17 @@ When saving configuration changes through this editor:
 
 The configuration is organized into the following sections:
 
-### General
-Basic application settings like URLs and titles
-
-### Athlete
-Personal information including heart rate zones, weight history, and FTP data
-
-### Appearance
-Visual customization options for your statistics display
-
-### Import
-Data import settings and preferences
-
-### Metrics
-Configuration for statistical calculations and metrics
-
-### Gear
-Equipment and bike configuration
-
-### Zwift
-Zwift integration settings
-
-### Integrations
-Third-party service connections and API settings
-
-### Scheduling Daemon
-Automated task scheduling configuration
+| Section | Description                                              |
+| ------- | -------------------------------------------------------- |
+| General | Basic application settings like URLs and titles          |
+| Athlete | Personal information including heart rate zones, weight history, and FTP data |
+| Appearance | Visual customization options for your statistics display |
+| Import | Data import settings and preferences |
+| Metrics | Configuration for statistical calculations and metrics |
+| Gear | Equipment and bike configuration |
+| Zwift | Zwift integration settings |
+| Integrations | Third-party service connections and API settings |
+| Scheduling Daemon | Automated task scheduling configuration |
 
 ---
 
