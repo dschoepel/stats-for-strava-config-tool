@@ -18,7 +18,7 @@ This tool provides guided forms for editing your Strava configuration files. Eac
 
 ### Automatic Backups
 
-For safety, the Config Tool automatically creates backups before saving changes:
+For safety, the Config Tool can automatically create backups before saving changes:
 
 - **Timestamped files** - Backups are named like `config-everythingelse_backup_2026-01-02T15-30-45.yaml`
 - **Section-specific** - Each configuration file gets its own backup based on which section you edit
@@ -44,17 +44,17 @@ When saving configuration changes through this editor:
 
 The configuration is organized into the following sections:
 
-| Section | Description                                              |
-| ------- | -------------------------------------------------------- |
-| General | Basic application settings like URLs and titles          |
-| Athlete | Personal information including heart rate zones, weight history, and FTP data |
-| Appearance | Visual customization options for your statistics display |
-| Import | Data import settings and preferences |
-| Metrics | Configuration for statistical calculations and metrics |
-| Gear | Equipment and bike configuration |
-| Zwift | Zwift integration settings |
-| Integrations | Third-party service connections and API settings |
-| Scheduling Daemon | Automated task scheduling configuration |
+| Section           | Description                                                                   |
+| ----------------- | ----------------------------------------------------------------------------- |
+| General           | Basic application settings like URLs and titles                               |
+| Athlete           | Personal information including heart rate zones, weight history, and FTP data |
+| Appearance        | Visual customization options for your statistics display                      |
+| Import            | Data import settings and preferences                                          |
+| Metrics           | Configuration for statistical calculations and metrics                        |
+| Gear              | Equipment and bike configuration                                              |
+| Zwift             | Zwift integration settings                                                    |
+| Integrations      | Third-party service connections and API settings                              |
+| Scheduling Daemon | Automated task scheduling configuration                                       |
 
 ---
 

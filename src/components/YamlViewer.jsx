@@ -43,7 +43,10 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = (updatedContent) => {
+  const handleSaveEdit = (result) => {
+    // Extract content from result object or use result directly if it's a string
+    const updatedContent = typeof result === 'string' ? result : result.content;
+    
     // Update the file content in memory
     const updatedFiles = [...allFiles];
     updatedFiles[selectedFileIndex] = {
