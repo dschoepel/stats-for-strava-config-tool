@@ -69,24 +69,31 @@ Widget definitions are stored in `settings/widget-definitions.yaml` within your 
 ## Widget Properties
 
 ### Widget Name (camelCase)
+
 Unique identifier in camelCase format (e.g., mostRecentActivities)
 
 ### Display Name
+
 Human-readable name shown in the UI (e.g., "Most Recent Activities")
 
 ### Description
+
 Brief explanation of what the widget displays or does. Multi-line descriptions are supported.
 
 ### Allow multiple instances
+
 If checked, multiple copies of this widget can be added to the dashboard
 
 ### Has configuration options
+
 If checked, the widget supports customizable settings
 
 ### Config Template (YAML)
+
 Example configuration showing available options and syntax. This is displayed in the Dashboard Layout Editor as read-only documentation.
 
 ### Default Config (JSON)
+
 Initial values when widget is added to dashboard. Use the "Generate" button to automatically convert your Config Template to JSON format.
 
 ---
@@ -96,6 +103,7 @@ Initial values when widget is added to dashboard. Use the "Generate" button to a
 ### Understanding the Difference
 
 #### Settings → Widgets
+
 **Defines WHAT widgets exist**
 
 - Widget names and metadata
@@ -106,13 +114,14 @@ Initial values when widget is added to dashboard. Use the "Generate" button to a
 *Add widgets here when Stats-for-Strava releases new ones*
 
 #### Appearance → Dashboard → Edit Dashboard Layout
+
 **Controls HOW widgets display**
 
 - Which widgets show on dashboard
 - Widget order (drag to reorder)
 - Widget width (33%, 50%, 66%, 100%)
 - Widget enabled/disabled state
-- Widget-specific configuration values
+- Widget-specific configuration values  (ℹ️use Settings -> Widgets to change complex configuration values e.g. arrays of values)
 
 *Cannot edit configuration schema here - only values*
 
@@ -132,6 +141,7 @@ When Stats-for-Strava releases a new widget, add it to your configuration tool:
 3. **Click "Add Widget"** button
 4. **Fill in widget details** - Use exact widget name from documentation (case-sensitive)
 5. **Add configuration options** - If the widget has config options in the docs:
+
    - Check "Has configuration options"
    - Copy configuration structure from Stats-for-Strava docs into Config Template (YAML)
    - Click "Generate Default Config from Template" button
