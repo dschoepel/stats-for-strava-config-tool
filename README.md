@@ -353,6 +353,7 @@ sudo systemctl status certbot.timer
 #### Step 5: Access Your Config Tool
 
 Navigate to `https://your-domain.com` in your browser. The connection will be:
+
 - ✅ Encrypted with SSL/TLS
 - ✅ Automatically redirected from HTTP to HTTPS
 - ✅ Protected with modern security headers
@@ -360,17 +361,20 @@ Navigate to `https://your-domain.com` in your browser. The connection will be:
 #### Troubleshooting Proxy Issues
 
 **502 Bad Gateway**
+
 - Verify container is running: `docker ps | grep config-tool`
 - Check container accessibility: `curl http://localhost:8092`
 - Verify proxy_pass IP address is correct
 - Check nginx error logs: `sudo tail -f /var/log/nginx/strava-config-tool-error.log`
 
 **SSL Certificate Errors**
+
 - Ensure domain points to your server IP
 - Verify certificates exist: `sudo ls -la /etc/letsencrypt/live/your-domain.com/`
 - Check certificate expiration: `sudo certbot certificates`
 
 **Connection Timeout**
+
 - Increase timeout values in nginx config
 - Check firewall rules for ports 80, 443, and 8092
 - Verify docker network allows external access
@@ -446,7 +450,7 @@ If you need to preserve all comments, edit the YAML files manually.
 
 ### 💾 Configuration Path
 
-**For Docker users**: Use the **container path** in settings, not the host path
+**For Docker users**: Use the **container path** in settings - this is the path you entered in the environment variabale `DEFAULT_STATS_CONFIG_PATH` , not the host path.  Be sure to use the fully expanded path.
 
 - Container path: `/app/config/config.yaml` ✅
 - Host path: `./config/app/config.yaml` ❌
@@ -482,7 +486,7 @@ A: Not recommended - the tool doesn't have user management or conflict resolutio
 
 **Q: Where are my configuration files stored?**  
 
-A: In your Stats for Strava config directory, mounted via Docker volumes.
+A: In your Stats for Strava config directory, mounted via Docker volumes - refer to the mapping you used for the `/var/www/config/app` volume .
 
 **Q: Does this replace the Stats for Strava app?**  
 
