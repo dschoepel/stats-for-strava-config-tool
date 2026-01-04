@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Input, Flex, Text, VStack, Table, Heading, Field } from '@chakra-ui/react';
+import { Box, Button, Flex, Text, VStack, Table, Heading, Field, NumberInput } from '@chakra-ui/react';
 import { MdAdd, MdDelete } from 'react-icons/md';
 import { DateInput } from '../DateInput';
 
@@ -118,16 +118,37 @@ const WeightHistoryEditor = ({
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    <Input
-                      type="number"
-                      value={weight}
-                      onChange={(e) => handleWeightChange(date, e.target.value)}
-                      size="sm"
+                    <NumberInput.Root
+                      value={String(weight)}
+                      onValueChange={(e) => handleWeightChange(date, e.value)}
+                      min={0}
+                      step={0.1}
                       width="120px"
-                      min="0"
-                      step="0.1"
-                      bg="inputBg"
-                    />
+                      size="sm"
+                    >
+                      <NumberInput.Input bg="inputBg" />
+                      <NumberInput.Control css={{
+                        '& button': {
+                          borderWidth: '1px',
+                          borderColor: 'var(--chakra-colors-border)',
+                          backgroundColor: 'var(--chakra-colors-bg)',
+                          color: 'var(--chakra-colors-text)',
+                          fontSize: '12px',
+                          minHeight: '14px',
+                          height: '14px',
+                          width: '20px',
+                          padding: '0'
+                        },
+                        '& button:hover': {
+                          backgroundColor: 'var(--chakra-colors-gray-100)',
+                          _dark: { backgroundColor: 'var(--chakra-colors-gray-700)' }
+                        },
+                        '& svg': {
+                          width: '12px',
+                          height: '12px'
+                        }
+                      }} />
+                    </NumberInput.Root>
                   </Table.Cell>
                   <Table.Cell>
                     <Button
