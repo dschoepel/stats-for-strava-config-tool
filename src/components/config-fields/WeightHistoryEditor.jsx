@@ -129,23 +129,25 @@ const WeightHistoryEditor = ({
                       <NumberInput.Input bg="inputBg" />
                       <NumberInput.Control css={{
                         '& button': {
-                          borderWidth: '1px',
-                          borderColor: 'var(--chakra-colors-border)',
-                          backgroundColor: 'var(--chakra-colors-bg)',
+                          border: 'none',
+                          backgroundColor: 'transparent',
                           color: 'var(--chakra-colors-text)',
                           fontSize: '12px',
                           minHeight: '14px',
                           height: '14px',
                           width: '20px',
-                          padding: '0'
+                          padding: '0',
+                          borderRadius: '0'
                         },
                         '& button:hover': {
-                          backgroundColor: 'var(--chakra-colors-gray-100)',
-                          _dark: { backgroundColor: 'var(--chakra-colors-gray-700)' }
+                          backgroundColor: 'transparent',
+                          opacity: '0.7'
                         },
                         '& svg': {
                           width: '12px',
-                          height: '12px'
+                          height: '12px',
+                          stroke: 'var(--chakra-colors-text)',
+                          strokeWidth: '2px'
                         }
                       }} />
                     </NumberInput.Root>
