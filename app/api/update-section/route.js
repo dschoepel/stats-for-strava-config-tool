@@ -95,7 +95,9 @@ export async function POST(request) {
                   if (value === null) {
                     valueStr = 'null';
                   } else if (typeof value === 'string') {
-                    const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+                    // Always quote birthday field and date-like values (YYYY-MM-DD format)
+                    const isDateValue = /^\d{4}-\d{2}-\d{2}$/.test(value);
+                    const needsQuoting = key === 'birthday' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
                     if (needsQuoting) {
                       valueStr = `'${value.replace(/'/g, "''")}'`;
                     } else {
@@ -108,7 +110,9 @@ export async function POST(request) {
                       minContentWidth: 0,
                       singleQuote: true
                     }).trim();
+                    // Quote both date keys and date values
                     complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
+                    complexYaml = complexYaml.replace(/: (\d{4}-\d{2}-\d{2})$/gm, ": '$1'");
                     const complexLines = complexYaml.split('\n');
                     complexLines.forEach((complexLine, index) => {
                       if (index === 0) {
@@ -139,7 +143,9 @@ export async function POST(request) {
                 if (value === null) {
                   valueStr = 'null';
                 } else if (typeof value === 'string') {
-                  const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+                  // Always quote birthday field and date-like values (YYYY-MM-DD format)
+                  const isDateValue = /^\d{4}-\d{2}-\d{2}$/.test(value);
+                  const needsQuoting = key === 'birthday' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
                   if (needsQuoting) {
                     valueStr = `'${value.replace(/'/g, "''")}'`;
                   } else {
@@ -152,7 +158,9 @@ export async function POST(request) {
                     minContentWidth: 0,
                     singleQuote: true
                   }).trim();
+                  // Quote both date keys and date values
                   complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
+                  complexYaml = complexYaml.replace(/: (\d{4}-\d{2}-\d{2})$/gm, ": '$1'");
                   const complexLines = complexYaml.split('\n');
                   complexLines.forEach((complexLine, index) => {
                     if (index === 0) {
@@ -327,7 +335,9 @@ export async function POST(request) {
       if (value === null) {
         valueStr = 'null';
       } else if (typeof value === 'string') {
-        const needsQuoting = /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+        // Always quote birthday field and date-like values (YYYY-MM-DD format)
+        const isDateValue = /^\d{4}-\d{2}-\d{2}$/.test(value);
+        const needsQuoting = key === 'birthday' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
         if (needsQuoting) {
           valueStr = `'${value.replace(/'/g, "''")}'`;
         } else {
@@ -340,7 +350,9 @@ export async function POST(request) {
           minContentWidth: 0,
           singleQuote: true
         }).trim();
+        // Quote both date keys and date values
         complexYaml = complexYaml.replace(/(\s+)(\d{4}-\d{2}-\d{2}):/g, "$1'$2':");
+        complexYaml = complexYaml.replace(/: (\d{4}-\d{2}-\d{2})$/gm, ": '$1'");
         const complexLines = complexYaml.split('\n');
         complexLines.forEach((complexLine, index) => {
           if (index === 0) {
