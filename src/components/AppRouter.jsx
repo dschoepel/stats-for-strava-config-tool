@@ -178,7 +178,7 @@ const AppRouter = ({
     );
   }
 
-  if (currentPage === 'Documentation') {
+  if (currentPage === 'Documentation' || currentPage === 'Overview') {
     return <MarkdownHelp filePath="overview.md" />;
   }
 

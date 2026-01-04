@@ -285,7 +285,6 @@ export default function Sidebar({
           onToggleSidebar={onToggle}
           onClick={(e) => {
             e.preventDefault();
-            handleNavClick('Documentation');
             if (isCollapsed) {
               setIsSidebarCollapsed(false);
               setIsHelpExpanded(true);
@@ -297,7 +296,7 @@ export default function Sidebar({
         >
           <MenuItem 
             label="Overview" 
-            onClick={(e) => { e.preventDefault(); handleNavClick('Documentation'); }}
+            onClick={(e) => { e.preventDefault(); handleNavClick('Overview', 'Documentation'); }}
             isSubmenu
             onToggleSidebar={onToggle}
           />
