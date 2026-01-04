@@ -4,7 +4,7 @@ Manage sport types and activity classifications for your statistics
 
 ## What is the Sports List?
 
-The Sports List defines which Strava activity types are recognized and tracked by your statistics dashboard. This allows you to customize which activities appear in your statistics and how they're categorized.
+The Sports List defines which Strava activity types are recognized and tracked by your statistics dashboard. This allows you to select which activities appear in your statistics and how they're categorized.
 
 Navigate to **Sports List** in the settings to access the editor.
 
@@ -14,9 +14,8 @@ Navigate to **Sports List** in the settings to access the editor.
 
 Click "Add Sport" to include a new activity type. This is useful if Strava adds a new sport that is enabled in the Stats for Strava app.  You'll need to specify:
 
+- **Category** - If a new category is needed, create this first then add the sport to it
 - **Sport Name** - The Strava activity type (must match exactly)
-- **Display Name** - (Optional) Custom name shown in your statistics
-- **Icon/Color** - (Optional) Visual customization for the sport
 
 ### Editing a Sport
 
@@ -24,10 +23,8 @@ Click the edit icon next to any sport to modify its settings. You can change the
 
 ### Removing a Sport
 
-Click the delete icon to remove a sport fromthe list of available sports in the config editors for sections that allow filtering for sports. This will:
+Click the delete icon to remove a sport from the list of available sports in the config editors for sections that allow filtering for sports. This will:
 
-- Exclude activities of this type from most statistics
-- Hide the sport from sport-specific widgets and filters
 - Not delete the actual Strava activities (they remain in your account)
 
 ## Common Strava Activity Types
@@ -38,6 +35,7 @@ Most commonly used Strava activity types (names must match exactly):
 - **Run**
 - **VirtualRide**
 - **Walk**
+- **Golf**
 - **Hike**
 - **Swim**
 - **WeightTraining**
@@ -75,21 +73,21 @@ For less common activities, verify the exact naming in Strava's API documentatio
 
 > **⚠️ Removing sports affects statistics**
 >
-> If you remove a sport from your list, activities of that type will not appear in most statistics. The activities still exist in Strava, but they won't be included in your Stats for Strava calculations.
+> If you remove a sport from your list, you still need to edit any configurations (Appearance filters, Dashboard Widgets, etc.) that utilize that sprot and remove it.  The activities still exist in Strava, but they won't be included in your Stats for Strava calculations.
 
 > **⚠️ Changes require a rebuild**
 >
-> After modifying your sports list, you must rebuild the Stats for Strava HTML files for changes to appear.
+> After modifying your sports list, and modifying configurations (Appearance filters, Dashboard Widgets, etc.) you must rebuild the Stats for Strava HTML files for changes to appear.
 
 > **ℹ️ Historical data is preserved**
 >
-> Adding or removing sports doesn't affect your Strava data - it only controls what appears in your statistics.
+> Adding or removing sports doesn't affect your Strava data - it only controls what appears in the lists for selecting sports in the configuration pages.
 
 ## Saving Changes
 
 Click **Save** to write your sports list configuration to the config file.
 
-After saving, rebuild your Stats for Strava container and regenerate the HTML files:
+After saving, and modifying any configurations that referred to the sport that was removed/modified, rebuild your Stats for Strava container and regenerate the HTML files:
 
 ```bash
 docker compose restart app && docker compose exec app bin/console app:strava:build-files

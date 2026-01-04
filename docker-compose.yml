@@ -8,8 +8,6 @@ services:
 
     volumes: 
       - ./statistics-for-strava/config:/data/statistics-for-strava/config  #Match this to your stats for strava config directory
-      - ./statistics-for-strava/config/settings:/data/settings # Config tool settings
-      - ./statistics-for-strava/config/backups:/data/backups # Config tool backups when editing files
       - ./statistics-for-strava/logs:/data/logs  # Application and service logs
 
     ports:

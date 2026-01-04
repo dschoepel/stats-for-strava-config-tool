@@ -496,6 +496,17 @@ metricsDisplayOrder: ['distance', 'movingTime', 'elevation']`,
     description: 'Shows your weight history (summary of values entered in athlete config section).',
     allowMultiple: false,
     hasConfig: false
+  },
+  'streaks': {
+    name: "streaks",
+    displayName: "Current streaks",
+    description: "This widget shows your current activity streaks, calculated in days, weeks, and months.\n\nHas a single key value - sportTypesToInclude: an array of sport types to include when calculating streaks. Leave this empty to include all sport types.",
+    allowMultiple: true,
+    hasConfig: true,
+    configTemplate: `sportTypesToInclude: []`,
+    defaultConfig: {
+      sportTypesToInclude: []
+    }
   }
 };
 
