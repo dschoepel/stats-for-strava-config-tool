@@ -31,12 +31,14 @@ Use the up/down arrow buttons on each widget card to change its position in the 
 
 ### Configuring Widgets
 
-Many widgets support custom configuration options. Click the "Configure" button on a widget card to:
+Many widgets support custom configuration options. You will need to use the **Settings → Widgets tab** to configure wideget options.
 
-- Set display preferences (chart types, date ranges, etc.)
-- Filter data (specific sports, gear, time periods)
-- Customize titles and labels
+The Dashboard Editor allows you to:
+
 - Adjust visual settings
+    - Display width (33%, 50%, 60% or 100%)
+    - Enabled (true or false)
+- View the widgets configured settings 
 
 ---
 
@@ -45,9 +47,11 @@ Many widgets support custom configuration options. Click the "Configure" button 
 The dashboard uses a responsive grid layout that automatically adjusts based on screen size:
 
 ### Desktop View
+
 Widgets are displayed in a multi-column grid, with configurable widths for each widget
 
 ### Mobile View
+
 Widgets automatically stack in a single column for optimal mobile viewing
 
 ---
@@ -57,21 +61,27 @@ Widgets automatically stack in a single column for optimal mobile viewing
 Common configuration options available for many widgets:
 
 ### Title
+
 Custom display title for the widget
 
 ### Sport Filter
+
 Show statistics for specific sports only (cycling, running, etc.)
 
 ### Date Range
+
 Filter data by time period (year, month, all-time, etc.)
 
 ### Gear Filter
+
 Show statistics for specific bikes or equipment
 
 ### Chart Type
+
 Choose visualization style (bar, line, pie, etc.)
 
 ### Metric Display
+
 Select which metrics to show (distance, time, elevation, etc.)
 
 ---
@@ -79,18 +89,23 @@ Select which metrics to show (distance, time, elevation, etc.)
 ## Tips & Best Practices
 
 ### Start with the essentials
+
 Add key widgets first (Recent Activities, Weekly Stats) before customizing with specialized widgets
 
 ### Group related widgets
+
 Place similar widgets near each other (all cycling stats together, all training metrics together)
 
 ### Use descriptive titles
+
 When adding multiple instances of the same widget, use clear titles to distinguish them
 
 ### Test on different devices
+
 Preview your dashboard on mobile and desktop to ensure a good experience on all screen sizes
 
 ### Less is more
+
 Too many widgets can be overwhelming - focus on the metrics that matter most to you
 
 ---
@@ -99,7 +114,9 @@ Too many widgets can be overwhelming - focus on the metrics that matter most to 
 
 Click the **Save** button to write your dashboard configuration to the config file.
 
-After saving, remember to rebuild your Stats for Strava container and regenerate the HTML files:
+> **⚠️ Changes require a rebuild**
+>
+> After modifying your dashboard configuration, you must rebuild the Stats for Strava HTML files for changes to appear.
 
 ```bash
 docker compose restart app && docker compose exec app bin/console app:strava:build-files

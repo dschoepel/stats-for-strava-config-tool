@@ -6,13 +6,13 @@ Manage sport types and activity classifications for your statistics
 
 The Sports List defines which Strava activity types are recognized and tracked by your statistics dashboard. This allows you to customize which activities appear in your statistics and how they're categorized.
 
-Navigate to **Sports List** in the sidebar to access the editor.
+Navigate to **Sports List** in the settings to access the editor.
 
 ## Managing Sports
 
 ### Adding a Sport
 
-Click "Add Sport" to include a new activity type. You'll need to specify:
+Click "Add Sport" to include a new activity type. This is useful if Strava adds a new sport that is enabled in the Stats for Strava app.  You'll need to specify:
 
 - **Sport Name** - The Strava activity type (must match exactly)
 - **Display Name** - (Optional) Custom name shown in your statistics
@@ -24,7 +24,7 @@ Click the edit icon next to any sport to modify its settings. You can change the
 
 ### Removing a Sport
 
-Click the delete icon to remove a sport from your statistics. This will:
+Click the delete icon to remove a sport fromthe list of available sports in the config editors for sections that allow filtering for sports. This will:
 
 - Exclude activities of this type from most statistics
 - Hide the sport from sport-specific widgets and filters
@@ -52,18 +52,23 @@ Most commonly used Strava activity types (names must match exactly):
 ## Best Practices
 
 **Match Strava activity types exactly**
+
 Sport names must match Strava's activity types character-for-character, including capitalization
 
 **Use display names for clarity**
+
 Add custom display names to make activities more readable (e.g., "Virtual Ride" instead of "VirtualRide")
 
 **Keep your list focused**
+
 Only include sports you actually track - a shorter list makes your statistics easier to navigate
 
 **Consider virtual activities separately**
+
 VirtualRide (Zwift, etc.) is treated as a separate sport type from regular Ride activities
 
 **Check the Strava API documentation**
+
 For less common activities, verify the exact naming in Strava's API documentation
 
 ## Important Considerations
