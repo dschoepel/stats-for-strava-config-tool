@@ -162,26 +162,24 @@ The "Generate Default Config from Template" button automatically converts your Y
 
 The system includes these built-in widget definitions:
 
-- Most Recent Activities
-- Introduction Text
-- Training Goals
-- Weekly Statistics
-- Peak Power Outputs
-- Heart Rate Zones
-- Activity Grid
-- Monthly Statistics
-- Training Load
-- Weekday Statistics
-- Day Time Statistics
-- Distance Breakdown
-- Yearly Statistics
-- Zwift Statistics
-- Gear Statistics
-- Eddington Number
-- Challenge Consistency
-- Most Recent Challenges
-- FTP History
-- Athlete Weight History
+ℹ️ Widgets with an asterisk * are configurable
+
+| Widgets | More Widgets|
+|------------------------------|----------------------------|
+| • Most Recent Activities*     | • Yearly Statistics*        |
+| • Introduction Text          | • Zwift Statistics         |
+| • Training Goals*             | • Gear Statistics*          |
+| • Weekly Statistics*          | • Eddington Number         |
+| • Peak Power Outputs         | • Challenge Consistency*    |
+| • Heart Rate Zones           | • Most Recent Challenges*   |
+| • Activity Grid              | • FTP History              |
+| • Monthly Statistics*         | • Athlete Weight History   |
+| • Training Load              | • Weekday Statistics       |
+| • Day Time Statistics        | • Distance Breakdown       |
+| • Current Streaks             |                           |
+
+ℹ️ Widgets with an asterisk * are configurable
+
 
 ### Automatic Initialization
 

@@ -23,7 +23,7 @@ Click the "Add Widget" button to open the widget picker. Available widgets are o
 
 ### Removing Widgets
 
-Click the delete icon on any widget card to remove it from your dashboard. This can be undone by clicking Save to keep your changes or Cancel to discard them.
+Click the delete icon on any widget card to remove it from your dashboard. This can be done by clicking Save to keep your changes or Cancel to discard them.
 
 ### Reordering Widgets
 
@@ -38,7 +38,7 @@ The Dashboard Editor allows you to:
 - Adjust visual settings
     - Display width (33%, 50%, 60% or 100%)
     - Enabled (true or false)
-- View the widgets configured settings 
+- View the widgets configured settings, in simple cases where the config has a single value, to update it here.  Lists or complex key values need to be configured in the Settings -> Widgets editor. 
 
 ---
 
@@ -60,29 +60,25 @@ Widgets automatically stack in a single column for optimal mobile viewing
 
 Common configuration options available for many widgets:
 
-### Title
+### Challenges
 
-Custom display title for the widget
+- Type and number of challenges to display 
 
 ### Sport Filter
 
-Show statistics for specific sports only (cycling, running, etc.)
+- Show statistics for specific sports only (cycling, running, etc.)
 
 ### Date Range
 
-Filter data by time period (year, month, all-time, etc.)
+- Filter data by time period (year, month, all-time, etc.)
 
 ### Gear Filter
 
-Show statistics for specific bikes or equipment
+- Show statistics for specific bikes or equipment
 
-### Chart Type
+### Display Order
 
-Choose visualization style (bar, line, pie, etc.)
-
-### Metric Display
-
-Select which metrics to show (distance, time, elevation, etc.)
+- Specify the order to show metrics (distance, time, elevation, etc.)
 
 ---
 
@@ -90,23 +86,23 @@ Select which metrics to show (distance, time, elevation, etc.)
 
 ### Start with the essentials
 
-Add key widgets first (Recent Activities, Weekly Stats) before customizing with specialized widgets
+- Add key widgets first (Recent Activities, Weekly Stats) before customizing with specialized widgets
 
 ### Group related widgets
 
-Place similar widgets near each other (all cycling stats together, all training metrics together)
+- Place similar widgets near each other (all cycling stats together, all training metrics together)
 
 ### Use descriptive titles
 
-When adding multiple instances of the same widget, use clear titles to distinguish them
+- When adding multiple instances of the same widget, use clear titles to distinguish them
 
 ### Test on different devices
 
-Preview your dashboard on mobile and desktop to ensure a good experience on all screen sizes
+- Preview your dashboard on mobile and desktop to ensure a good experience on all screen sizes
 
 ### Less is more
 
-Too many widgets can be overwhelming - focus on the metrics that matter most to you
+- Too many widgets can be overwhelming - focus on the metrics that matter most to you
 
 ---
 
