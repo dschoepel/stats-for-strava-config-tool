@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Flex, VStack, Heading, Text, Button, Input, IconButton, Badge } from '@chakra-ui/react';
 import { MdClose, MdArrowUpward, MdArrowDownward, MdExpandMore, MdChevronRight, MdInfo } from 'react-icons/md';
@@ -12,8 +12,6 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
   const [separator, setSeparator] = useState('---');
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [expandedKeys, setExpandedKeys] = useState(new Set());
-  const [smartMergeEnabled, setSmartMergeEnabled] = useState({});
-  const [primaryFilePerKey, setPrimaryFilePerKey] = useState({});
 
   // Reset ordered files when modal opens with new files
   const [lastFilesLength, setLastFilesLength] = useState(files.length);
@@ -23,12 +21,11 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
     setLastFilesLength(files.length);
   }
 
-  // Check for duplicates when files or order changes
-  const duplicateInfo = useMemo(() => {
+  // Check for duplicates and compute default smart merge settings
+  const { duplicateInfo, defaultSmartMerge, defaultPrimaryFiles } = useMemo(() => {
     if (orderedFiles.length > 1) {
       const info = checkForDuplicateKeys(orderedFiles);
       
-      // Auto-enable smart merge for keys that can be merged
       if (info.hasDuplicates) {
         const newSmartMerge = {};
         const newPrimaryFiles = {};
@@ -49,14 +46,25 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
           }
         });
         
-        setSmartMergeEnabled(newSmartMerge);
-        setPrimaryFilePerKey(newPrimaryFiles);
+        return { duplicateInfo: info, defaultSmartMerge: newSmartMerge, defaultPrimaryFiles: newPrimaryFiles };
       }
       
-      return info;
+      return { duplicateInfo: info, defaultSmartMerge: {}, defaultPrimaryFiles: {} };
     }
-    return null;
+    return { duplicateInfo: null, defaultSmartMerge: {}, defaultPrimaryFiles: {} };
   }, [orderedFiles]);
+
+  // Use the computed defaults directly as initial state
+  const [smartMergeEnabled, setSmartMergeEnabled] = useState(defaultSmartMerge);
+  const [primaryFilePerKey, setPrimaryFilePerKey] = useState(defaultPrimaryFiles);
+
+  // Update state when defaults change (when orderedFiles change)
+  const defaultsKey = JSON.stringify(defaultSmartMerge);
+  useEffect(() => {
+    setSmartMergeEnabled(defaultSmartMerge);
+    setPrimaryFilePerKey(defaultPrimaryFiles);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultsKey]);
 
   if (!isOpen) return null;
 
@@ -567,11 +575,10 @@ const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
                                   <Box
                                     p={2}
                                     bg="orange.50"
-                                    _dark={{ bg: "orange.900/30" }}
+                                    _dark={{ bg: "orange.900/30", borderColor: "orange.700" }}
                                     borderRadius="md"
                                     borderWidth="1px"
                                     borderColor="orange.300"
-                                    _dark={{ borderColor: "orange.700" }}
                                   >
                                     <Text fontSize="xs" color="orange.700" _dark={{ color: "orange.300" }} fontWeight="600" mb={1}>
                                       ⚠️ Conflicting Second-Level Keys:

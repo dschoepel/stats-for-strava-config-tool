@@ -81,6 +81,7 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
           }
         } else {
           // Fallback to standard download (one by one to downloads folder)
+          setError('Note: Folder selection not available. Files will be downloaded to your browser\'s default Downloads folder. File System Access API is not supported in this browser/environment.');
           for (const index of selectedFiles) {
             const file = files[index];
             const blob = new Blob([file.content], { type: 'text/yaml' });
@@ -95,7 +96,9 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
             // Small delay between downloads
             await new Promise(resolve => setTimeout(resolve, 100));
           }
-          onClose();
+          // Don't close immediately so user sees the message
+          setDownloading(false);
+          return;
         }
       } else {
         // Save to server

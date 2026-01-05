@@ -12,7 +12,6 @@ const MonacoYamlViewer = ({
   lastModified = null,
   showFileInfo = true,
   showActions = true,
-  onDownload = null,
   onCopy = null,
   onEdit = null,
   className = '',
@@ -35,22 +34,6 @@ const MonacoYamlViewer = ({
     
     // Focus the editor
     editor.focus();
-  };
-
-  const handleDownload = () => {
-    if (onDownload) {
-      onDownload();
-    } else {
-      const blob = new Blob([fileContent], { type: 'text/yaml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
   };
 
   const handleCopy = async () => {
@@ -175,30 +158,18 @@ const MonacoYamlViewer = ({
                 <Icon fontSize={{ base: "xs", sm: "md" }}><MdContentCopy /></Icon>
                 <Text display={{ base: "none", sm: "inline" }} ml={1}>Copy</Text>
               </Button>
+              {onEdit && (
               <Button 
-                onClick={handleDownload} 
+                onClick={onEdit} 
                 variant="outline" 
                 size={{ base: "xs", sm: "sm" }} 
                 colorPalette="gray"
-                title="Download file"
+                title="Edit file"
                 fontSize={{ base: "2xs", sm: "sm" }}
                 px={{ base: 1.5, sm: 3 }}
                 h={{ base: "24px", sm: "auto" }}
               >
-                <Icon fontSize={{ base: "xs", sm: "md" }}><MdDownload /></Icon>
-                <Text display={{ base: "none", sm: "inline" }} ml={1}>Download</Text>
-              </Button>
-              {onEdit && (
-                <Button 
-                  onClick={onEdit} 
-                  variant="outline" 
-                  size={{ base: "xs", sm: "sm" }} 
-                  colorPalette="gray"
-                  title="Edit file"
-                  fontSize={{ base: "2xs", sm: "sm" }}
-                  px={{ base: 1.5, sm: 3 }}
-                  h={{ base: "24px", sm: "auto" }}
-                >
+
                   <Icon fontSize={{ base: "xs", sm: "md" }}><MdEdit /></Icon>
                   <Text display={{ base: "none", sm: "inline" }} ml={1}>Edit</Text>
                 </Button>
