@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Flex, VStack, Heading, Text, Button, IconButton, Badge, Checkbox, Icon } from '@chakra-ui/react';
-import { MdClose, MdInfo, MdCheckCircle } from 'react-icons/md';
+import { Box, Flex, VStack, Heading, Text, Button, IconButton, Badge, Icon, Input, Field, Stack, RadioCard, Collapsible } from '@chakra-ui/react';
+import { Checkbox } from '@chakra-ui/react';
+import { MdClose, MdInfo, MdCheckCircle, MdWarning, MdExpandMore, MdExpandLess } from 'react-icons/md';
 import { 
   PiArrowsSplitFill, 
   PiGearSixFill, 
@@ -22,6 +23,10 @@ import { splitConfigFile } from '../utils/configSplitter';
 const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
   const [splitting, setSplitting] = useState(false);
   const [error, setError] = useState(null);
+  const [splitConfig, setSplitConfig] = useState({});
+  const [expandedSections, setExpandedSections] = useState(new Set());
+  const [remainingDestination, setRemainingDestination] = useState('original');
+  const [customFileName, setCustomFileName] = useState('config-remaining.yaml');
 
   // Analyze the file to determine split structure
   const splitAnalysis = useMemo(() => {
@@ -66,51 +71,47 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
     }
   }, [file]);
 
-  // Preview what files will be created
-  const filePreview = useMemo(() => {
+  // Preview what files will be created with hierarchical structure
+  const hierarchicalPreview = useMemo(() => {
     if (!splitAnalysis) return [];
     
-    const preview = [];
+    const hierarchy = [];
     
     for (const [topKey, data] of splitAnalysis.entries()) {
       const topFileName = topKey === 'general' ? 'config.yaml' : `config-${topKey}.yaml`;
       
       // Check if this section has complex 2nd-level keys
-      const hasMultipleComplex = data.secondLevel.length > 1;
-      const hasComplexAndSimple = data.secondLevel.length >= 1;
+      const hasComplexKeys = data.secondLevel.length > 0;
       
-      if (!hasMultipleComplex && !hasComplexAndSimple) {
-        // Simple section - one file
-        preview.push({
-          fileName: topFileName,
-          topKey,
-          secondKey: null,
-          description: `Full ${topKey} section`
-        });
-      } else {
-        // Will be split - parent file + children
-        const firstSecondKey = data.secondLevel[0];
-        preview.push({
-          fileName: topFileName,
-          topKey,
-          secondKey: firstSecondKey,
-          description: `${topKey} (simple keys + ${firstSecondKey})`
-        });
-        
-        // Additional split files
-        for (let i = 1; i < data.secondLevel.length; i++) {
-          const secondKey = data.secondLevel[i];
-          preview.push({
-            fileName: `config-${topKey}-${secondKey}.yaml`,
+      const topLevelItem = {
+        id: topKey,
+        topKey,
+        fileName: topFileName,
+        hasChildren: hasComplexKeys,
+        secondLevelKeys: [],
+        description: hasComplexKeys 
+          ? `${topKey} section with ${data.secondLevel.length} complex subsection${data.secondLevel.length > 1 ? 's' : ''}`
+          : `Full ${topKey} section`
+      };
+      
+      // Add second-level keys if they exist
+      if (hasComplexKeys) {
+        data.secondLevel.forEach((secondKey, index) => {
+          topLevelItem.secondLevelKeys.push({
+            id: `${topKey}.${secondKey}`,
             topKey,
             secondKey,
-            description: `${topKey}.${secondKey}`
+            fileName: `config-${topKey}-${secondKey}.yaml`,
+            isFirst: index === 0,
+            description: `${topKey}.${secondKey} subsection`
           });
-        }
+        });
       }
+      
+      hierarchy.push(topLevelItem);
     }
     
-    return preview;
+    return hierarchy;
   }, [splitAnalysis]);
 
   // Section metadata for display
@@ -128,19 +129,190 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
 
   // Reset state when modal opens
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && hierarchicalPreview.length > 0) {
       setError(null);
+      
+      // Initialize split configuration - all top-level selected, first child kept with parent, rest split
+      const initialConfig = {};
+      hierarchicalPreview.forEach(item => {
+        initialConfig[item.topKey] = {
+          selected: true,
+          secondLevel: {}
+        };
+        
+        item.secondLevelKeys.forEach((child, index) => {
+          initialConfig[item.topKey].secondLevel[child.secondKey] = {
+            split: index > 0 // First child stays with parent by default, others split
+          };
+        });
+      });
+      
+      setSplitConfig(initialConfig);
+      
+      // Expand all sections by default
+      setExpandedSections(new Set(hierarchicalPreview.map(item => item.topKey)));
+      
+      setRemainingDestination('original');
+      setCustomFileName('config-remaining.yaml');
     }
-  }, [isOpen]);
+  }, [isOpen, hierarchicalPreview]);
+
+  // Calculate statistics
+  const selectedTopLevelCount = Object.values(splitConfig).filter(c => c.selected).length;
+  const totalTopLevelCount = hierarchicalPreview.length;
+  const unselectedCount = totalTopLevelCount - selectedTopLevelCount;
+  const hasUnselected = unselectedCount > 0;
+
+  // Calculate how many files will be created
+  const filesCount = useMemo(() => {
+    let count = 0;
+    hierarchicalPreview.forEach(item => {
+      const config = splitConfig[item.topKey];
+      if (config?.selected) {
+        count++; // Parent file
+        item.secondLevelKeys.forEach(child => {
+          if (config.secondLevel[child.secondKey]?.split) {
+            count++; // Split child file
+          }
+        });
+      }
+    });
+    return count;
+  }, [hierarchicalPreview, splitConfig]);
+
+  // Toggle section expansion
+  const toggleSection = (topKey) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(topKey)) {
+      newExpanded.delete(topKey);
+    } else {
+      newExpanded.add(topKey);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  // Toggle top-level section selection
+  const toggleTopLevel = (topKey) => {
+    setSplitConfig(prev => ({
+      ...prev,
+      [topKey]: {
+        ...prev[topKey],
+        selected: !prev[topKey]?.selected
+      }
+    }));
+  };
+
+  // Toggle second-level split
+  const toggleSecondLevelSplit = (topKey, secondKey) => {
+    setSplitConfig(prev => ({
+      ...prev,
+      [topKey]: {
+        ...prev[topKey],
+        secondLevel: {
+          ...prev[topKey]?.secondLevel,
+          [secondKey]: {
+            split: !prev[topKey]?.secondLevel?.[secondKey]?.split
+          }
+        }
+      }
+    }));
+  };
+
+  // Select/deselect all
+  const handleSelectAll = () => {
+    const newConfig = {};
+    hierarchicalPreview.forEach(item => {
+      newConfig[item.topKey] = {
+        selected: true,
+        secondLevel: {}
+      };
+      item.secondLevelKeys.forEach((child, index) => {
+        newConfig[item.topKey].secondLevel[child.secondKey] = {
+          split: index > 0
+        };
+      });
+    });
+    setSplitConfig(newConfig);
+  };
+
+  const handleSelectNone = () => {
+    const newConfig = {};
+    hierarchicalPreview.forEach(item => {
+      newConfig[item.topKey] = {
+        selected: false,
+        secondLevel: {}
+      };
+      item.secondLevelKeys.forEach((child, index) => {
+        newConfig[item.topKey].secondLevel[child.secondKey] = {
+          split: index > 0
+        };
+      });
+    });
+    setSplitConfig(newConfig);
+  };
+
+  // Get list of selected files (for merge dropdown)
+  const selectedFilesList = hierarchicalPreview
+    .filter(item => splitConfig[item.topKey]?.selected)
+    .map(item => ({ fileName: item.fileName }));
 
   if (!isOpen || !file) return null;
 
   const handleSplit = async () => {
+    // Validate selection
+    if (selectedTopLevelCount === 0) {
+      setError('Please select at least one section to split');
+      return;
+    }
+
+    // Validate remaining destination if needed
+    if (hasUnselected) {
+      if (remainingDestination === 'custom' && !customFileName.trim()) {
+        setError('Please enter a filename for remaining sections');
+        return;
+      }
+      if (remainingDestination === 'merge' && selectedTopLevelCount === 0) {
+        setError('Please select at least one section to merge remaining sections into');
+        return;
+      }
+    }
+
     setSplitting(true);
     setError(null);
 
     try {
-      const result = await splitConfigFile(file.content);
+      // Build configuration for split based on hierarchical selection
+      const splitConfiguration = {
+        sections: {},
+        remainingConfig: hasUnselected ? {
+          destination: remainingDestination,
+          customFileName: remainingDestination === 'custom' ? customFileName : null,
+          mergeIntoFile: remainingDestination === 'merge' ? selectedFilesList[0]?.fileName : null
+        } : null
+      };
+
+      // Build the sections configuration
+      hierarchicalPreview.forEach(item => {
+        const config = splitConfig[item.topKey];
+        if (config?.selected) {
+          splitConfiguration.sections[item.topKey] = {
+            include: true,
+            secondLevel: {}
+          };
+          
+          item.secondLevelKeys.forEach(child => {
+            splitConfiguration.sections[item.topKey].secondLevel[child.secondKey] = {
+              split: config.secondLevel[child.secondKey]?.split || false
+            };
+          });
+        } else {
+          splitConfiguration.sections[item.topKey] = {
+            include: false
+          };
+        }
+      });
+
+      const result = await splitConfigFile(file.content, splitConfiguration);
       
       if (!result.success) {
         setError(result.error || 'Failed to split configuration file');
@@ -293,13 +465,54 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
               </Box>
             )}
 
-            {/* File Preview */}
+            {/* File Preview with Hierarchical Structure */}
             <Box>
-              <Heading size={{ base: "sm", sm: "md" }} mb={3} lineHeight="1.2" display="flex" alignItems="center" gap={2}>
-                <Icon color="primary" boxSize={4}><PiListChecksFill /></Icon> Files to be Created
-              </Heading>
+              <Flex 
+                justify="space-between" 
+                align={{ base: "flex-start", sm: "center" }} 
+                mb={3}
+                direction={{ base: "column", sm: "row" }}
+                gap={{ base: 2, sm: 0 }}
+              >
+                <Heading size={{ base: "sm", sm: "md" }} lineHeight="1.2" display="flex" alignItems="center" gap={2} flexWrap="wrap">
+                  <Flex align="center" gap={2}>
+                    <Icon color="primary" boxSize={4}><PiListChecksFill /></Icon> 
+                    <Text>Sections to Split</Text>
+                  </Flex>
+                  <Badge colorPalette="blue" fontSize="xs">
+                    {selectedTopLevelCount} of {totalTopLevelCount}
+                  </Badge>
+                  <Badge colorPalette="green" fontSize="xs">
+                    {filesCount} file{filesCount !== 1 ? 's' : ''}
+                  </Badge>
+                </Heading>
+                <Flex gap={2}>
+                  <Button
+                    onClick={handleSelectAll}
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="blue"
+                    isDisabled={selectedTopLevelCount === totalTopLevelCount}
+                    fontSize="xs"
+                    px={2}
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    onClick={handleSelectNone}
+                    size="xs"
+                    variant="ghost"
+                    colorPalette="gray"
+                    isDisabled={selectedTopLevelCount === 0}
+                    fontSize="xs"
+                    px={2}
+                  >
+                    Deselect
+                  </Button>
+                </Flex>
+              </Flex>
 
-              {!splitAnalysis || filePreview.length === 0 ? (
+              {!splitAnalysis || hierarchicalPreview.length === 0 ? (
                 <Box
                   p={4}
                   bg="gray.50"
@@ -314,69 +527,319 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
                 </Box>
               ) : (
                 <VStack align="stretch" gap={2}>
-                  {filePreview.map((preview, index) => {
-                    const metadata = sectionMetadata[preview.topKey] || { 
+                  {hierarchicalPreview.map((item) => {
+                    const metadata = sectionMetadata[item.topKey] || { 
                       icon: PiFileFill, 
                       color: 'gray' 
                     };
+                    const isSelected = splitConfig[item.topKey]?.selected;
+                    const isExpanded = expandedSections.has(item.topKey);
+                    const hasChildren = item.secondLevelKeys.length > 0;
 
                     return (
-                      <Flex
-                        key={index}
-                        p={{ base: 2, sm: 3 }}
-                        bg="cardBg"
-                        borderWidth="1px"
-                        borderColor="border"
-                        borderRadius="md"
-                        align="center"
-                        gap={{ base: 2, sm: 3 }}
-                      >
-                        <Icon color="primary" boxSize={5}>{React.createElement(metadata.icon)}</Icon>
-                        
-                        <VStack align="flex-start" gap={0} flex={1} minW={0}>
-                          <Flex align="center" gap={2} wrap="wrap">
-                            <Badge 
-                              colorPalette={metadata.color}
-                              fontSize={{ base: "xs", sm: "sm" }}
-                              fontWeight="600"
-                            >
-                              {preview.fileName}
-                            </Badge>
-                          </Flex>
-                          <Text fontSize="xs" color="textMuted">
-                            {preview.description}
-                          </Text>
-                        </VStack>
+                      <Box key={item.topKey}>
+                        {/* Top-level Section */}
+                        <Flex
+                          p={{ base: 2, sm: 3 }}
+                          bg={isSelected ? "blue.50" : "gray.50"}
+                          _dark={{ bg: isSelected ? "blue.900/20" : "gray.800" }}
+                          borderWidth="1px"
+                          borderColor={isSelected ? "blue.300" : "gray.300"}
+                          _dark={{ borderColor: isSelected ? "blue.700" : "gray.700" }}
+                          borderRadius="md"
+                          align="center"
+                          gap={{ base: 2, sm: 3 }}
+                          opacity={isSelected ? 1 : 0.6}
+                          transition="all 0.2s"
+                          cursor="pointer"
+                          onClick={() => toggleTopLevel(item.topKey)}
+                          _hover={{ opacity: 1, borderColor: "primary" }}
+                        >
+                          <Checkbox.Root
+                            checked={isSelected}
+                            onCheckedChange={() => toggleTopLevel(item.topKey)}
+                            onClick={(e) => e.stopPropagation()}
+                            colorPalette="blue"
+                            size={{ base: "sm", sm: "md" }}
+                          >
+                            <Checkbox.HiddenInput />
+                            <Checkbox.Control />
+                          </Checkbox.Root>
+                          
+                          <Icon 
+                            color="primary" 
+                            boxSize={{ base: 4, sm: 5 }} 
+                            display={{ base: "none", xs: "block" }}
+                          >
+                            {React.createElement(metadata.icon)}
+                          </Icon>
+                          
+                          <VStack align="flex-start" gap={0} flex={1} minW={0}>
+                            <Flex align="center" gap={2} wrap="wrap">
+                              <Badge 
+                                colorPalette={metadata.color}
+                                fontSize="2xs"
+                                fontWeight="600"
+                              >
+                                {item.fileName}
+                              </Badge>
+                              {hasChildren && (
+                                <Badge colorPalette="gray" fontSize="2xs">
+                                  {item.secondLevelKeys.length} subsection{item.secondLevelKeys.length > 1 ? 's' : ''}
+                                </Badge>
+                              )}
+                            </Flex>
+                            <Text fontSize="2xs" color="textMuted" noOfLines={1}>
+                              {item.description}
+                            </Text>
+                          </VStack>
 
-                        <Icon boxSize={4} color="green.600" _dark={{ color: "green.400" }}>
-                          <MdCheckCircle />
-                        </Icon>
-                      </Flex>
+                          {hasChildren && (
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSection(item.topKey);
+                              }}
+                              aria-label={isExpanded ? "Collapse" : "Expand"}
+                              size="xs"
+                              variant="ghost"
+                              colorPalette="gray"
+                            >
+                              {isExpanded ? <MdExpandLess /> : <MdExpandMore />}
+                            </IconButton>
+                          )}
+
+                          {isSelected && !hasChildren && (
+                            <Icon boxSize={{ base: 3.5, sm: 4 }} color="green.600" _dark={{ color: "green.400" }} flexShrink={0}>
+                              <MdCheckCircle />
+                            </Icon>
+                          )}
+                        </Flex>
+
+                        {/* Second-level Keys (collapsible) */}
+                        {hasChildren && isExpanded && (
+                          <Box mt={2} ml={{ base: 4, sm: 6 }} pl={3} borderLeftWidth="2px" borderColor="gray.300" _dark={{ borderColor: "gray.700" }}>
+                            <VStack align="stretch" gap={2}>
+                              {item.secondLevelKeys.map((child) => {
+                                const shouldSplit = splitConfig[item.topKey]?.secondLevel?.[child.secondKey]?.split;
+                                
+                                return (
+                                  <Flex
+                                    key={child.id}
+                                    p={{ base: 2, sm: 2.5 }}
+                                    bg={shouldSplit ? "purple.50" : "gray.100"}
+                                    _dark={{ bg: shouldSplit ? "purple.900/20" : "gray.700" }}
+                                    borderWidth="1px"
+                                    borderColor={shouldSplit ? "purple.300" : "gray.300"}
+                                    _dark={{ borderColor: shouldSplit ? "purple.700" : "gray.600" }}
+                                    borderRadius="md"
+                                    align="center"
+                                    gap={2}
+                                    opacity={isSelected ? 1 : 0.5}
+                                    pointerEvents={isSelected ? "auto" : "none"}
+                                  >
+                                    <VStack align="flex-start" gap={0} flex={1} minW={0}>
+                                      <Flex align="center" gap={2} wrap="wrap">
+                                        <Text fontSize="2xs" fontWeight="600" color={shouldSplit ? "purple.700" : "gray.700"} _dark={{ color: shouldSplit ? "purple.300" : "gray.300" }}>
+                                          {child.secondKey}
+                                        </Text>
+                                        {child.isFirst && !shouldSplit && (
+                                          <Badge colorPalette="gray" fontSize="2xs">kept with parent</Badge>
+                                        )}
+                                      </Flex>
+                                      {shouldSplit && (
+                                        <Text fontSize="2xs" color="textMuted" noOfLines={1}>
+                                          → {child.fileName}
+                                        </Text>
+                                      )}
+                                    </VStack>
+
+                                    <Button
+                                      onClick={() => toggleSecondLevelSplit(item.topKey, child.secondKey)}
+                                      size="xs"
+                                      variant={shouldSplit ? "solid" : "outline"}
+                                      colorPalette={shouldSplit ? "purple" : "gray"}
+                                      fontSize="2xs"
+                                      px={2}
+                                      h="24px"
+                                    >
+                                      {shouldSplit ? 'Split' : 'Keep'}
+                                    </Button>
+                                  </Flex>
+                                );
+                              })}
+                            </VStack>
+                          </Box>
+                        )}
+                      </Box>
                     );
                   })}
                 </VStack>
               )}
             </Box>
 
+            {/* Remaining Sections Panel - only show when some files are unselected */}
+            {hasUnselected && (
+              <Box
+                p={{ base: 3, sm: 4 }}
+                bg="orange.50"
+                _dark={{ bg: "orange.900/30", borderColor: "orange.700" }}
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="orange.200"
+              >
+                <Flex align="start" gap={2} mb={3} direction={{ base: "column", sm: "row" }}>
+                  <Flex align="start" gap={2} flex={1}>
+                    <MdWarning size={20} color="var(--chakra-colors-orange-600)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <VStack align="stretch" gap={1} flex={1}>
+                      <Text fontSize={{ base: "sm", sm: "md" }} color="orange.700" _dark={{ color: "orange.300" }} fontWeight="600">
+                        {unselectedCount} section{unselectedCount > 1 ? 's' : ''} will not be split out
+                      </Text>
+                      <Text fontSize={{ base: "xs", sm: "sm" }} color="orange.600" _dark={{ color: "orange.400" }}>
+                        Choose where these sections should be placed:
+                      </Text>
+                    </VStack>
+                  </Flex>
+                </Flex>
+
+                <RadioCard.Root 
+                  value={remainingDestination} 
+                  onValueChange={(e) => setRemainingDestination(e.value)}
+                  colorPalette="orange"
+                  size="sm"
+                >
+                  <Stack gap={2}>
+                    <RadioCard.Item value="original">
+                      <RadioCard.ItemHiddenInput />
+                      <RadioCard.ItemControl>
+                        <RadioCard.ItemContent>
+                          <Flex direction="column" gap={1} flex={1}>
+                            <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="500" color="orange.800" _dark={{ color: "orange.200" }}>
+                              Keep in original file
+                            </Text>
+                            <Text fontSize="2xs" color="orange.600" _dark={{ color: "orange.400" }}>
+                              Creates: <Badge colorPalette="orange" fontSize="2xs">{file.name}</Badge>
+                            </Text>
+                          </Flex>
+                        </RadioCard.ItemContent>
+                        <RadioCard.ItemIndicator />
+                      </RadioCard.ItemControl>
+                    </RadioCard.Item>
+
+                    <Box>
+                      <RadioCard.Item value="custom">
+                        <RadioCard.ItemHiddenInput />
+                        <RadioCard.ItemControl>
+                          <RadioCard.ItemContent>
+                            <Flex direction="column" gap={1} flex={1}>
+                              <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="500" color="orange.800" _dark={{ color: "orange.200" }}>
+                                Create new file for remaining sections
+                              </Text>
+                              <Text fontSize="2xs" color="orange.600" _dark={{ color: "orange.400" }}>
+                                Specify a custom filename
+                              </Text>
+                            </Flex>
+                          </RadioCard.ItemContent>
+                          <RadioCard.ItemIndicator />
+                        </RadioCard.ItemControl>
+                      </RadioCard.Item>
+                      {remainingDestination === 'custom' && (
+                        <Box mt={2} pl={{ base: 2, sm: 3 }}>
+                          <Field.Root>
+                            <Input
+                              value={customFileName}
+                              onChange={(e) => setCustomFileName(e.target.value)}
+                              placeholder="config-remaining.yaml"
+                              size="sm"
+                              bg="white"
+                              _dark={{ bg: "gray.800" }}
+                              fontSize={{ base: "xs", sm: "sm" }}
+                              borderColor="orange.300"
+                              _focus={{ borderColor: "orange.500" }}
+                            />
+                          </Field.Root>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {selectedFilesList.length > 0 && (
+                      <Box>
+                        <RadioCard.Item value="merge">
+                          <RadioCard.ItemHiddenInput />
+                          <RadioCard.ItemControl>
+                            <RadioCard.ItemContent>
+                              <Flex direction="column" gap={1} flex={1}>
+                                <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="500" color="orange.800" _dark={{ color: "orange.200" }}>
+                                  Merge into selected file
+                                </Text>
+                                <Text fontSize="2xs" color="orange.600" _dark={{ color: "orange.400" }}>
+                                  Add to one of the split files
+                                </Text>
+                              </Flex>
+                            </RadioCard.ItemContent>
+                            <RadioCard.ItemIndicator />
+                          </RadioCard.ItemControl>
+                        </RadioCard.Item>
+                        {remainingDestination === 'merge' && (
+                          <Box mt={2} pl={{ base: 2, sm: 3 }}>
+                            <Field.Root>
+                              <Box
+                                as="select"
+                                bg="white"
+                                _dark={{ bg: "gray.800" }}
+                                borderWidth="1px"
+                                borderColor="orange.300"
+                                _focus={{ borderColor: "orange.500" }}
+                                borderRadius="md"
+                                px={2}
+                                py={1}
+                                fontSize={{ base: "xs", sm: "sm" }}
+                                w="full"
+                                cursor="pointer"
+                              >
+                                {selectedFilesList.map((f, idx) => (
+                                  <option key={idx} value={f.fileName}>
+                                    {f.fileName}
+                                  </option>
+                                ))}
+                              </Box>
+                            </Field.Root>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+                  </Stack>
+                </RadioCard.Root>
+              </Box>
+            )}
+
             {/* Summary */}
-            {filePreview.length > 0 && (
+            {hierarchicalPreview.length > 0 && (
               <Box>
                 <Heading size={{ base: "sm", sm: "md" }} mb={2} lineHeight="1.2" display="flex" alignItems="center" gap={2}>
                   <Icon color="primary" boxSize={4}><PiChartLineFill /></Icon> Split Summary
                 </Heading>
                 <Flex gap={2} wrap="wrap" fontSize={{ base: "xs", sm: "sm" }}>
                   <Badge colorPalette="blue">
-                    Files: {filePreview.length}
+                    Sections: {selectedTopLevelCount}/{totalTopLevelCount}
                   </Badge>
                   <Badge colorPalette="green">
-                    Sections: {splitAnalysis?.size || 0}
+                    Files: {filesCount}
                   </Badge>
+                  {hasUnselected && (
+                    <Badge colorPalette="orange">
+                      Unselected: {unselectedCount}
+                    </Badge>
+                  )}
                   <Badge colorPalette="purple">
                     Original: {file.name}
                   </Badge>
                 </Flex>
                 <Text fontSize="xs" color="textMuted" mt={2}>
-                  Split files will be added to your current file list
+                  {selectedTopLevelCount === totalTopLevelCount 
+                    ? `All sections will be split into ${filesCount} file${filesCount !== 1 ? 's' : ''}` 
+                    : `${selectedTopLevelCount} section${selectedTopLevelCount !== 1 ? 's' : ''} will be split into ${filesCount} file${filesCount !== 1 ? 's' : ''}`
+                  }
                 </Text>
               </Box>
             )}
@@ -393,6 +856,7 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
           gap={{ base: 2, sm: 3 }}
           justify="flex-end"
           flexShrink={0}
+          flexWrap={{ base: "wrap", sm: "nowrap" }}
         >
           <Button
             onClick={onClose}
@@ -402,6 +866,8 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
             size={{ base: "sm", sm: "md" }}
             fontSize={{ base: "xs", sm: "sm" }}
             isDisabled={splitting}
+            flex={{ base: "1", sm: "0" }}
+            minW={{ base: "auto", sm: "80px" }}
           >
             Cancel
           </Button>
@@ -412,11 +878,13 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
             _hover={{ bg: "primaryHover" }}
             size={{ base: "sm", sm: "md" }}
             fontSize={{ base: "xs", sm: "sm" }}
-            isDisabled={!filePreview || filePreview.length === 0 || splitting}
+            isDisabled={selectedTopLevelCount === 0 || splitting}
             loading={splitting}
+            flex={{ base: "1", sm: "0" }}
+            minW={{ base: "auto", sm: "100px" }}
           >
-            <Icon mr={1}><PiArrowsSplitFill /></Icon>
-            {splitting ? 'Splitting...' : 'Split Config'}
+            <Icon mr={1} display={{ base: "none", sm: "inline-block" }}><PiArrowsSplitFill /></Icon>
+            {splitting ? 'Splitting...' : `Split ${filesCount}`}
           </Button>
         </Flex>
       </Flex>

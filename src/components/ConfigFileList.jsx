@@ -7,6 +7,7 @@ import FileViewerModal from './FileViewerModal';
 import YamlEditorModal from './YamlEditorModal';
 import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
+import ServerFolderBrowser from './ServerFolderBrowser';
 import { getSetting } from '../utils/settingsManager';
 import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
 
@@ -29,6 +30,7 @@ const ConfigFileList = forwardRef((props, ref) => {
   const [modalFileName, setModalFileName] = useState('');
   const [modalFileContent, setModalFileContent] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [showFolderBrowser, setShowFolderBrowser] = useState(false);
   const [editorFileName, setEditorFileName] = useState('');
   const [editorFileContent, setEditorFileContent] = useState('');
   const [editorFilePath, setEditorFilePath] = useState('');
@@ -427,12 +429,14 @@ const ConfigFileList = forwardRef((props, ref) => {
     }
   }, [configFiles, selectedDirectory, showInfo, showSuccess, showError, scanDirectory]);
 
-  const handleBrowseDirectory = async () => {
-    const directoryPath = prompt('Enter the full path to your configuration directory:', defaultPath || '/home/user/Documents/config');
-    
-    if (directoryPath && directoryPath.trim()) {
-      showInfo(`Scanning directory: ${directoryPath}`, 3000);
-      await scanDirectory(directoryPath.trim());
+  const handleBrowseDirectory = () => {
+    setShowFolderBrowser(true);
+  };
+
+  const handleFolderSelected = async (folderPath) => {
+    if (folderPath && folderPath.trim()) {
+      showInfo(`Scanning directory: ${folderPath}`, 3000);
+      await scanDirectory(folderPath.trim());
     }
   };
 
@@ -823,6 +827,13 @@ const ConfigFileList = forwardRef((props, ref) => {
         fileContent={editorFileContent}
         filePath={editorFilePath}
         onSave={handleSaveFile}
+      />
+
+      <ServerFolderBrowser
+        isOpen={showFolderBrowser}
+        onClose={() => setShowFolderBrowser(false)}
+        onFolderSelected={handleFolderSelected}
+        initialPath={defaultPath}
       />
     </Box>
   );
