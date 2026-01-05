@@ -74,32 +74,34 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
             onClose();
           } catch (err) {
             if (err.name === 'AbortError') {
-              setError('Download cancelled');
+              setError('Folder selection cancelled');
+              setDownloading(false);
+              return;
             } else {
-              throw err;
+              console.error('File System Access API error:', err);
+              setError(`Error using folder picker: ${err.message}. Files will be downloaded to default folder instead.`);
+              // Fall through to standard download method below
             }
           }
-        } else {
-          // Fallback to standard download (one by one to downloads folder)
-          setError('Note: Folder selection not available. Files will be downloaded to your browser\'s default Downloads folder. File System Access API is not supported in this browser/environment.');
-          for (const index of selectedFiles) {
-            const file = files[index];
-            const blob = new Blob([file.content], { type: 'text/yaml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = file.name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            // Small delay between downloads
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-          // Don't close immediately so user sees the message
-          setDownloading(false);
-          return;
         }
+        
+        // Fallback to standard download (if API not available or if there was an error)
+        // This is the normal browser download to the Downloads folder
+        for (const index of selectedFiles) {
+          const file = files[index];
+          const blob = new Blob([file.content], { type: 'text/yaml' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = file.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          // Small delay between downloads
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        onClose();
       } else {
         // Save to server
         const results = [];
