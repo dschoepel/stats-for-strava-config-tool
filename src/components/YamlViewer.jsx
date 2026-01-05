@@ -211,7 +211,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             minW={{ base: "auto", sm: "auto" }}
           >
             <Icon fontSize={{ base: "xs", sm: "sm" }}><MdDownload /></Icon>
-            <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Download All</Text>
+            <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Download</Text>
           </Button>
           <Button
             onClick={() => setShowSplitModal(true)}
