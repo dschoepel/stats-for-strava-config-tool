@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Flex, VStack, Heading, Text, Button, IconButton, Badge, Checkbox, Icon } from '@chakra-ui/react';
-import { MdClose, MdCheckCircle, MdDownload, MdFolder } from 'react-icons/md';
+import { Box, Flex, VStack, Heading, Text, Button, IconButton, Badge, Checkbox, Icon, RadioCard } from '@chakra-ui/react';
+import { MdClose, MdCheckCircle, MdDownload, MdFolder, MdComputer, MdStorage, MdEdit } from 'react-icons/md';
 import { PiCircleFill, PiFileFill } from 'react-icons/pi';
 import { Tooltip } from './Tooltip';
 import { getSetting } from '../utils/settingsManager';
+import ServerFolderBrowser from './ServerFolderBrowser';
 
 const DownloadFilesModal = ({ files, isOpen, onClose }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
   const [savePath, setSavePath] = useState('');
+  const [destination, setDestination] = useState('pc');
+  const [showFolderBrowser, setShowFolderBrowser] = useState(false);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -17,6 +20,7 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
       // Select all files by default
       setSelectedFiles(new Set(files.map((_, index) => index)));
       setError(null);
+      setDestination('pc');
       
       // Load save path from settings
       const defaultPath = getSetting('files.defaultPath', '~/Documents/strava-config-tool/');
@@ -54,36 +58,76 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
     setError(null);
 
     try {
-      const results = [];
-      
-      // Save each selected file via API
-      for (const index of selectedFiles) {
-        const file = files[index];
-        
-        // Construct full file path
-        const cleanPath = savePath.replace(/\/$/, '');
-        const fullPath = `${cleanPath}/${file.name}`;
-        
-        const response = await fetch('/api/save-file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            path: fullPath, 
-            content: file.content 
-          })
-        });
-        
-        const result = await response.json();
-        results.push({ filename: file.name, success: result.success, error: result.error });
-      }
-      
-      // Check for failures
-      const failures = results.filter(r => !r.success);
-      if (failures.length > 0) {
-        setError(`Failed to save ${failures.length} file(s): ${failures.map(f => f.filename).join(', ')}`);
+      if (destination === 'pc') {
+        // Download to PC - Use File System Access API if available
+        if ('showDirectoryPicker' in window) {
+          try {
+            const dirHandle = await window.showDirectoryPicker();
+            
+            for (const index of selectedFiles) {
+              const file = files[index];
+              const fileHandle = await dirHandle.getFileHandle(file.name, { create: true });
+              const writable = await fileHandle.createWritable();
+              await writable.write(file.content);
+              await writable.close();
+            }
+            onClose();
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              setError('Download cancelled');
+            } else {
+              throw err;
+            }
+          }
+        } else {
+          // Fallback to standard download (one by one to downloads folder)
+          for (const index of selectedFiles) {
+            const file = files[index];
+            const blob = new Blob([file.content], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            // Small delay between downloads
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          onClose();
+        }
       } else {
-        // Close modal on success
-        onClose();
+        // Save to server
+        const results = [];
+        
+        for (const index of selectedFiles) {
+          const file = files[index];
+          
+          // Construct full file path
+          const cleanPath = savePath.replace(/\/$/, '');
+          const fullPath = `${cleanPath}/${file.name}`;
+          
+          const response = await fetch('/api/save-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              path: fullPath, 
+              content: file.content 
+            })
+          });
+          
+          const result = await response.json();
+          results.push({ filename: file.name, success: result.success, error: result.error });
+        }
+        
+        // Check for failures
+        const failures = results.filter(r => !r.success);
+        if (failures.length > 0) {
+          setError(`Failed to save ${failures.length} file(s): ${failures.map(f => f.filename).join(', ')}`);
+        } else {
+          onClose();
+        }
       }
     } catch (err) {
       console.error('Error saving files:', err);
@@ -144,10 +188,10 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
               alignItems="center"
               gap={2}
             >
-              <Icon color="primary" boxSize={5}><MdDownload /></Icon> Save Files
+              <Icon color="primary" boxSize={5}><MdDownload /></Icon> Download Files
             </Heading>
             <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
-              Select files to save to server
+              Select files and destination
             </Text>
           </VStack>
           <IconButton
@@ -168,7 +212,49 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
         {/* Body */}
         <Box flex={1} overflow="auto" p={{ base: 3, sm: 4 }}>
           <VStack align="stretch" gap={{ base: 4, sm: 5 }}>
-            {/* Save Path Info */}
+            {/* Destination Selection */}
+            <Box>
+              <Text fontSize="sm" fontWeight="600" mb={2} color="text">
+                Download Destination
+              </Text>
+              <RadioCard.Root value={destination} onValueChange={(e) => setDestination(e.value)}>
+                <Flex gap={3} direction={{ base: "column", sm: "row" }}>
+                  <RadioCard.Item value="pc" flex={1}>
+                    <RadioCard.ItemHiddenInput />
+                    <RadioCard.ItemControl>
+                      <RadioCard.ItemContent>
+                        <Flex align="center" gap={2} flex={1}>
+                          <Icon fontSize="xl" color="blue.500"><MdComputer /></Icon>
+                          <Box>
+                            <Text fontSize="sm" fontWeight="600">Download to PC</Text>
+                            <Text fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>Your computer's downloads</Text>
+                          </Box>
+                        </Flex>
+                      </RadioCard.ItemContent>
+                      <RadioCard.ItemIndicator />
+                    </RadioCard.ItemControl>
+                  </RadioCard.Item>
+                  <RadioCard.Item value="server" flex={1}>
+                    <RadioCard.ItemHiddenInput />
+                    <RadioCard.ItemControl>
+                      <RadioCard.ItemContent>
+                        <Flex align="center" gap={2} flex={1}>
+                          <Icon fontSize="xl" color="green.500"><MdStorage /></Icon>
+                          <Box>
+                            <Text fontSize="sm" fontWeight="600">Save to Server</Text>
+                            <Text fontSize="xs" color="gray.600" _dark={{ color: "gray.400" }}>Docker container filesystem</Text>
+                          </Box>
+                        </Flex>
+                      </RadioCard.ItemContent>
+                      <RadioCard.ItemIndicator />
+                    </RadioCard.ItemControl>
+                  </RadioCard.Item>
+                </Flex>
+              </RadioCard.Root>
+            </Box>
+
+            {/* Save Path Info - Only show for server */}
+            {destination === 'server' && (
             <Box
               p={{ base: 3, sm: 4 }}
               bg="blue.50"
@@ -181,19 +267,31 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
                 <Flex align="start" gap={2}>
                   <Icon boxSize={5} color="blue.600" _dark={{ color: "blue.400" }}><MdFolder /></Icon>
                   <Box flex={1}>
-                    <Text fontSize={{ base: "xs", sm: "sm" }} color="blue.700" _dark={{ color: "blue.300" }} mb={1}>
-                      Files will be saved to:
-                    </Text>
+                    <Flex justify="space-between" align="center" mb={1}>
+                      <Text fontSize={{ base: "xs", sm: "sm" }} color="blue.700" _dark={{ color: "blue.300" }}>
+                        Files will be saved to:
+                      </Text>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        colorPalette="blue"
+                        onClick={() => setShowFolderBrowser(true)}
+                        leftIcon={<MdEdit />}
+                      >
+                        Browse
+                      </Button>
+                    </Flex>
                     <Text fontSize="sm" fontFamily="mono" color="blue.800" _dark={{ color: "blue.200" }} fontWeight="medium">
                       {savePath}
                     </Text>
                   </Box>
                 </Flex>
                 <Text fontSize="xs" color="blue.600" _dark={{ color: "blue.400" }}>
-                  Change this path in Settings → Files → Default file path
+                  Click Browse to select a different folder, or change default in Settings → Files
                 </Text>
               </VStack>
             </Box>
+            )}
 
             {/* Error Display */}
             {error && (
@@ -351,17 +449,31 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
             onClick={handleSaveFiles}
             bg="primary"
             color="white"
-            _hover={{ bg: "primaryHover" }}
+            _hover={{ bg: selectedFiles.size === 0 ? "primary" : "primaryHover" }}
+            _disabled={{ 
+              opacity: 0.5, 
+              cursor: "not-allowed",
+              bg: "gray.400",
+              _dark: { bg: "gray.600" }
+            }}
             size={{ base: "sm", sm: "md" }}
             fontSize={{ base: "xs", sm: "sm" }}
-            isDisabled={selectedFiles.size === 0 || downloading}
+            disabled={selectedFiles.size === 0 || downloading}
             loading={downloading}
           >
             <Icon mr={1}><MdDownload /></Icon>
-            {downloading ? 'Saving...' : 'Save Files'}
+            {downloading ? (destination === 'pc' ? 'Downloading...' : 'Saving...') : (destination === 'pc' ? 'Download Files' : 'Save Files')}
           </Button>
         </Flex>
       </Flex>
+      
+      {/* Server Folder Browser */}
+      <ServerFolderBrowser
+        isOpen={showFolderBrowser}
+        onClose={() => setShowFolderBrowser(false)}
+        onFolderSelected={(folderPath) => setSavePath(folderPath)}
+        initialPath={savePath}
+      />
     </Flex>
   );
 };

@@ -60,9 +60,12 @@ function generateHeader(topKey, secondKey, obj) {
 /**
  * Split a master config file into separate section files with smart 2nd-level splitting
  * @param {string} masterConfigContent - The content of the master config file
+ * @param {Object} splitConfiguration - Configuration for hierarchical splitting
+ * @param {Object} splitConfiguration.sections - Object mapping top-level keys to their config
+ * @param {Object} splitConfiguration.remainingConfig - Configuration for unselected sections
  * @returns {Object} - { success, files, errors }
  */
-export async function splitConfigFile(masterConfigContent) {
+export async function splitConfigFile(masterConfigContent, splitConfiguration = null) {
   try {
     const YAML = await import('yaml');
     const parsedData = YAML.parse(masterConfigContent);
@@ -77,6 +80,12 @@ export async function splitConfigFile(masterConfigContent) {
     
     const files = [];
     const errors = [];
+    const remainingSections = {}; // Track sections not included in split
+    
+    // Extract split configuration
+    const sections = splitConfiguration?.sections || null;
+    const remainingConfig = splitConfiguration?.remainingConfig || null;
+    const isHierarchical = sections !== null;
     
     // Process each top-level section
     for (const [topKey, topValue] of Object.entries(parsedData)) {
@@ -91,15 +100,25 @@ export async function splitConfigFile(masterConfigContent) {
       const complexKeys = secondEntries.filter(([_, v]) => isComplex(v));
       const simpleKeys = secondEntries.filter(([_, v]) => !isComplex(v));
       
-      // Determine if we should split
-      const shouldSplit = 
-        complexKeys.length > 1 || 
-        (complexKeys.length === 1 && simpleKeys.length > 0);
+      //---------------------------------------------
+      // Check if this section is selected (hierarchical mode)
+      //---------------------------------------------
+      const sectionConfig = isHierarchical ? sections[topKey] : null;
+      const isTopKeyIncluded = !isHierarchical || sectionConfig?.include;
+      
+      if (!isTopKeyIncluded) {
+        // Store entire section for remaining
+        remainingSections[topKey] = topValue;
+        continue;
+      }
       
       //---------------------------------------------
-      // Case 1: Do NOT split (metrics, daemon, or simple sections)
+      // Determine split strategy for this section
       //---------------------------------------------
-      if (!shouldSplit) {
+      const hasComplexKeys = complexKeys.length > 0;
+      
+      if (!hasComplexKeys) {
+        // Simple section - create one file with all content
         const header = generateHeader(topKey, null, topValue);
         const yamlBody = YAML.stringify(
           { [topKey]: topValue },
@@ -115,34 +134,50 @@ export async function splitConfigFile(masterConfigContent) {
       }
       
       //---------------------------------------------
-      // Case 2: Split — keep first complex key with parent
+      // Complex section - handle second-level splitting
       //---------------------------------------------
-      const [firstComplexKey, firstComplexValue] = complexKeys[0];
+      const parentContent = { ...Object.fromEntries(simpleKeys) };
+      const splitChildren = [];
       
-      // Parent file contains simple keys + first complex key
-      const parentObj = {
-        [topKey]: {
-          ...Object.fromEntries(simpleKeys),
-          [firstComplexKey]: firstComplexValue
+      for (const [secondKey, secondValue] of complexKeys) {
+        const shouldSplit = isHierarchical 
+          ? sectionConfig?.secondLevel?.[secondKey]?.split 
+          : complexKeys.indexOf([secondKey, secondValue]) > 0; // Default: first stays, rest split
+        
+        if (shouldSplit) {
+          // Split this child into separate file
+          splitChildren.push({ secondKey, secondValue });
+        } else {
+          // Keep with parent
+          parentContent[secondKey] = secondValue;
         }
-      };
+      }
       
-      const parentHeader = generateHeader(topKey, null, parentObj[topKey]);
-      const parentYaml = YAML.stringify(
-        parentObj,
-        { indent: 2, lineWidth: -1, noRefs: true }
-      );
+      // Create parent file with simple keys + non-split children
+      if (Object.keys(parentContent).length > 0) {
+        const parentObj = { [topKey]: parentContent };
+        const parentHeader = generateHeader(topKey, null, parentContent);
+        const parentYaml = YAML.stringify(
+          parentObj,
+          { indent: 2, lineWidth: -1, noRefs: true }
+        );
+        
+        const parentSections = [topKey];
+        Object.keys(parentContent).forEach(key => {
+          if (complexKeys.find(([k]) => k === key)) {
+            parentSections.push(`${topKey}.${key}`);
+          }
+        });
+        
+        files.push({
+          fileName: topFileName,
+          content: parentHeader + parentYaml,
+          sections: parentSections
+        });
+      }
       
-      files.push({
-        fileName: topFileName,
-        content: parentHeader + parentYaml,
-        sections: [topKey, `${topKey}.${firstComplexKey}`]
-      });
-      
-      //---------------------------------------------
-      // Split remaining complex keys into separate files
-      //---------------------------------------------
-      for (const [secondKey, secondValue] of complexKeys.slice(1)) {
+      // Create separate files for split children
+      for (const { secondKey, secondValue } of splitChildren) {
         const filename = `config-${topKey}-${secondKey}.yaml`;
         const obj = { [topKey]: { [secondKey]: secondValue } };
         const header = generateHeader(topKey, secondKey, secondValue);
@@ -156,6 +191,70 @@ export async function splitConfigFile(masterConfigContent) {
           content: header + yamlBody,
           sections: [`${topKey}.${secondKey}`]
         });
+      }
+    }
+    
+    //---------------------------------------------
+    // Handle remaining sections based on configuration
+    //---------------------------------------------
+    if (isHierarchical && Object.keys(remainingSections).length > 0 && remainingConfig) {
+      const { destination, customFileName, mergeIntoFile } = remainingConfig;
+      
+      if (destination === 'original') {
+        // Keep remaining sections in original file structure
+        const header = 
+          "#===============================================================================#\n" +
+          "# Configuration File (Unselected Sections)\n" +
+          "#===============================================================================#\n" +
+          "# This file contains sections that were not split out\n" +
+          "#===============================================================================#\n\n";
+        
+        const yamlBody = YAML.stringify(
+          remainingSections,
+          { indent: 2, lineWidth: -1, noRefs: true }
+        );
+        
+        files.push({
+          fileName: 'config-original-remaining.yaml',
+          content: header + yamlBody,
+          sections: Object.keys(remainingSections)
+        });
+      } else if (destination === 'custom' && customFileName) {
+        // Create custom file for remaining sections
+        const header = 
+          "#===============================================================================#\n" +
+          "# Configuration File (Remaining Sections)\n" +
+          "#===============================================================================#\n" +
+          "# This file contains sections that were not split out\n" +
+          "#===============================================================================#\n\n";
+        
+        const yamlBody = YAML.stringify(
+          remainingSections,
+          { indent: 2, lineWidth: -1, noRefs: true }
+        );
+        
+        files.push({
+          fileName: customFileName,
+          content: header + yamlBody,
+          sections: Object.keys(remainingSections)
+        });
+      } else if (destination === 'merge' && mergeIntoFile) {
+        // Merge remaining sections into specified file
+        const targetFile = files.find(f => f.fileName === mergeIntoFile);
+        if (targetFile) {
+          // Parse existing file and merge
+          const existingData = YAML.parse(targetFile.content.split('\n').filter(l => !l.startsWith('#')).join('\n'));
+          const mergedData = { ...existingData, ...remainingSections };
+          
+          const header = targetFile.content.split('\n').filter(l => l.startsWith('#')).join('\n') + '\n\n';
+          const yamlBody = YAML.stringify(
+            mergedData,
+            { indent: 2, lineWidth: -1, noRefs: true }
+          );
+          
+          targetFile.content = header + yamlBody;
+          targetFile.sections.push(...Object.keys(remainingSections));
+        }
       }
     }
     

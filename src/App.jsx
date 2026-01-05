@@ -210,16 +210,16 @@ function App() {
         title: 'Unsaved Changes',
         message: 'You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?',
         onConfirm: () => {
-          setHasUnsavedChanges(false);
           setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
-          // Proceed with navigation using navigateTo
-          navigateTo(page, parentPage, true);
+          setHasUnsavedChanges(false);
+          // Proceed with navigation directly
+          navigateTo(page, parentPage);
         }
       });
       return;
     }
     
-    navigateTo(page, parentPage, skipUnsavedCheck);
+    navigateTo(page, parentPage);
   }
 
   const handleBreadcrumbClick = (index) => {
@@ -230,8 +230,8 @@ function App() {
         title: 'Unsaved Changes',
         message: 'You have unsaved changes. These changes will be lost if you leave without saving.\n\nAre you sure you want to leave?',
         onConfirm: () => {
-          setHasUnsavedChanges(false);
           setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          setHasUnsavedChanges(false);
           // Proceed with breadcrumb navigation
           navigateToBreadcrumb(index);
         }

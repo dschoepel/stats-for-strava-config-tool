@@ -30,11 +30,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
 
   const currentFile = allFiles[selectedFileIndex];
   
-  // Custom download and copy handlers for the current file
-  const handleDownloadFile = () => {
-    handleDownload(currentFile);
-  };
-
+  // Custom copy and edit handlers for the current file
   const handleCopyFile = async () => {
     await copyToClipboard(currentFile.content);
   };
@@ -63,18 +59,6 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
   };
 
 
-
-  const handleDownload = (file) => {
-    const blob = new Blob([file.content], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   const copyToClipboard = async (content) => {
     try {
@@ -215,7 +199,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
           </Button>
           <Button
             onClick={() => setShowDownloadModal(true)}
-            title="Download selected files"
+            title="Download all files"
             size={{ base: "xs", sm: "sm" }}
             variant="outline"
             colorPalette="gray"
@@ -227,7 +211,7 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
             minW={{ base: "auto", sm: "auto" }}
           >
             <Icon fontSize={{ base: "xs", sm: "sm" }}><MdDownload /></Icon>
-            <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Download</Text>
+            <Text ml={0.5} display={{ base: "none", sm: "inline" }}>Download All</Text>
           </Button>
           <Button
             onClick={() => setShowSplitModal(true)}
@@ -367,7 +351,6 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
           lastModified={currentFile.lastModified}
           showFileInfo={true}
           showActions={true}
-          onDownload={handleDownloadFile}
           onCopy={handleCopyFile}
           onEdit={handleEditFile}
           className="page-viewer"
