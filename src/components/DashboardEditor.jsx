@@ -163,7 +163,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     if (!widgetDef) return;
 
     const newWidget = {
-      name: widgetName,
+      widget: widgetName,
       width: 100,
       enabled: true
     };
@@ -177,7 +177,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   };
 
   const getAvailableWidgets = () => {
-    const widgetsInLayout = layout.map(w => w.name);
+    const widgetsInLayout = layout.map(w => w.widget);
     
     return Object.values(widgetDefinitions).filter(def => {
       if (def.allowMultiple) return true;

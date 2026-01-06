@@ -27,8 +27,8 @@ const DashboardWidgetItem = ({
   onDragOver,
   onDragEnd
 }) => {
-  const widgetDef = widgetDefinitions[widget.name];
-  const displayName = widgetDef?.displayName || widget.name;
+  const widgetDef = widgetDefinitions[widget.widget];
+  const displayName = widgetDef?.displayName || widget.widget;
   const description = widgetDef?.description || '';
 
   return (
@@ -321,7 +321,7 @@ const DashboardWidgetItem = ({
 
 DashboardWidgetItem.propTypes = {
   widget: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+    widget: PropTypes.string.isRequired,
     enabled: PropTypes.bool,
     width: PropTypes.string,
     config: PropTypes.object
