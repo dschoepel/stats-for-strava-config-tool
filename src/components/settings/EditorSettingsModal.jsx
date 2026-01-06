@@ -112,7 +112,7 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Enable word wrap</Switch.Label>
@@ -127,7 +127,7 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Show line numbers</Switch.Label>
@@ -142,7 +142,7 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Highlight search matches</Switch.Label>
@@ -276,7 +276,7 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Enable word wrap</Switch.Label>
@@ -291,7 +291,7 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Show line numbers</Switch.Label>
@@ -306,7 +306,7 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Highlight search matches</Switch.Label>
@@ -358,3 +358,5 @@ const EditorSettingsModal = ({ isOpen, onClose, embedded = false }) => {
 };
 
 export default EditorSettingsModal;
+
+

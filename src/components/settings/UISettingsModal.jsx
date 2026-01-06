@@ -101,7 +101,7 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Start with sidebar collapsed</Switch.Label>
@@ -116,7 +116,7 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Auto-save changes</Switch.Label>
@@ -131,7 +131,7 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Show line numbers in YAML viewer</Switch.Label>
@@ -252,7 +252,7 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Start with sidebar collapsed</Switch.Label>
@@ -267,7 +267,7 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Auto-save changes</Switch.Label>
@@ -282,7 +282,7 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Show line numbers in YAML viewer</Switch.Label>
@@ -334,3 +334,5 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
 };
 
 export default UISettingsModal;
+
+

@@ -206,3 +206,5 @@ const PerformanceSettingsModal = ({ isOpen, onClose }) => {
 };
 
 export default PerformanceSettingsModal;
+
+
