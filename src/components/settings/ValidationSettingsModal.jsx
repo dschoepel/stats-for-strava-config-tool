@@ -254,3 +254,4 @@ const ValidationSettingsModal = ({ isOpen, onClose, embedded = false }) => {
 };
 
 export default ValidationSettingsModal;
+

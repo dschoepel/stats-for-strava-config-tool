@@ -220,7 +220,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Create automatic backups</Switch.Label>
@@ -235,7 +235,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Validate YAML syntax on file load</Switch.Label>
@@ -379,7 +379,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Create automatic backups</Switch.Label>
@@ -394,7 +394,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               colorPalette="blue"
             >
               <Switch.HiddenInput />
-              <Switch.Control>
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
                 <Switch.Thumb />
               </Switch.Control>
               <Switch.Label>Validate YAML syntax on file load</Switch.Label>
@@ -446,3 +446,4 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
 };
 
 export default FilesSettingsModal;
+
