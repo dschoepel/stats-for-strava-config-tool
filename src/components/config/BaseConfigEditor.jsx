@@ -302,16 +302,32 @@ const BaseConfigEditor = ({
   return (
     <Box as="form" onSubmit={handleSubmit} p={6} bg="cardBg" borderRadius="md" boxShadow="md" border="1px solid" borderColor="border">
       <VStack align="stretch" gap={6}>
-        <Box>
-          <Heading as="h3" size="lg" color="text">
-            {schema?.title || sectionName}
-          </Heading>
-          {schema?.description && (
-            <Text color="textMuted" mt={2}>
-              {schema.description}
-            </Text>
-          )}
-        </Box>
+        <Flex justify="space-between" align="flex-start" gap={4} flexWrap="wrap">
+          <Box flex="1" minW="200px">
+            <Heading as="h3" size="lg" color="text">
+              {schema?.title || sectionName}
+            </Heading>
+            {schema?.description && (
+              <Text color="textMuted" mt={2}>
+                {schema.description}
+              </Text>
+            )}
+          </Box>
+          <Button
+            type="submit"
+            disabled={isLoading || !isDirty}
+            isLoading={isLoading}
+            bg="primary"
+            color="white"
+            _hover={{ bg: "primaryHover" }}
+            border={isDirty ? "3px solid" : "none"}
+            borderColor={isDirty ? "primaryHover" : "transparent"}
+            boxShadow={isDirty ? { base: "0 0 8px rgba(252, 82, 0, 0.5)", _dark: "0 0 12px rgba(255, 127, 63, 0.8)" } : "none"}
+            flexShrink={0}
+          >
+            {isLoading ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
+          </Button>
+        </Flex>
 
         <VStack align="stretch" gap={4}>
           {children({

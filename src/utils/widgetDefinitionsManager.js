@@ -4,6 +4,7 @@
  */
 
 import { getSetting } from './settingsManager.js';
+import * as YAML from 'yaml';
 
 const WIDGET_DEFINITIONS_FILENAME = 'widget-definitions.yaml';
 
@@ -100,77 +101,6 @@ function toYAML(definitions) {
 }
 
 /**
- * Simple YAML parser for config values
- * Handles strings, numbers, booleans, arrays, and nested objects
- */
-function parseSimpleYAML(yamlText) {
-  const lines = yamlText.split('\n');
-  const result = {};
-  const stack = [{ obj: result, indent: -1 }];
-  
-  for (const line of lines) {
-    if (!line.trim() || line.trim().startsWith('#')) continue;
-    
-    const indent = line.search(/\S/);
-    const trimmed = line.trim();
-    
-    // Handle array items
-    if (trimmed.startsWith('- ')) {
-      const value = trimmed.substring(2).trim();
-      const parent = stack[stack.length - 1];
-      if (!Array.isArray(parent.currentArray)) {
-        parent.currentArray = [];
-        parent.obj[parent.currentKey] = parent.currentArray;
-      }
-      parent.currentArray.push(parseValue(value));
-      continue;
-    }
-    
-    // Handle key: value
-    const match = trimmed.match(/^([^:]+):\s*(.*)$/);
-    if (match) {
-      const [, key, value] = match;
-      
-      // Pop stack to correct level
-      while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
-        stack.pop();
-      }
-      
-      const parent = stack[stack.length - 1];
-      
-      if (value === '' || value === '[]') {
-        // Empty value or empty array - might have children or be empty array
-        if (value === '[]') {
-          parent.obj[key] = [];
-        } else {
-          parent.obj[key] = {};
-          stack.push({ obj: parent.obj[key], indent, currentKey: key });
-        }
-      } else {
-        // Has value
-        parent.obj[key] = parseValue(value);
-      }
-      
-      parent.currentKey = key;
-      parent.currentArray = null;
-    }
-  }
-  
-  return result;
-}
-
-function parseValue(value) {
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  if (value === 'null') return null;
-  if (value === '[]') return [];
-  if (value.startsWith('"') && value.endsWith('"')) return value.slice(1, -1);
-  if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1);
-  if (!isNaN(value) && value !== '') return Number(value);
-  return value;
-}
-
-/**
  * Parse YAML string to widget definitions object
  * Uses a simple approach that handles our widget definition structure
  * @param {string} yamlContent - YAML content
@@ -206,7 +136,7 @@ function fromYAML(yamlContent) {
           // Parse the defaultConfig YAML block
           try {
             const configYaml = defaultConfigLines.join('\n');
-            currentWidget.defaultConfig = parseSimpleYAML(configYaml);
+            currentWidget.defaultConfig = YAML.parse(configYaml);
             console.log(`Set defaultConfig for ${currentKey}:`, currentWidget.defaultConfig);
           } catch (e) {
             console.warn('Failed to parse defaultConfig for', currentKey, e);
@@ -259,7 +189,7 @@ function fromYAML(yamlContent) {
         if (inDefaultConfig && defaultConfigLines.length > 0) {
           try {
             const configYaml = defaultConfigLines.join('\n');
-            currentWidget.defaultConfig = parseSimpleYAML(configYaml);
+            currentWidget.defaultConfig = YAML.parse(configYaml);
             console.log(`Set defaultConfig for ${currentKey}:`, currentWidget.defaultConfig);
           } catch (e) {
             console.warn('Failed to parse defaultConfig for', currentKey, e);
@@ -313,7 +243,7 @@ function fromYAML(yamlContent) {
     if (inDefaultConfig && defaultConfigLines.length > 0) {
       try {
         const configYaml = defaultConfigLines.join('\n');
-        currentWidget.defaultConfig = parseSimpleYAML(configYaml);
+        currentWidget.defaultConfig = YAML.parse(configYaml);
         console.log(`Set defaultConfig for ${currentKey}:`, currentWidget.defaultConfig);
       } catch (e) {
         console.warn('Failed to parse defaultConfig for', currentKey, e);
@@ -504,9 +434,7 @@ metricsDisplayOrder: ['distance', 'movingTime', 'elevation']`,
     allowMultiple: true,
     hasConfig: true,
     configTemplate: `sportTypesToInclude: []`,
-    defaultConfig: {
-      sportTypesToInclude: []
-    }
+    defaultConfig: {sportTypesToInclude: []}
   }
 };
 
