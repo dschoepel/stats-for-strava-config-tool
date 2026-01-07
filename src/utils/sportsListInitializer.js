@@ -11,7 +11,10 @@ const initialSportsList = {
     'Ride', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'VirtualRide', 'Velomobile'
   ],
   Running: [
-    'Run', 'TrailRun', 'VirtualRun', 'Walking', 'Walk', 'Hike'
+    'Run', 'TrailRun', 'VirtualRun'
+  ],
+  Walking: [
+     'Walk', 'Hike'
   ],
   'Water sports': [
     'Canoeing', 'Kayaking', 'Kitesurf', 'Rowing', 'StandUpPaddling', 'Surfing', 'Swim', 'Windsurf'
