@@ -107,8 +107,8 @@ async function readDashboardWidgetsFromConfig(configFilePath) {
       
       if (!inLayout) continue;
       
-      // Check for widget list item (- name: widgetName)
-      const widgetMatch = line.match(/^\s{4}- name:\s*(\S+)/);
+      // Check for widget list item (- widget: widgetName)
+      const widgetMatch = line.match(/^\s{4}- widget:\s*(\S+)/);
       if (widgetMatch) {
         // Save previous widget
         if (currentWidget) {
@@ -117,7 +117,7 @@ async function readDashboardWidgetsFromConfig(configFilePath) {
         
         // Start new widget
         currentWidget = {
-          name: widgetMatch[1],
+          widget: widgetMatch[1],
           config: {}
         };
         inConfig = false;
@@ -193,10 +193,10 @@ async function syncWidgetDefinitionsWithConfig(configWidgets) {
     
     // Update definitions based on config widgets
     for (const configWidget of configWidgets) {
-      const widgetDef = definitions[configWidget.name];
+      const widgetDef = definitions[configWidget.widget];
       
       if (!widgetDef) {
-        console.warn(`Widget ${configWidget.name} found in config but not in definitions`);
+        console.warn(`Widget ${configWidget.widget} found in config but not in definitions`);
         continue;
       }
       
@@ -208,7 +208,7 @@ async function syncWidgetDefinitionsWithConfig(configWidgets) {
           ...configWidget.config
         };
         hasChanges = true;
-        console.log(`Updated defaultConfig for ${configWidget.name}:`, widgetDef.defaultConfig);
+        console.log(`Updated defaultConfig for ${configWidget.widget}:`, widgetDef.defaultConfig);
       }
     }
     
