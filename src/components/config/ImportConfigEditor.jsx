@@ -21,7 +21,7 @@ import { MdAdd, MdClose, MdWarning, MdInfo, MdLightbulb } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import { Tooltip } from '../Tooltip';
 import { generateRandomString } from '../../utils/stringUtils';
-import { initialSportsList } from '../../utils/sportsListManager';
+import { useSportsList } from '../../contexts/SportsListContext';
 import SportTypeMultiSelect from './appearance/SportTypeMultiSelect';
 
 /**
@@ -35,6 +35,7 @@ const ImportConfigEditor = ({
   isLoading,
   onDirtyChange 
 }) => {
+  const { sportsList } = useSportsList();
   // State for array field inputs
   const [arrayInputs, setArrayInputs] = useState({
     activitiesToSkipDuringImport: ''
@@ -261,7 +262,7 @@ const ImportConfigEditor = ({
                 value={value}
                 onChange={handleFieldChange}
                 hasError={errors[fieldName]}
-                sportsList={initialSportsList}
+                sportsList={sportsList}
                 subsectionKey="import"
               />
               

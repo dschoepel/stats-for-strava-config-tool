@@ -1,37 +1,11 @@
-import { useState, useEffect } from 'react';
-import { readSportsList, initialSportsList } from '../../../utils/sportsListManager';
+import { useSportsList } from '../../../contexts/SportsListContext';
 
 /**
  * Custom hook for appearance configuration logic
  * Handles sports list loading and appearance-specific validation
  */
 export const useAppearanceConfig = () => {
-  const [sportsList, setSportsList] = useState(initialSportsList);
-
-  // Load sports list for sport type selection
-  useEffect(() => {
-    async function loadSports() {
-      try {
-        const settings = JSON.parse(localStorage.getItem('config-tool-settings') || '{}');
-        const list = await readSportsList(settings);
-        setSportsList(list);
-      } catch (error) {
-        console.error('Error loading sports list:', error);
-      }
-    }
-    loadSports();
-  }, []);
-
-  // Get flat array of all sport types
-  const getAllSportTypes = () => {
-    const allSports = [];
-    Object.values(sportsList).forEach(categoryArray => {
-      if (Array.isArray(categoryArray)) {
-        allSports.push(...categoryArray);
-      }
-    });
-    return allSports;
-  };
+  const { sportsList, getAllSportTypes } = useSportsList();
 
   // Custom validation for appearance fields
   const validateAppearanceFields = (formData, getNestedValue) => {
