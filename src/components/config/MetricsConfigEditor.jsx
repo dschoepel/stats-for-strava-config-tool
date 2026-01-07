@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
   VStack,
@@ -18,7 +18,7 @@ import {
 } from '@chakra-ui/react';
 import { MdAdd, MdDelete, MdArrowUpward, MdArrowDownward, MdExpandMore, MdChevronRight, MdInfo, MdWarning } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import { readSportsList, initialSportsList } from '../../utils/sportsListManager';
+import { useSportsList } from '../../contexts/SportsListContext';
 
 /**
  * MetricsConfigEditor - Handles metrics configuration fields
@@ -31,22 +31,8 @@ const MetricsConfigEditor = ({
   isLoading,
   onDirtyChange 
 }) => {
-  const [sportsList, setSportsList] = useState(initialSportsList);
+  const { sportsList } = useSportsList();
   const [expandedEddington, setExpandedEddington] = useState({});
-
-  // Load sports list for sport type selection
-  useEffect(() => {
-    async function loadSports() {
-      try {
-        const settings = JSON.parse(localStorage.getItem('config-tool-settings') || '{}');
-        const list = await readSportsList(settings);
-        setSportsList(list);
-      } catch (error) {
-        console.error('Error loading sports list:', error);
-      }
-    }
-    loadSports();
-  }, []);
 
   // Custom validation for metrics fields
   const validateMetricsFields = (formData, getNestedValue) => {

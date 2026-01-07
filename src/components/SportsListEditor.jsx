@@ -3,8 +3,10 @@ import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Icon, IconButt
 import { MdExpandMore, MdChevronRight, MdAdd, MdDelete, MdEdit, MdSave } from 'react-icons/md';
 import { readSportsList, writeSportsList, initialSportsList } from '../utils/sportsListManager';
 import { ConfirmDialog } from './ConfirmDialog';
+import { useSportsList } from '../contexts/SportsListContext';
 
 export default function SportsListEditor({ settings, onDirtyChange }) {
+  const { loadSportsList } = useSportsList();
   const [sportsList, setSportsList] = useState(initialSportsList);
   const [initialSnapshot, setInitialSnapshot] = useState(() => JSON.stringify(initialSportsList));
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -180,6 +182,8 @@ export default function SportsListEditor({ settings, onDirtyChange }) {
   const handleSave = async () => {
     try {
       await writeSportsList(settings, sportsList);
+      // Refresh the global sports list context so all components see the updated list
+      await loadSportsList();
       const snapshot = JSON.stringify(sportsList);
       setInitialSnapshot(snapshot);
       setIsDirty(false);
