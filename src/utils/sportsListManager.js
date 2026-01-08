@@ -1,4 +1,3 @@
-import { getSportsList, saveSportsList } from './apiClient';
 import { initialSportsList } from './sportsListInitializer';
 
 // initialSportsList is now imported from sportsListInitializer.js to maintain single source of truth
