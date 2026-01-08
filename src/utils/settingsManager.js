@@ -6,12 +6,13 @@ import packageJson from '../../package.json';
 
 /* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
-// Default fallback path (used if runtime config fails to load)
-let DEFAULT_SETTINGS_PATH = '~/Documents/strava-config-tool/';
+// Default fallback path (updated by runtime config)
+let DEFAULT_SETTINGS_PATH = '/data/statistics-for-strava/config/';
 const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 
 // Runtime config loaded from API endpoint (allows Docker env vars to work)
 let runtimeConfigLoaded = false;
+let runtimeConfigPromise = null;
 
 /**
  * Load runtime configuration from API endpoint
@@ -20,19 +21,31 @@ let runtimeConfigLoaded = false;
 async function loadRuntimeConfig() {
   if (runtimeConfigLoaded) return;
   
-  try {
-    const response = await fetch('/api/runtime-config');
-    const data = await response.json();
-    
-    if (data.success && data.config.defaultPath) {
-      DEFAULT_SETTINGS_PATH = data.config.defaultPath;
-      console.log('Runtime config loaded, defaultPath:', DEFAULT_SETTINGS_PATH);
+  // Return existing promise if already loading
+  if (runtimeConfigPromise) return runtimeConfigPromise;
+  
+  runtimeConfigPromise = (async () => {
+    try {
+      const response = await fetch('/api/runtime-config');
+      const data = await response.json();
+      
+      if (data.success && data.config.defaultPath) {
+        DEFAULT_SETTINGS_PATH = data.config.defaultPath;
+        console.log('Runtime config loaded, defaultPath:', DEFAULT_SETTINGS_PATH);
+      }
+    } catch (error) {
+      console.warn('Failed to load runtime config, using defaults:', error);
+    } finally {
+      runtimeConfigLoaded = true;
     }
-    runtimeConfigLoaded = true;
-  } catch (error) {
-    console.warn('Failed to load runtime config, using defaults:', error);
-    runtimeConfigLoaded = true;
-  }
+  })();
+  
+  return runtimeConfigPromise;
+}
+
+// Load runtime config immediately when module loads
+if (typeof window !== 'undefined') {
+  loadRuntimeConfig();
 }
 
 // Default settings structure (function to ensure runtime config is used)
@@ -95,7 +108,17 @@ export const loadSettings = async () => {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Merge with defaults to ensure all settings exist
-      return mergeSettings(getDefaultSettings(), parsed);
+      const merged = mergeSettings(getDefaultSettings(), parsed);
+      
+      // Update cached defaultPath if runtime config has a different value
+      if (merged.files?.defaultPath !== DEFAULT_SETTINGS_PATH) {
+        merged.files.defaultPath = DEFAULT_SETTINGS_PATH;
+        // Update localStorage with corrected path
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(merged, null, 2));
+        console.log('Updated cached settings with runtime config path:', DEFAULT_SETTINGS_PATH);
+      }
+      
+      return merged;
     }
   } catch (error) {
     console.error('Error loading settings from localStorage:', error);
