@@ -13,6 +13,7 @@ const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 // Runtime config loaded from API endpoint (allows Docker env vars to work)
 let runtimeConfigLoaded = false;
 let runtimeConfigPromise = null;
+let cachedSettings = null;
 
 /**
  * Load runtime configuration from API endpoint
@@ -45,7 +46,10 @@ async function loadRuntimeConfig() {
 
 // Load runtime config immediately when module loads
 if (typeof window !== 'undefined') {
-  loadRuntimeConfig();
+  loadRuntimeConfig().then(() => {
+    // Pre-load settings after runtime config is ready
+    loadSettings();
+  });
 }
 
 // Default settings structure (function to ensure runtime config is used)
@@ -94,12 +98,16 @@ export const getSettingsFilePath = (defaultPath = null) => {
  * @returns {Object} Settings object
  */
 export const loadSettings = async () => {
+  // Return cached settings if already loaded
+  if (cachedSettings) return cachedSettings;
+  
   // Load runtime config first
   await loadRuntimeConfig();
   
   // Check if we're in a browser environment (client-side)
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return getDefaultSettings();
+    cachedSettings = getDefaultSettings();
+    return cachedSettings;
   }
   
   try {
@@ -118,6 +126,7 @@ export const loadSettings = async () => {
         console.log('Updated cached settings with runtime config path:', DEFAULT_SETTINGS_PATH);
       }
       
+      cachedSettings = merged;
       return merged;
     }
   } catch (error) {
@@ -125,7 +134,8 @@ export const loadSettings = async () => {
   }
   
   // Return defaults if loading fails or no settings exist
-  return getDefaultSettings();
+  cachedSettings = getDefaultSettings();
+  return cachedSettings;
 };
 
 /**
@@ -286,8 +296,15 @@ export const resetSettings = () => {
  * @param {*} defaultValue - Default value if setting not found
  * @returns {*} Setting value
  */
+/**
+ * Get a specific setting by path (e.g., 'ui.theme' or 'files.maxRecentFiles')
+ * @param {string} path - Dot-separated path to setting
+ * @param {*} defaultValue - Default value if setting not found
+ * @returns {*} Setting value
+ */
 export const getSetting = (path, defaultValue = null) => {
-  const settings = loadSettings();
+  // Use cached settings if available (loaded on module init)
+  const settings = cachedSettings || getDefaultSettings();
   const keys = path.split('.');
   
   let current = settings;
