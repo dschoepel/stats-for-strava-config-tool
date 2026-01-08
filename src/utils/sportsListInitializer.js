@@ -6,7 +6,7 @@
 import { getSetting } from './settingsManager.js';
 
 // Initial sports list (default if file doesn't exist)
-const initialSportsList = {
+export const initialSportsList = {
   Cycling: [
     'Ride', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'VirtualRide', 'Velomobile'
   ],

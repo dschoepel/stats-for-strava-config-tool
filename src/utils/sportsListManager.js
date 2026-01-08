@@ -1,38 +1,8 @@
 import { getSportsList, saveSportsList } from './apiClient';
+import { initialSportsList } from './sportsListInitializer';
 
-// Initial sports list grouped by category (used as fallback)
-export const initialSportsList = {
-  Cycling: [
-    'Ride', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'VirtualRide', 'Velomobile'
-  ],
-  Running: [
-    'Run', 'TrailRun', 'VirtualRun', 'Walking', 'Walk', 'Hike'
-  ],
-  'Water sports': [
-    'Canoeing', 'Kayaking', 'Kitesurf', 'Rowing', 'StandUpPaddling', 'Surfing', 'Swim', 'Windsurf'
-  ],
-  'Winter sports': [
-    'BackcountrySki', 'AlpineSki', 'NordicSki', 'IceSkate', 'Snowboard', 'Snowshoe'
-  ],
-  Skating: [
-    'InlineSkate', 'RollerSki', 'Skateboard'
-  ],
-  'Racquet & Paddle Sports': [
-    'Badminton', 'Pickleball', 'Racquetball', 'Squash', 'TableTennis', 'Tennis'
-  ],
-  Fitness: [
-    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining'
-  ],
-  'Mind & Body Sports': [
-    'Pilates', 'Yoga'
-  ], 
-  'Outdoor Sports': [
-    'Golf', 'RockClimbing', 'Sail', 'Soccer'
-  ],
-  'Adaptive & Inclusive Sports': [
-    'Handcycle', 'Wheelchair'
-  ]
-};
+// initialSportsList is now imported from sportsListInitializer.js to maintain single source of truth
+export { initialSportsList };
 
 // Read sports list from server via API
 export async function readSportsList(settings = {}) {
