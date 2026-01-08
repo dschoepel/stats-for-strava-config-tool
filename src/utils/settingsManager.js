@@ -3,11 +3,12 @@
 
 import { getFileContent, saveFile, expandPath } from './apiClient';
 import packageJson from '../../package.json';
+import { DEFAULT_CONFIG_PATH } from '../../app/api/config/defaults.js';
 
 /* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
 // Default fallback path (updated by runtime config)
-let DEFAULT_SETTINGS_PATH = '/data/statistics-for-strava/config/';
+let DEFAULT_SETTINGS_PATH = DEFAULT_CONFIG_PATH;
 const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 
 // Runtime config loaded from API endpoint (allows Docker env vars to work)

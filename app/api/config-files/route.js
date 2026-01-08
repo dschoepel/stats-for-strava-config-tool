@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
+import { getDefaultConfigPath } from '../config/defaults.js';
 
 // Configure runtime to use Node.js
 export const runtime = 'nodejs';
@@ -41,8 +42,8 @@ export async function GET(request) {
       }
       console.log('Using path from settings:', configPath);
     } else {
-      // Fallback to environment variable or default
-      const envPath = process.env.DEFAULT_STATS_CONFIG_PATH || '~/Documents/config/';
+      // Fallback to environment variable or Docker default
+      const envPath = getDefaultConfigPath();
       console.log('Environment path:', envPath);
       
       // Replace ~ with actual home directory

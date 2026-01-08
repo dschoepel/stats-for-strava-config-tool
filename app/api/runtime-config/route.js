@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getDefaultConfigPath } from '../config/defaults.js';
 
 /**
  * API endpoint to expose runtime environment variables to the client
@@ -9,7 +10,7 @@ export async function GET() {
   try {
     // Read environment variables at runtime (server-side)
     const config = {
-      defaultPath: process.env.DEFAULT_STATS_CONFIG_PATH || '/data/statistics-for-strava/config/',
+      defaultPath: getDefaultConfigPath(),
     };
 
     return NextResponse.json({
@@ -22,7 +23,7 @@ export async function GET() {
       success: false,
       error: error.message,
       config: {
-        defaultPath: '/data/statistics-for-strava/config/'
+        defaultPath: getDefaultConfigPath()
       }
     }, { status: 500 });
   }

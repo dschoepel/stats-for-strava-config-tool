@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import yaml from 'js-yaml';
+import { getDefaultConfigPath } from '../config/defaults.js';
 
 // Initial sports list (default if file doesn't exist)
 const initialSportsList = {
@@ -39,7 +40,7 @@ const initialSportsList = {
 };
 
 function resolveFilePath(defaultPath) {
-  let basePath = defaultPath || '~/Documents/config/';
+  let basePath = defaultPath || getDefaultConfigPath();
 
   // Expand ~ to home directory
   if (basePath.startsWith('~/') || basePath.startsWith('~\\')) {
