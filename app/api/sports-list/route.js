@@ -3,41 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import yaml from 'js-yaml';
-import { getDefaultConfigPath } from '../config/defaults.js';
-
-// Initial sports list (default if file doesn't exist)
-const initialSportsList = {
-  Cycling: [
-    'Ride', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'VirtualRide', 'Velomobile'
-  ],
-  Running: [
-    'Run', 'TrailRun', 'VirtualRun', 'Walking', 'Walk', 'Hike'
-  ],
-  'Water sports': [
-    'Canoeing', 'Kayaking', 'Kitesurf', 'Rowing', 'StandUpPaddling', 'Surfing', 'Swim', 'Windsurf'
-  ],
-  'Winter sports': [
-    'BackcountrySki', 'AlpineSki', 'NordicSki', 'IceSkate', 'Snowboard', 'Snowshoe'
-  ],
-  Skating: [
-    'InlineSkate', 'RollerSki', 'Skateboard'
-  ],
-  'Racquet & Paddle Sports': [
-    'Badminton', 'Pickleball', 'Racquetball', 'Squash', 'TableTennis', 'Tennis'
-  ],
-  Fitness: [
-    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining'
-  ],
-  'Mind & Body Sports': [
-    'Pilates', 'Yoga'
-  ],
-  'Outdoor Sports': [
-    'Golf', 'RockClimbing', 'Sail', 'Soccer'
-  ],
-  'Adaptive & Inclusive Sports': [
-    'Handcycle', 'Wheelchair'
-  ]
-};
+import { getDefaultConfigPath, INITIAL_SPORTS_LIST } from '../config/defaults.js';
 
 function resolveFilePath(defaultPath) {
   let basePath = defaultPath || getDefaultConfigPath();
@@ -69,14 +35,14 @@ export async function GET(request) {
     } catch (error) {
       // File doesn't exist, return initial list
       console.log('Sports list file not found, returning initial list');
-      return NextResponse.json({ success: true, sportsList: initialSportsList });
+      return NextResponse.json({ success: true, sportsList: INITIAL_SPORTS_LIST });
     }
   } catch (error) {
     console.error('Error reading sports list:', error);
     return NextResponse.json({
       success: false,
       error: error.message,
-      sportsList: initialSportsList // Fallback to initial list
+      sportsList: INITIAL_SPORTS_LIST // Fallback to initial list
     }, { status: 500 });
   }
 }
