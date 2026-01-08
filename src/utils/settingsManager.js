@@ -42,8 +42,8 @@ const DEFAULT_SETTINGS = {
  */
 export const getSettingsFilePath = (defaultPath = null) => {
   const basePath = defaultPath || DEFAULT_SETTINGS_PATH;
-  // Remove trailing slash if present
-  const cleanPath = basePath.replace(/\/$/, '');
+  // Remove trailing slash/backslash if present and normalize to forward slashes
+  const cleanPath = basePath.replace(/[\\/]+$/, '').replace(/\\/g, '/');
   return `${cleanPath}/settings/${SETTINGS_FILENAME}`;
 };
 

@@ -14,11 +14,9 @@ const WIDGET_DEFINITIONS_FILENAME = 'widget-definitions.yaml';
  */
 function getWidgetDefinitionsPath() {
   const defaultPath = getSetting('files.defaultPath', '~/Documents/strava-config-tool/');
-  // Ensure path ends with a separator
-  const normalizedPath = defaultPath.endsWith('/') || defaultPath.endsWith('\\') 
-    ? defaultPath 
-    : defaultPath + '/';
-  return normalizedPath + 'settings/' + WIDGET_DEFINITIONS_FILENAME;
+  // Remove trailing slashes and normalize to forward slashes for cross-platform compatibility
+  const normalizedPath = defaultPath.replace(/[\\/]+$/, '').replace(/\\/g, '/');
+  return normalizedPath + '/settings/' + WIDGET_DEFINITIONS_FILENAME;
 }
 
 /**

@@ -48,10 +48,9 @@ export const initialSportsList = {
  */
 function getSportsListPath() {
   const defaultPath = getSetting('files.defaultPath', '~/Documents/strava-config-tool/');
-  const normalizedPath = defaultPath.endsWith('/') || defaultPath.endsWith('\\') 
-    ? defaultPath 
-    : defaultPath + '/';
-  return normalizedPath + 'settings/strava-sports-by-category.yaml';
+  // Remove trailing slashes and normalize to forward slashes for cross-platform compatibility
+  const normalizedPath = defaultPath.replace(/[\\/]+$/, '').replace(/\\/g, '/');
+  return normalizedPath + '/settings/strava-sports-by-category.yaml';
 }
 
 /**
