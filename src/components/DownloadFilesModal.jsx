@@ -109,8 +109,8 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
         for (const index of selectedFiles) {
           const file = files[index];
           
-          // Construct full file path
-          const cleanPath = savePath.replace(/\/$/, '');
+          // Construct full file path (normalize for cross-platform compatibility)
+          const cleanPath = savePath.replace(/[\\/]+$/, '').replace(/\\/g, '/');
           const fullPath = `${cleanPath}/${file.name}`;
           
           const response = await fetch('/api/save-file', {
