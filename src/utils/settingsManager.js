@@ -6,11 +6,37 @@ import packageJson from '../../package.json';
 
 /* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
-const DEFAULT_SETTINGS_PATH = process.env.NEXT_PUBLIC_DEFAULT_STATS_CONFIG_PATH || '~/Documents/strava-config-tool/';
+// Default fallback path (used if runtime config fails to load)
+let DEFAULT_SETTINGS_PATH = '~/Documents/strava-config-tool/';
 const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 
-// Default settings structure
-const DEFAULT_SETTINGS = {
+// Runtime config loaded from API endpoint (allows Docker env vars to work)
+let runtimeConfigLoaded = false;
+
+/**
+ * Load runtime configuration from API endpoint
+ * This allows environment variables to be read at runtime, not build time
+ */
+async function loadRuntimeConfig() {
+  if (runtimeConfigLoaded) return;
+  
+  try {
+    const response = await fetch('/api/runtime-config');
+    const data = await response.json();
+    
+    if (data.success && data.config.defaultPath) {
+      DEFAULT_SETTINGS_PATH = data.config.defaultPath;
+      console.log('Runtime config loaded, defaultPath:', DEFAULT_SETTINGS_PATH);
+    }
+    runtimeConfigLoaded = true;
+  } catch (error) {
+    console.warn('Failed to load runtime config, using defaults:', error);
+    runtimeConfigLoaded = true;
+  }
+}
+
+// Default settings structure (function to ensure runtime config is used)
+const getDefaultSettings = () => ({
   version: packageJson.version,
   ui: {
     theme: 'dark', // 'light' or 'dark'
@@ -33,7 +59,10 @@ const DEFAULT_SETTINGS = {
   validation: {
     maxZwiftLevel: 100, // Maximum Zwift level (can increase in future)
   }
-};
+});
+
+// Maintain backwards compatibility
+const DEFAULT_SETTINGS = getDefaultSettings();
 
 /**
  * Get the settings file path
@@ -51,10 +80,13 @@ export const getSettingsFilePath = (defaultPath = null) => {
  * Load settings from file or localStorage (fallback)
  * @returns {Object} Settings object
  */
-export const loadSettings = () => {
+export const loadSettings = async () => {
+  // Load runtime config first
+  await loadRuntimeConfig();
+  
   // Check if we're in a browser environment (client-side)
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return DEFAULT_SETTINGS;
+    return getDefaultSettings();
   }
   
   try {
@@ -63,14 +95,14 @@ export const loadSettings = () => {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Merge with defaults to ensure all settings exist
-      return mergeSettings(DEFAULT_SETTINGS, parsed);
+      return mergeSettings(getDefaultSettings(), parsed);
     }
   } catch (error) {
     console.error('Error loading settings from localStorage:', error);
   }
   
   // Return defaults if loading fails or no settings exist
-  return { ...DEFAULT_SETTINGS };
+  return getDefaultSettings();
 };
 
 /**
@@ -78,9 +110,12 @@ export const loadSettings = () => {
  * @returns {Promise<Object>} Settings object
  */
 export const loadSettingsFromFile = async () => {
+  // Load runtime config first to get correct default path
+  await loadRuntimeConfig();
+  
   try {
     // First get the default path from localStorage or defaults
-    const currentSettings = loadSettings();
+    const currentSettings = await loadSettings();
     const defaultPath = currentSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
     const filePath = getSettingsFilePath(defaultPath);
     
@@ -92,7 +127,7 @@ export const loadSettingsFromFile = async () => {
     
     if (!response.ok) {
       console.log('Settings file not found, using defaults');
-      return { ...DEFAULT_SETTINGS };
+      return getDefaultSettings();
     }
     
     const data = await response.json();
@@ -102,7 +137,7 @@ export const loadSettingsFromFile = async () => {
       const settings = parseYamlSettings(lines);
       
       // Merge with defaults and save to localStorage cache
-      const mergedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
+      const mergedSettings = mergeSettings(getDefaultSettings(), settings);
       
       // Check if version needs updating
       if (mergedSettings.version !== packageJson.version) {
@@ -123,7 +158,7 @@ export const loadSettingsFromFile = async () => {
     console.error('Error loading settings from file:', error);
   }
   
-  return { ...DEFAULT_SETTINGS };
+  return getDefaultSettings();
 };
 
 /**
@@ -156,7 +191,7 @@ export const expandTildePath = async (inputPath) => {
 export const saveSettings = async (settings) => {
   try {
     // Validate settings structure
-    const validatedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
+    const validatedSettings = mergeSettings(getDefaultSettings(), settings);
     
     // Always update version to current from package.json
     validatedSettings.version = packageJson.version;
@@ -215,10 +250,10 @@ export const resetSettings = () => {
     // Dispatch reset event
     window.dispatchEvent(new CustomEvent('settingsReset'));
     
-    return { ...DEFAULT_SETTINGS };
+    return getDefaultSettings();
   } catch (error) {
     console.error('Error resetting settings:', error);
-    return { ...DEFAULT_SETTINGS };
+    return getDefaultSettings();
   }
 };
 
@@ -462,4 +497,4 @@ const mergeSettings = (defaults, override) => {
   return result;
 };
 
-export { DEFAULT_SETTINGS, SETTINGS_KEY };
+export { DEFAULT_SETTINGS, getDefaultSettings, SETTINGS_KEY };
