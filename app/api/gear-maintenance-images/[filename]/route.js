@@ -13,9 +13,11 @@ export const runtime = 'nodejs';
  */
 export async function GET(request, { params }) {
   try {
-    const { filename } = params;
+    const { filename } = await params;
     const { searchParams } = new URL(request.url);
     const customPath = searchParams.get('path');
+
+    console.log('Image request:', { filename, customPath });
 
     let basePath = customPath || getDefaultGearMaintenancePath();
 
@@ -24,7 +26,10 @@ export async function GET(request, { params }) {
       basePath = path.join(os.homedir(), basePath.slice(2));
     }
 
+    console.log('Resolved base path:', basePath);
+
     const filePath = path.join(basePath, filename);
+    console.log('Full file path:', filePath);
 
     // Security check: ensure file is within gear maintenance directory
     const resolvedPath = path.resolve(filePath);
@@ -39,7 +44,9 @@ export async function GET(request, { params }) {
     // Check if file exists
     try {
       await fs.access(filePath);
-    } catch {
+      console.log('✅ File exists:', filePath);
+    } catch (accessError) {
+      console.error('❌ File not found:', filePath, accessError.message);
       return NextResponse.json({
         success: false,
         error: 'File not found'

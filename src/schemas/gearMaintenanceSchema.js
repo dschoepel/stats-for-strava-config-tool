@@ -9,7 +9,7 @@ export const gearMaintenanceSchema = {
     enabled: {
       type: 'boolean',
       title: 'Enable Gear Maintenance',
-      description: 'Set to true to enable the gear maintenance feature',
+      description: 'Set to on to enable the gear maintenance feature',
       default: true
     },
     hashtagPrefix: {
@@ -31,7 +31,7 @@ export const gearMaintenanceSchema = {
     ignoreRetiredGear: {
       type: 'boolean',
       title: 'Ignore Retired Gear',
-      description: 'Set to true to ignore retired gear',
+      description: 'Set to on to ignore retired gear',
       default: false
     },
     components: {

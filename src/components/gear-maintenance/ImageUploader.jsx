@@ -21,7 +21,7 @@ const ImageUploader = ({ onUploadComplete, customPath = null }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
-  const toast = useToast();
+  const { showSuccess, showError } = useToast();
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -53,11 +53,7 @@ const ImageUploader = ({ onUploadComplete, customPath = null }) => {
     const invalidFiles = files.filter(f => !validTypes.includes(f.type));
     
     if (invalidFiles.length > 0) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Only PNG, JPG, WEBP, GIF, and SVG images are allowed.',
-        status: 'error'
-      });
+      showError('Only PNG, JPG, WEBP, GIF, and SVG images are allowed.');
       return;
     }
 
@@ -66,11 +62,7 @@ const ImageUploader = ({ onUploadComplete, customPath = null }) => {
     const oversizedFiles = files.filter(f => f.size > maxSize);
     
     if (oversizedFiles.length > 0) {
-      toast({
-        title: 'File too large',
-        description: 'Maximum file size is 10MB per image.',
-        status: 'error'
-      });
+      showError('Maximum file size is 10MB per image.');
       return;
     }
 
@@ -96,20 +88,12 @@ const ImageUploader = ({ onUploadComplete, customPath = null }) => {
         const result = await response.json();
 
         if (result.success) {
-          toast({
-            title: 'Image uploaded',
-            description: `${file.name} uploaded successfully`,
-            status: 'success'
-          });
+          showSuccess(`${file.name} uploaded successfully`);
         } else {
           throw new Error(result.error || 'Upload failed');
         }
       } catch (error) {
-        toast({
-          title: 'Upload failed',
-          description: `Failed to upload ${file.name}: ${error.message}`,
-          status: 'error'
-        });
+        showError(`Failed to upload ${file.name}: ${error.message}`);
       }
 
       setUploadProgress(((i + 1) / files.length) * 100);
@@ -178,7 +162,11 @@ const ImageUploader = ({ onUploadComplete, customPath = null }) => {
               {Math.round(uploadProgress)}%
             </Text>
           </HStack>
-          <Progress value={uploadProgress} colorPalette="blue" size="sm" />
+          <Progress.Root value={uploadProgress} colorPalette="blue" size="sm">
+            <Progress.Track>
+              <Progress.Range />
+            </Progress.Track>
+          </Progress.Root>
         </Box>
       )}
     </VStack>

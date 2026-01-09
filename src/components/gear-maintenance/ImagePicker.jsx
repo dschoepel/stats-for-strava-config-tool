@@ -7,10 +7,12 @@ import {
   VStack,
   Input,
   HStack,
-  Spinner
+  Spinner,
+  Portal,
+  Icon
 } from '@chakra-ui/react';
 import { MdClose, MdSearch, MdRefresh } from 'react-icons/md';
-import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogCloseTrigger, DialogBackdrop } from '@chakra-ui/react';
+import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogCloseTrigger, DialogBackdrop, DialogPositioner } from '@chakra-ui/react';
 import ImageThumbnail from './ImageThumbnail';
 import ImageUploader from './ImageUploader';
 import { useToast } from '../../hooks/useToast';
@@ -23,7 +25,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
-  const toast = useToast();
+  const { showSuccess, showError } = useToast();
 
   const loadImages = async () => {
     setLoading(true);
@@ -41,11 +43,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
         throw new Error(data.error || 'Failed to load images');
       }
     } catch (error) {
-      toast({
-        title: 'Error loading images',
-        description: error.message,
-        status: 'error'
-      });
+      showError(`Error loading images: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -70,21 +68,13 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: 'Image deleted',
-          description: `${filename} deleted successfully`,
-          status: 'success'
-        });
+        showSuccess(`${filename} deleted successfully`);
         loadImages();
       } else {
         throw new Error(data.error || 'Delete failed');
       }
     } catch (error) {
-      toast({
-        title: 'Delete failed',
-        description: error.message,
-        status: 'error'
-      });
+      showError(`Delete failed: ${error.message}`);
     }
   };
 
@@ -101,16 +91,44 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
 
   return (
     <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="xl">
-      <DialogBackdrop />
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Select or Upload Image</DialogTitle>
-          <DialogCloseTrigger />
-        </DialogHeader>
+      <Portal>
+        <DialogBackdrop />
+        <DialogPositioner>
+          <DialogContent
+            maxW="800px"
+            borderRadius="lg"
+            boxShadow="xl"
+            bg="cardBg"
+          >
+            <DialogHeader
+              bg="#E2E8F0"
+              _dark={{ bg: "#334155" }}
+              borderTopRadius="lg"
+            >
+              <DialogTitle
+                fontSize={{ base: "md", sm: "lg" }}
+                color="#1a202c"
+                _dark={{ color: "#f7fafc" }}
+              >
+                Select or Upload Image
+              </DialogTitle>
+              <DialogCloseTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  color="#1a202c"
+                  _dark={{ color: "#f7fafc" }}
+                >
+                  <Icon><MdClose /></Icon>
+                </Button>
+              </DialogCloseTrigger>
+            </DialogHeader>
 
-        <DialogBody>
-          <VStack gap={4} align="stretch">
-            {/* Upload Section */}
+            <DialogBody
+              p={{ base: 4, sm: 6 }}
+              bg="cardBg"
+            >
+              <VStack gap={4} align="stretch">{/* Upload Section */}
             <Box>
               <Text fontWeight="medium" mb={2}>
                 Upload New Image
@@ -212,7 +230,14 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
           </VStack>
         </DialogBody>
 
-        <DialogFooter>
+        <DialogFooter
+          gap={3}
+          justify="flex-end"
+          p={{ base: 3, sm: 4 }}
+          bg="#E2E8F0"
+          _dark={{ bg: "#334155" }}
+          borderBottomRadius="lg"
+        >
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
@@ -224,7 +249,9 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
             Select
           </Button>
         </DialogFooter>
-      </DialogContent>
+          </DialogContent>
+        </DialogPositioner>
+      </Portal>
     </DialogRoot>
   );
 };

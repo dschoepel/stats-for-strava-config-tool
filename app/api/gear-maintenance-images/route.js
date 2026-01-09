@@ -29,6 +29,7 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const customPath = searchParams.get('path');
+    const pathParam = customPath ? `?path=${encodeURIComponent(customPath)}` : '';
 
     const gearMaintenancePath = resolveGearMaintenancePath(customPath);
 
@@ -58,7 +59,7 @@ export async function GET(request) {
             name: entry.name,
             size: stats.size,
             lastModified: stats.mtime,
-            url: `/api/gear-maintenance-images/${encodeURIComponent(entry.name)}`
+            url: `/api/gear-maintenance-images/${encodeURIComponent(entry.name)}${pathParam}`
           });
         }
       }
@@ -93,6 +94,13 @@ export async function POST(request) {
     const file = formData.get('file');
     const customPath = formData.get('path');
 
+    console.log('Upload request received:', { 
+      fileName: file?.name, 
+      fileSize: file?.size, 
+      fileType: file?.type,
+      customPath 
+    });
+
     if (!file) {
       return NextResponse.json({
         success: false,
@@ -119,17 +127,29 @@ export async function POST(request) {
     }
 
     const gearMaintenancePath = resolveGearMaintenancePath(customPath);
+    console.log('Resolved gear maintenance path:', gearMaintenancePath);
 
     // Ensure directory exists
-    await fs.mkdir(gearMaintenancePath, { recursive: true });
+    try {
+      await fs.mkdir(gearMaintenancePath, { recursive: true });
+      console.log('Directory ensured:', gearMaintenancePath);
+    } catch (mkdirError) {
+      console.error('Failed to create directory:', mkdirError);
+      return NextResponse.json({
+        success: false,
+        error: `Failed to create directory: ${mkdirError.message}`
+      }, { status: 500 });
+    }
 
     // Sanitize filename
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = path.join(gearMaintenancePath, sanitizedName);
+    console.log('Target file path:', filePath);
 
     // Check if file already exists
     try {
       await fs.access(filePath);
+      console.log('File already exists:', filePath);
       return NextResponse.json({
         success: false,
         error: `File '${sanitizedName}' already exists. Please rename or delete the existing file first.`
@@ -143,7 +163,7 @@ export async function POST(request) {
     const buffer = Buffer.from(bytes);
     await fs.writeFile(filePath, buffer);
 
-    console.log('Image uploaded:', filePath);
+    console.log('✅ Image uploaded successfully:', filePath);
 
     return NextResponse.json({
       success: true,
@@ -153,7 +173,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('❌ Error uploading image:', error);
     return NextResponse.json({
       success: false,
       error: error.message

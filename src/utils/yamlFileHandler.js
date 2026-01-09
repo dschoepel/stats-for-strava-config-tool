@@ -15,8 +15,9 @@ export const filterConfigYamlFiles = (files) => {
     const file = files[i];
     const fileName = file.name.toLowerCase();
     
-    // Check if file starts with 'config' and ends with '.yaml' or '.yml'
-    if (fileName.startsWith('config') && (fileName.endsWith('.yaml') || fileName.endsWith('.yml'))) {
+    // Check if file starts with 'config' or is 'gear-maintenance.yaml' and ends with '.yaml' or '.yml'
+    if ((fileName.startsWith('config') || fileName === 'gear-maintenance.yaml' || fileName === 'gear-maintenance.yml') && 
+        (fileName.endsWith('.yaml') || fileName.endsWith('.yml'))) {
       configFiles.push(file);
     }
   }

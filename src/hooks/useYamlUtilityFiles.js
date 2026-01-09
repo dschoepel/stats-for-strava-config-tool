@@ -136,12 +136,13 @@ export const useYamlUtilityFiles = () => {
 
     // Validate naming convention
     const isValidName = finalName === 'config.yaml' || 
+                       finalName === 'gear-maintenance.yaml' ||
                        (finalName.startsWith('config-') && finalName.endsWith('.yaml'));
     
     if (!isValidName) {
       return { 
         valid: false, 
-        error: 'Filename must be "config.yaml" or start with "config-" and end with ".yaml"',
+        error: 'Filename must be "config.yaml", "gear-maintenance.yaml", or start with "config-" and end with ".yaml"',
         fileName: finalName
       };
     }

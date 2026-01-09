@@ -236,6 +236,11 @@ export const saveSettings = async (settings) => {
       validatedSettings.files.defaultPath = await expandTildePath(validatedSettings.files.defaultPath);
     }
     
+    // Expand tilde in gearMaintenancePath if present
+    if (validatedSettings.files?.gearMaintenancePath?.startsWith('~')) {
+      validatedSettings.files.gearMaintenancePath = await expandTildePath(validatedSettings.files.gearMaintenancePath);
+    }
+    
     // Add timestamp
     validatedSettings.lastUpdated = new Date().toISOString();
     

@@ -12,14 +12,33 @@ import {
   Select,
   Spinner,
   Flex,
-  Grid
+  Grid,
+  createListCollection
 } from '@chakra-ui/react';
 import { Field } from '@chakra-ui/react';
 import { MdAdd, MdDelete, MdImage, MdExpandMore, MdChevronRight, MdSave, MdClose } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
+import { getSetting } from '../utils/settingsManager';
 import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../schemas/gearMaintenanceSchema';
 import ImagePicker from './gear-maintenance/ImagePicker';
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
+
+// Create list collections for Select components
+const resetModeCollection = createListCollection({
+  items: [
+    { label: 'Next Activity Onwards', value: 'nextActivityOnwards' },
+    { label: 'Current Activity Onwards', value: 'currentActivityOnwards' }
+  ]
+});
+
+const intervalUnitCollection = createListCollection({
+  items: [
+    { label: 'Kilometers', value: 'km' },
+    { label: 'Miles', value: 'mi' },
+    { label: 'Hours', value: 'hours' },
+    { label: 'Days', value: 'days' }
+  ]
+});
 
 const GearMaintenanceEditor = () => {
   const [config, setConfig] = useState(null);
@@ -29,7 +48,10 @@ const GearMaintenanceEditor = () => {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [imagePickerTarget, setImagePickerTarget] = useState(null);
   const [expandedComponents, setExpandedComponents] = useState({});
-  const toast = useToast();
+  const { showSuccess, showError } = useToast();
+  
+  // Get gear maintenance path from settings
+  const gearMaintenancePath = getSetting('files.gearMaintenancePath', '/data/statistics-for-strava/storage/gear-maintenance');
 
   const loadConfig = async () => {
     setLoading(true);
@@ -48,11 +70,7 @@ const GearMaintenanceEditor = () => {
         throw new Error(data.error || 'Failed to load configuration');
       }
     } catch (error) {
-      toast({
-        title: 'Error loading configuration',
-        description: error.message,
-        status: 'error'
-      });
+      showError(`Error loading configuration: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -67,11 +85,7 @@ const GearMaintenanceEditor = () => {
     // Validate
     const validation = validateGearMaintenanceConfig(config);
     if (!validation.valid) {
-      toast({
-        title: 'Validation error',
-        description: validation.errors.join(', '),
-        status: 'error'
-      });
+      showError(`Validation error: ${validation.errors.join(', ')}`);
       return;
     }
 
@@ -90,21 +104,13 @@ const GearMaintenanceEditor = () => {
       const data = await response.json();
 
       if (data.success) {
-        toast({
-          title: 'Configuration saved',
-          description: 'Gear maintenance configuration updated successfully',
-          status: 'success'
-        });
+        showSuccess('Gear maintenance configuration saved successfully');
         setIsDirty(false);
       } else {
         throw new Error(data.error || 'Failed to save configuration');
       }
     } catch (error) {
-      toast({
-        title: 'Error saving configuration',
-        description: error.message,
-        status: 'error'
-      });
+      showError(`Error saving configuration: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -303,9 +309,12 @@ const GearMaintenanceEditor = () => {
               <Switch.Root
                 checked={config.enabled}
                 onCheckedChange={(e) => handleFieldChange('enabled', e.checked)}
+                colorPalette="blue"
               >
                 <Switch.HiddenInput />
-                <Switch.Control />
+                <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
+                  <Switch.Thumb />
+                </Switch.Control>
               </Switch.Root>
               <Field.HelperText>
                 {gearMaintenanceSchema.properties.enabled.description}
@@ -327,6 +336,7 @@ const GearMaintenanceEditor = () => {
             <Field.Root>
               <Field.Label>Counters Reset Mode</Field.Label>
               <Select.Root
+                collection={resetModeCollection}
                 value={[config.countersResetMode]}
                 onValueChange={(e) => handleFieldChange('countersResetMode', e.value[0])}
               >
@@ -334,12 +344,11 @@ const GearMaintenanceEditor = () => {
                   <Select.ValueText />
                 </Select.Trigger>
                 <Select.Content>
-                  <Select.Item value="nextActivityOnwards">
-                    Next Activity Onwards
-                  </Select.Item>
-                  <Select.Item value="currentActivityOnwards">
-                    Current Activity Onwards
-                  </Select.Item>
+                  {resetModeCollection.items.map((item) => (
+                    <Select.Item item={item} key={item.value}>
+                      {item.label}
+                    </Select.Item>
+                  ))}
                 </Select.Content>
               </Select.Root>
               <Field.HelperText>
@@ -352,9 +361,12 @@ const GearMaintenanceEditor = () => {
               <Switch.Root
                 checked={config.ignoreRetiredGear}
                 onCheckedChange={(e) => handleFieldChange('ignoreRetiredGear', e.checked)}
+                colorPalette="blue"
               >
                 <Switch.HiddenInput />
-                <Switch.Control />
+                <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
+                  <Switch.Thumb />
+                </Switch.Control>
               </Switch.Root>
               <Field.HelperText>
                 {gearMaintenanceSchema.properties.ignoreRetiredGear.description}
@@ -392,6 +404,7 @@ const GearMaintenanceEditor = () => {
                   component={component}
                   componentIndex={componentIndex}
                   hashtagPrefix={config.hashtagPrefix}
+                  gearMaintenancePath={gearMaintenancePath}
                   onUpdate={updateComponent}
                   onDelete={deleteComponent}
                   onAddTask={addMaintenanceTask}
@@ -462,7 +475,7 @@ const GearMaintenanceEditor = () => {
                       <HStack>
                         {gear.imgSrc && (
                           <ImageThumbnail
-                            src={`/api/gear-maintenance-images/${encodeURIComponent(gear.imgSrc)}`}
+                            src={`/api/gear-maintenance-images/${encodeURIComponent(gear.imgSrc)}?path=${encodeURIComponent(gearMaintenancePath)}`}
                             alt={gear.gearId}
                             size="sm"
                           />
@@ -491,6 +504,7 @@ const GearMaintenanceEditor = () => {
         isOpen={imagePickerOpen}
         onClose={() => setImagePickerOpen(false)}
         onSelect={handleImageSelect}
+        customPath={gearMaintenancePath}
       />
     </Box>
   );
@@ -501,6 +515,7 @@ const ComponentEditor = ({
   component,
   componentIndex,
   hashtagPrefix,
+  gearMaintenancePath,
   onUpdate,
   onDelete,
   onAddTask,
@@ -574,7 +589,7 @@ const ComponentEditor = ({
               <HStack>
                 {component.imgSrc && (
                   <ImageThumbnail
-                    src={`/api/gear-maintenance-images/${encodeURIComponent(component.imgSrc)}`}
+                    src={`/api/gear-maintenance-images/${encodeURIComponent(component.imgSrc)}?path=${encodeURIComponent(gearMaintenancePath)}`}
                     alt={component.label}
                     size="sm"
                   />
@@ -699,6 +714,7 @@ const ComponentEditor = ({
                         <Field.Root>
                           <Field.Label fontSize="xs">Unit</Field.Label>
                           <Select.Root
+                            collection={intervalUnitCollection}
                             size="sm"
                             value={[task.interval.unit]}
                             onValueChange={(e) => onUpdateTask(componentIndex, taskIndex, 'interval.unit', e.value[0])}
@@ -707,10 +723,11 @@ const ComponentEditor = ({
                               <Select.ValueText />
                             </Select.Trigger>
                             <Select.Content>
-                              <Select.Item value="km">Kilometers</Select.Item>
-                              <Select.Item value="mi">Miles</Select.Item>
-                              <Select.Item value="hours">Hours</Select.Item>
-                              <Select.Item value="days">Days</Select.Item>
+                              {intervalUnitCollection.items.map((item) => (
+                                <Select.Item item={item} key={item.value}>
+                                  {item.label}
+                                </Select.Item>
+                              ))}
                             </Select.Content>
                           </Select.Root>
                         </Field.Root>
