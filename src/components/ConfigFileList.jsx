@@ -16,7 +16,7 @@ const ConfigFileList = forwardRef((props, ref) => {
   const { onConfigSectionClick } = props;
 
   // Use contexts
-  const { settings } = useSettings();
+  const { settings, hasHydrated: settingsHydrated } = useSettings();
   const { fileCache, setFileCache, hasConfigInitialized, setHasConfigInitialized, sectionToFileMap, setSectionToFileMap } = useConfig();
   const [configFiles, setConfigFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -224,8 +224,8 @@ const ConfigFileList = forwardRef((props, ref) => {
     };
 
     // Only initialize if we don't have cached data and haven't initialized yet
-    // AND settings are ready
-    if (settings && (!hasConfigInitialized || fileCache.files.length === 0)) {
+    // AND settings are fully hydrated
+    if (settingsHydrated && settings && (!hasConfigInitialized || fileCache.files.length === 0)) {
       initializeApp();
     } else if (hasConfigInitialized && fileCache.files.length > 0) {
       // Use cached data
@@ -234,7 +234,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized, settings]);
+  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized, settings, settingsHydrated]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
@@ -513,6 +513,25 @@ const ConfigFileList = forwardRef((props, ref) => {
     await handleRefreshFiles();
     handleCloseEditor();
   };
+
+  // Show loading state while settings are hydrating
+  if (!settingsHydrated) {
+    return (
+      <Box p={6}>
+        <VStack align="stretch" gap={6}>
+          <Box>
+            <Heading as="h3" size="lg" color="text" mb={2}>
+              <Icon color="primary" mr={2}><MdFolder /></Icon> Configuration Files
+            </Heading>
+            <Flex align="center" gap={3} mt={4}>
+              <Spinner size="sm" color="primary" />
+              <Text color="textMuted">Loading settings...</Text>
+            </Flex>
+          </Box>
+        </VStack>
+      </Box>
+    );
+  }
 
   return (
     <Box p={6}>
