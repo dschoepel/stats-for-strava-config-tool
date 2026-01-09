@@ -285,10 +285,9 @@ const GearMaintenanceEditor = () => {
               onClick={handleSave}
               colorPalette="blue"
               disabled={!isDirty || saving}
-              loading={saving}
             >
               <MdSave />
-              Save Changes
+              {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </HStack>
         </Flex>
