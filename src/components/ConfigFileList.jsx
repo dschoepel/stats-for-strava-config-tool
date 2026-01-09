@@ -38,6 +38,13 @@ const ConfigFileList = forwardRef((props, ref) => {
 
   const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
 
+  // Calculate configuration mode based on files and validation
+  const configMode = !hasConfigInitialized ? null :
+    validationStatus && !validationStatus.isComplete ? 'invalid' :
+    configFiles.length === 0 ? null :
+    configFiles.length === 1 ? 'single-file' :
+    'multi-file';
+
   // Validate that all required sections are present
   const validateSections = useCallback(async (mapping) => {
     try {
