@@ -67,6 +67,7 @@ const getDefaultSettings = () => ({
     autoBackup: true,
     backupsDir: DEFAULT_SETTINGS_PATH, // Directory where backups folder will be created
     validateOnLoad: true,
+    gearMaintenancePath: '/data/statistics-for-strava/storage/gear-maintenance', // Path for gear maintenance images
   },
   editor: {
     fontSize: 14,

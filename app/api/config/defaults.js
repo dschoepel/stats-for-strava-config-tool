@@ -6,6 +6,7 @@
  */
 
 export const DEFAULT_CONFIG_PATH = '/data/statistics-for-strava/config/';
+export const DEFAULT_GEAR_MAINTENANCE_PATH = '/data/statistics-for-strava/storage/gear-maintenance';
 
 /**
  * Get the default configuration path from environment or fallback to default
@@ -13,6 +14,14 @@ export const DEFAULT_CONFIG_PATH = '/data/statistics-for-strava/config/';
  */
 export function getDefaultConfigPath() {
   return process.env.DEFAULT_STATS_CONFIG_PATH || DEFAULT_CONFIG_PATH;
+}
+
+/**
+ * Get the default gear maintenance path from environment or fallback to default
+ * @returns {string} The gear maintenance directory path
+ */
+export function getDefaultGearMaintenancePath() {
+  return process.env.DEFAULT_GEAR_MAINTENANCE_PATH || DEFAULT_GEAR_MAINTENANCE_PATH;
 }
 
 /**
