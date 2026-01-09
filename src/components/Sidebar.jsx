@@ -107,15 +107,14 @@ const MenuItemWithSubmenu = ({
   </Box>
 );
 
-export default function Sidebar({ 
-  isCollapsed, 
-  onToggle, 
+export default function Sidebar({
+  isCollapsed,
+  onToggle,
   isMainConfigExpanded,
   setIsMainConfigExpanded,
   isHelpExpanded,
   setIsHelpExpanded,
-  setIsSidebarCollapsed,
-  handleNavClick 
+  handleNavClick
 }) {
   return (
     <>
@@ -196,7 +195,7 @@ export default function Sidebar({
             e.preventDefault();
             handleNavClick('Configuration');
             if (isCollapsed) {
-              setIsSidebarCollapsed(false);
+              onToggle();
               setIsMainConfigExpanded(true);
             } else {
               setIsMainConfigExpanded(!isMainConfigExpanded);
@@ -294,7 +293,7 @@ export default function Sidebar({
           onClick={(e) => {
             e.preventDefault();
             if (isCollapsed) {
-              setIsSidebarCollapsed(false);
+              onToggle();
               setIsHelpExpanded(true);
             } else {
               setIsHelpExpanded(!isHelpExpanded);
