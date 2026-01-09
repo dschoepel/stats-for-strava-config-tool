@@ -56,14 +56,13 @@ function App() {
       />
       
       <Flex mt="64px" h="calc(100vh - 64px)">
-        <Sidebar 
+        <Sidebar
           isCollapsed={isSidebarCollapsed}
           onToggle={toggleSidebar}
           isMainConfigExpanded={isMainConfigExpanded}
           setIsMainConfigExpanded={setIsMainConfigExpanded}
           isHelpExpanded={isHelpExpanded}
           setIsHelpExpanded={setIsHelpExpanded}
-          setIsSidebarCollapsed={setIsSidebarCollapsed}
           handleNavClick={handleNavClick}
         />
         
