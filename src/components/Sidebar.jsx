@@ -3,7 +3,7 @@ import { ChevronRightIcon, ChevronLeftIcon, ChevronDownIcon } from '@chakra-ui/i
 import { 
   MdBuild, MdPerson, MdPalette, MdFileDownload, 
   MdBarChart, MdDirectionsBike, MdLink, MdSchedule,
-  MdDescription, MdHelp 
+  MdDescription, MdHelp, MdConstruction
 } from 'react-icons/md';
 import { FcDataConfiguration } from 'react-icons/fc';
 import { SiYaml } from 'react-icons/si';
@@ -268,6 +268,14 @@ export default function Sidebar({
             onToggleSidebar={onToggle}
           />
         </MenuItemWithSubmenu>
+
+        <MenuItem 
+          icon={MdConstruction} 
+          label="Gear Maintenance" 
+          onClick={(e) => { e.preventDefault(); handleNavClick('Gear Maintenance'); }}
+          isCollapsed={isCollapsed}
+          onToggleSidebar={onToggle}
+        />
 
         <MenuItem 
           icon={SiYaml} 

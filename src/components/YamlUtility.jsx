@@ -234,7 +234,7 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
         
         <Text color="textMuted" mt={-4}>
           Upload and view your Strava configuration YAML files. This tool helps you inspect 
-          config files that start with "config" and have .yaml or .yml extensions.
+          config files that start with "config" or "gear-maintenance.yaml" and have .yaml or .yml extensions.
         </Text>
 
         {error && (

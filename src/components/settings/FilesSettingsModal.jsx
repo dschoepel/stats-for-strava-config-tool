@@ -22,6 +22,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const [originalDefaultPath, setOriginalDefaultPath] = useState('');
+  const [originalGearMaintenancePath, setOriginalGearMaintenancePath] = useState('');
   const { showSuccess, showError, showWarning } = useToast();
 
   // Expand tilde to full path
@@ -48,7 +49,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
       setIsDirty(false);
       
       const loadAndExpandSettings = async () => {
-        const loaded = loadSettings();
+        const loaded = await loadSettings();
         
         // Expand the default path if it contains tilde
         if (loaded.files?.defaultPath?.startsWith('~')) {
@@ -58,8 +59,17 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
           }
         }
         
+        // Expand the gear maintenance path if it contains tilde
+        if (loaded.files?.gearMaintenancePath?.startsWith('~')) {
+          const expandedPath = await expandPath(loaded.files.gearMaintenancePath);
+          if (expandedPath !== loaded.files.gearMaintenancePath) {
+            loaded.files.gearMaintenancePath = expandedPath;
+          }
+        }
+        
         setSettings(loaded);
         setOriginalDefaultPath(loaded.files?.defaultPath || '');
+        setOriginalGearMaintenancePath(loaded.files?.gearMaintenancePath || '');
       };
       
       loadAndExpandSettings();
@@ -102,18 +112,36 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const handleSave = async () => {
     // Check if default path has changed
     const newDefaultPath = settings.files?.defaultPath || '';
-    const pathChanged = newDefaultPath !== originalDefaultPath;
+    const defaultPathChanged = newDefaultPath !== originalDefaultPath;
+    
+    // Check if gear maintenance path has changed
+    const newGearMaintenancePath = settings.files?.gearMaintenancePath || '';
+    const gearMaintenancePathChanged = newGearMaintenancePath !== originalGearMaintenancePath;
 
-    if (pathChanged) {
+    if (defaultPathChanged || gearMaintenancePathChanged) {
+      // Build confirmation message
+      let message = '';
+      
+      if (defaultPathChanged) {
+        message += `You are changing the default file path from:\n\n"${originalDefaultPath}"\n\nto:\n\n"${newDefaultPath}"\n\nThis will update the DEFAULT_STATS_CONFIG_PATH environment variable.`;
+      }
+      
+      if (gearMaintenancePathChanged) {
+        if (message) message += '\n\n';
+        message += `You are changing the gear maintenance path from:\n\n"${originalGearMaintenancePath}"\n\nto:\n\n"${newGearMaintenancePath}"\n\nThis will update the DEFAULT_GEAR_MAINTENANCE_PATH environment variable.`;
+      }
+      
+      message += '\n\nThe application will need to be restarted for these changes to take full effect.\n\nDo you want to proceed?';
+      
       // Show confirmation dialog before updating .env
       setConfirmDialog({
         isOpen: true,
         title: 'Update Environment Variable?',
-        message: `You are changing the default file path from:\n\n"${originalDefaultPath}"\n\nto:\n\n"${newDefaultPath}"\n\nThis will update the DEFAULT_STATS_CONFIG_PATH environment variable in your .env file. The application will need to be restarted for this change to take full effect.\n\nDo you want to proceed?`,
+        message,
         confirmText: 'Proceed',
         onConfirm: async () => {
           setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
-          await performSave(newDefaultPath);
+          await performSave(defaultPathChanged ? newDefaultPath : null, gearMaintenancePathChanged ? newGearMaintenancePath : null);
         }
       });
     } else {
@@ -121,7 +149,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
     }
   };
 
-  const performSave = async (newPath = null) => {
+  const performSave = async (newDefaultPath = null, newGearMaintenancePath = null) => {
     // Save settings
     const success = await saveSettings(settings);
     if (!success) {
@@ -129,30 +157,69 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
       return;
     }
 
-    // If path changed, update .env file
-    if (newPath) {
+    const envUpdates = [];
+    let anyFailed = false;
+    
+    // If default path changed, update .env file
+    if (newDefaultPath) {
       try {
         const response = await fetch('/api/update-env', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             key: 'DEFAULT_STATS_CONFIG_PATH',
-            value: newPath
+            value: newDefaultPath
           })
         });
 
         const result = await response.json();
         
         if (result.success) {
-          console.log('✅ Environment variable updated successfully');
-          showSuccess('Settings saved successfully! The DEFAULT_STATS_CONFIG_PATH environment variable has been updated. Please restart the application for the change to take full effect.', 8000);
+          console.log('✅ DEFAULT_STATS_CONFIG_PATH updated successfully');
+          envUpdates.push('DEFAULT_STATS_CONFIG_PATH');
         } else {
-          console.error('Failed to update .env file:', result.error);
-          showWarning(`Settings saved, but failed to update .env file: ${result.error}. You may need to manually update the DEFAULT_STATS_CONFIG_PATH in your .env file.`, 8000);
+          console.error('Failed to update DEFAULT_STATS_CONFIG_PATH:', result.error);
+          anyFailed = true;
         }
       } catch (error) {
-        console.error('Error updating .env file:', error);
-        showWarning('Settings saved, but failed to update .env file. You may need to manually update the DEFAULT_STATS_CONFIG_PATH in your .env file.', 8000);
+        console.error('Error updating DEFAULT_STATS_CONFIG_PATH:', error);
+        anyFailed = true;
+      }
+    }
+    
+    // If gear maintenance path changed, update .env file
+    if (newGearMaintenancePath) {
+      try {
+        const response = await fetch('/api/update-env', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: 'DEFAULT_GEAR_MAINTENANCE_PATH',
+            value: newGearMaintenancePath
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ DEFAULT_GEAR_MAINTENANCE_PATH updated successfully');
+          envUpdates.push('DEFAULT_GEAR_MAINTENANCE_PATH');
+        } else {
+          console.error('Failed to update DEFAULT_GEAR_MAINTENANCE_PATH:', result.error);
+          anyFailed = true;
+        }
+      } catch (error) {
+        console.error('Error updating DEFAULT_GEAR_MAINTENANCE_PATH:', error);
+        anyFailed = true;
+      }
+    }
+    
+    // Show appropriate success/warning message
+    if (envUpdates.length > 0) {
+      if (anyFailed) {
+        showWarning(`Settings saved, but some environment variables failed to update: ${envUpdates.join(', ')}. You may need to manually update your .env file.`, 8000);
+      } else {
+        showSuccess(`Settings saved successfully! Environment variables updated: ${envUpdates.join(', ')}. Please restart the application for the changes to take full effect.`, 8000);
       }
     } else {
       // Show success message for regular save
@@ -161,6 +228,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
 
     setIsDirty(false);
     setOriginalDefaultPath(settings.files?.defaultPath || '');
+    setOriginalGearMaintenancePath(settings.files?.gearMaintenancePath || '');
     
     // Close modal after successful save
     onClose();
@@ -210,6 +278,19 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               </Button>
             </HStack>
             <Text fontSize="sm" color="gray.500" mt={1}>Backups are saved to a 'backups' subfolder in this directory</Text>
+          </Field.Root>
+
+          {/* Gear Maintenance Path Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Gear maintenance directory path</Field.Label>
+            <Input
+              type="text"
+              value={settings.files?.gearMaintenancePath || ''}
+              onChange={(e) => handleChange('files.gearMaintenancePath', e.target.value)}
+              placeholder="/data/statistics-for-strava/storage/gear-maintenance"
+              bg="inputBg"
+            />
+            <Text fontSize="sm" color="gray.500" mt={1}>Where gear maintenance images and data are stored</Text>
           </Field.Root>
 
           {/* Auto Backup Setting */}
@@ -369,6 +450,19 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               </Button>
             </HStack>
             <Text fontSize="sm" color="gray.500" mt={1}>Backups are saved to a 'backups' subfolder in this directory</Text>
+          </Field.Root>
+
+          {/* Gear Maintenance Path Setting */}
+          <Field.Root>
+            <Field.Label fontWeight="500" mb={2}>Gear maintenance directory path</Field.Label>
+            <Input
+              type="text"
+              value={settings.files?.gearMaintenancePath || ''}
+              onChange={(e) => handleChange('files.gearMaintenancePath', e.target.value)}
+              placeholder="/data/statistics-for-strava/storage/gear-maintenance"
+              bg="inputBg"
+            />
+            <Text fontSize="sm" color="gray.500" mt={1}>Where gear maintenance images and data are stored</Text>
           </Field.Root>
 
           {/* Auto Backup Setting */}

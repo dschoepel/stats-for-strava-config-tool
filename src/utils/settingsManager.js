@@ -3,14 +3,58 @@
 
 import { getFileContent, saveFile, expandPath } from './apiClient';
 import packageJson from '../../package.json';
+import { DEFAULT_CONFIG_PATH } from '../../app/api/config/defaults.js';
 
 /* eslint-disable no-undef */
 const SETTINGS_KEY = process.env.NEXT_PUBLIC_SETTINGS_STORAGE_KEY || 'stats-for-strava-settings';
-const DEFAULT_SETTINGS_PATH = process.env.NEXT_PUBLIC_DEFAULT_STATS_CONFIG_PATH || '~/Documents/strava-config-tool/';
+// Default fallback path (updated by runtime config)
+let DEFAULT_SETTINGS_PATH = DEFAULT_CONFIG_PATH;
 const SETTINGS_FILENAME = 'config-tool-settings.yaml';
 
-// Default settings structure
-const DEFAULT_SETTINGS = {
+// Runtime config loaded from API endpoint (allows Docker env vars to work)
+let runtimeConfigLoaded = false;
+let runtimeConfigPromise = null;
+let cachedSettings = null;
+
+/**
+ * Load runtime configuration from API endpoint
+ * This allows environment variables to be read at runtime, not build time
+ */
+async function loadRuntimeConfig() {
+  if (runtimeConfigLoaded) return;
+  
+  // Return existing promise if already loading
+  if (runtimeConfigPromise) return runtimeConfigPromise;
+  
+  runtimeConfigPromise = (async () => {
+    try {
+      const response = await fetch('/api/runtime-config');
+      const data = await response.json();
+      
+      if (data.success && data.config.defaultPath) {
+        DEFAULT_SETTINGS_PATH = data.config.defaultPath;
+        console.log('Runtime config loaded, defaultPath:', DEFAULT_SETTINGS_PATH);
+      }
+    } catch (error) {
+      console.warn('Failed to load runtime config, using defaults:', error);
+    } finally {
+      runtimeConfigLoaded = true;
+    }
+  })();
+  
+  return runtimeConfigPromise;
+}
+
+// Load runtime config immediately when module loads
+if (typeof window !== 'undefined') {
+  loadRuntimeConfig().then(() => {
+    // Pre-load settings after runtime config is ready
+    loadSettings();
+  });
+}
+
+// Default settings structure (function to ensure runtime config is used)
+const getDefaultSettings = () => ({
   version: packageJson.version,
   ui: {
     theme: 'dark', // 'light' or 'dark'
@@ -23,6 +67,7 @@ const DEFAULT_SETTINGS = {
     autoBackup: true,
     backupsDir: DEFAULT_SETTINGS_PATH, // Directory where backups folder will be created
     validateOnLoad: true,
+    gearMaintenancePath: '/data/statistics-for-strava/storage/gear-maintenance', // Path for gear maintenance images
   },
   editor: {
     fontSize: 14,
@@ -33,7 +78,10 @@ const DEFAULT_SETTINGS = {
   validation: {
     maxZwiftLevel: 100, // Maximum Zwift level (can increase in future)
   }
-};
+});
+
+// Maintain backwards compatibility
+const DEFAULT_SETTINGS = getDefaultSettings();
 
 /**
  * Get the settings file path
@@ -51,10 +99,17 @@ export const getSettingsFilePath = (defaultPath = null) => {
  * Load settings from file or localStorage (fallback)
  * @returns {Object} Settings object
  */
-export const loadSettings = () => {
+export const loadSettings = async () => {
+  // Return cached settings if already loaded
+  if (cachedSettings) return cachedSettings;
+  
+  // Load runtime config first
+  await loadRuntimeConfig();
+  
   // Check if we're in a browser environment (client-side)
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return DEFAULT_SETTINGS;
+    cachedSettings = getDefaultSettings();
+    return cachedSettings;
   }
   
   try {
@@ -63,14 +118,26 @@ export const loadSettings = () => {
     if (stored) {
       const parsed = JSON.parse(stored);
       // Merge with defaults to ensure all settings exist
-      return mergeSettings(DEFAULT_SETTINGS, parsed);
+      const merged = mergeSettings(getDefaultSettings(), parsed);
+      
+      // Update cached defaultPath if runtime config has a different value
+      if (merged.files?.defaultPath !== DEFAULT_SETTINGS_PATH) {
+        merged.files.defaultPath = DEFAULT_SETTINGS_PATH;
+        // Update localStorage with corrected path
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(merged, null, 2));
+        console.log('Updated cached settings with runtime config path:', DEFAULT_SETTINGS_PATH);
+      }
+      
+      cachedSettings = merged;
+      return merged;
     }
   } catch (error) {
     console.error('Error loading settings from localStorage:', error);
   }
   
   // Return defaults if loading fails or no settings exist
-  return { ...DEFAULT_SETTINGS };
+  cachedSettings = getDefaultSettings();
+  return cachedSettings;
 };
 
 /**
@@ -78,9 +145,12 @@ export const loadSettings = () => {
  * @returns {Promise<Object>} Settings object
  */
 export const loadSettingsFromFile = async () => {
+  // Load runtime config first to get correct default path
+  await loadRuntimeConfig();
+  
   try {
     // First get the default path from localStorage or defaults
-    const currentSettings = loadSettings();
+    const currentSettings = await loadSettings();
     const defaultPath = currentSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
     const filePath = getSettingsFilePath(defaultPath);
     
@@ -92,7 +162,7 @@ export const loadSettingsFromFile = async () => {
     
     if (!response.ok) {
       console.log('Settings file not found, using defaults');
-      return { ...DEFAULT_SETTINGS };
+      return getDefaultSettings();
     }
     
     const data = await response.json();
@@ -102,7 +172,7 @@ export const loadSettingsFromFile = async () => {
       const settings = parseYamlSettings(lines);
       
       // Merge with defaults and save to localStorage cache
-      const mergedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
+      const mergedSettings = mergeSettings(getDefaultSettings(), settings);
       
       // Check if version needs updating
       if (mergedSettings.version !== packageJson.version) {
@@ -123,7 +193,7 @@ export const loadSettingsFromFile = async () => {
     console.error('Error loading settings from file:', error);
   }
   
-  return { ...DEFAULT_SETTINGS };
+  return getDefaultSettings();
 };
 
 /**
@@ -156,7 +226,7 @@ export const expandTildePath = async (inputPath) => {
 export const saveSettings = async (settings) => {
   try {
     // Validate settings structure
-    const validatedSettings = mergeSettings(DEFAULT_SETTINGS, settings);
+    const validatedSettings = mergeSettings(getDefaultSettings(), settings);
     
     // Always update version to current from package.json
     validatedSettings.version = packageJson.version;
@@ -164,6 +234,11 @@ export const saveSettings = async (settings) => {
     // Expand tilde in defaultPath if present
     if (validatedSettings.files?.defaultPath?.startsWith('~')) {
       validatedSettings.files.defaultPath = await expandTildePath(validatedSettings.files.defaultPath);
+    }
+    
+    // Expand tilde in gearMaintenancePath if present
+    if (validatedSettings.files?.gearMaintenancePath?.startsWith('~')) {
+      validatedSettings.files.gearMaintenancePath = await expandTildePath(validatedSettings.files.gearMaintenancePath);
     }
     
     // Add timestamp
@@ -215,10 +290,10 @@ export const resetSettings = () => {
     // Dispatch reset event
     window.dispatchEvent(new CustomEvent('settingsReset'));
     
-    return { ...DEFAULT_SETTINGS };
+    return getDefaultSettings();
   } catch (error) {
     console.error('Error resetting settings:', error);
-    return { ...DEFAULT_SETTINGS };
+    return getDefaultSettings();
   }
 };
 
@@ -228,8 +303,15 @@ export const resetSettings = () => {
  * @param {*} defaultValue - Default value if setting not found
  * @returns {*} Setting value
  */
+/**
+ * Get a specific setting by path (e.g., 'ui.theme' or 'files.maxRecentFiles')
+ * @param {string} path - Dot-separated path to setting
+ * @param {*} defaultValue - Default value if setting not found
+ * @returns {*} Setting value
+ */
 export const getSetting = (path, defaultValue = null) => {
-  const settings = loadSettings();
+  // Use cached settings if available (loaded on module init)
+  const settings = cachedSettings || getDefaultSettings();
   const keys = path.split('.');
   
   let current = settings;
@@ -462,4 +544,4 @@ const mergeSettings = (defaults, override) => {
   return result;
 };
 
-export { DEFAULT_SETTINGS, SETTINGS_KEY };
+export { DEFAULT_SETTINGS, getDefaultSettings, SETTINGS_KEY };

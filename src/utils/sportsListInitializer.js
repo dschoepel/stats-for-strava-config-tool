@@ -4,43 +4,10 @@
  */
 
 import { getSetting } from './settingsManager.js';
+import { INITIAL_SPORTS_LIST } from '../../app/api/config/defaults.js';
 
-// Initial sports list (default if file doesn't exist)
-export const initialSportsList = {
-  Cycling: [
-    'Ride', 'MountainBikeRide', 'GravelRide', 'EBikeRide', 'EMountainBikeRide', 'VirtualRide', 'Velomobile'
-  ],
-  Running: [
-    'Run', 'TrailRun', 'VirtualRun'
-  ],
-  Walking: [
-     'Walk', 'Hike'
-  ],
-  'Water sports': [
-    'Canoeing', 'Kayaking', 'Kitesurf', 'Rowing', 'StandUpPaddling', 'Surfing', 'Swim', 'Windsurf'
-  ],
-  'Winter sports': [
-    'BackcountrySki', 'AlpineSki', 'NordicSki', 'IceSkate', 'Snowboard', 'Snowshoe'
-  ],
-  Skating: [
-    'InlineSkate', 'RollerSki', 'Skateboard'
-  ],
-  'Racquet & Paddle Sports': [
-    'Badminton', 'Pickleball', 'Racquetball', 'Squash', 'TableTennis', 'Tennis'
-  ],
-  Fitness: [
-    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining'
-  ],
-  'Mind & Body Sports': [
-    'Pilates', 'Yoga'
-  ],
-  'Outdoor Sports': [
-    'Golf', 'RockClimbing', 'Sail', 'Soccer'
-  ],
-  'Adaptive & Inclusive Sports': [
-    'Handcycle', 'Wheelchair'
-  ]
-};
+// Re-export for backwards compatibility
+export const initialSportsList = INITIAL_SPORTS_LIST;
 
 /**
  * Get the full path to the sports list file

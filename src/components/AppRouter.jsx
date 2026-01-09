@@ -3,6 +3,7 @@ import { Box } from '@chakra-ui/react';
 import YamlUtility from './YamlUtility';
 import SportsListEditor from './SportsListEditor';
 import WidgetDefinitionsEditor from './WidgetDefinitionsEditor';
+import GearMaintenanceEditor from './GearMaintenanceEditor';
 import ConfigFileList from './ConfigFileList';
 import AthleteConfigEditor from './config/AthleteConfigEditor';
 import GeneralConfigEditor from './config/GeneralConfigEditor';
@@ -59,6 +60,10 @@ const AppRouter = ({
 
   if (currentPage === 'YAML Utility') {
     return <YamlUtility settings={settings} />;
+  }
+
+  if (currentPage === 'Gear Maintenance') {
+    return <GearMaintenanceEditor />;
   }
 
   if (currentPage === 'Athlete') {
