@@ -138,7 +138,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     
     try {
       // Get the current default path from settings
-      const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
+      const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
       const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
       const result = await response.json();
       
@@ -176,8 +176,8 @@ const ConfigFileList = forwardRef((props, ref) => {
       try {
         showInfo('Checking default configuration directory...', 3000);
         
-        // Get the default path from settings using getSetting (which waits for runtime config)
-        const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
+        // Get the default path from settings (from SettingsProvider)
+        const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
         
         // Try to load files from default directory
         const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
@@ -302,7 +302,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setError(null);
       
       // Get the current default path from settings
-      const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
+      const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
       
       // Check cache first if not forcing refresh
       if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
