@@ -9,6 +9,7 @@ import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
 import ServerFolderBrowser from './ServerFolderBrowser';
 import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
+import { getSetting } from '../utils/settingsManager';
 
 const ConfigFileList = forwardRef((props, ref) => {
   const { 
@@ -134,7 +135,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     
     try {
       // Get the current default path from settings
-      const currentDefaultPath = getSetting('files.defaultPath', '~/Documents/config/');
+      const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
       const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
       const result = await response.json();
       
@@ -172,8 +173,8 @@ const ConfigFileList = forwardRef((props, ref) => {
       try {
         showInfo('Checking default configuration directory...', 3000);
         
-        // Get the default path from settings prop (wait for settings to be ready)
-        const currentDefaultPath = settings?.files?.defaultPath || '~/Documents/config/';
+        // Get the default path from settings using getSetting (which waits for runtime config)
+        const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
         
         // Try to load files from default directory
         const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
@@ -298,7 +299,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setError(null);
       
       // Get the current default path from settings
-      const currentDefaultPath = getSetting('files.defaultPath', '~/Documents/config/');
+      const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
       
       // Check cache first if not forcing refresh
       if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
