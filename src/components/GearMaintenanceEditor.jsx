@@ -300,10 +300,13 @@ const GearMaintenanceEditor = () => {
           <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
             <Field.Root>
               <Field.Label>Enable Gear Maintenance</Field.Label>
-              <Switch
+              <Switch.Root
                 checked={config.enabled}
                 onCheckedChange={(e) => handleFieldChange('enabled', e.checked)}
-              />
+              >
+                <Switch.HiddenInput />
+                <Switch.Control />
+              </Switch.Root>
               <Field.HelperText>
                 {gearMaintenanceSchema.properties.enabled.description}
               </Field.HelperText>
@@ -346,10 +349,13 @@ const GearMaintenanceEditor = () => {
 
             <Field.Root>
               <Field.Label>Ignore Retired Gear</Field.Label>
-              <Switch
+              <Switch.Root
                 checked={config.ignoreRetiredGear}
                 onCheckedChange={(e) => handleFieldChange('ignoreRetiredGear', e.checked)}
-              />
+              >
+                <Switch.HiddenInput />
+                <Switch.Control />
+              </Switch.Root>
               <Field.HelperText>
                 {gearMaintenanceSchema.properties.ignoreRetiredGear.description}
               </Field.HelperText>
