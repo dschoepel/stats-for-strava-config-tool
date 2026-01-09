@@ -8,7 +8,6 @@ import YamlEditorModal from './YamlEditorModal';
 import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
 import ServerFolderBrowser from './ServerFolderBrowser';
-import { getSetting } from '../utils/settingsManager';
 import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
 
 const ConfigFileList = forwardRef((props, ref) => {
@@ -19,7 +18,8 @@ const ConfigFileList = forwardRef((props, ref) => {
     setHasConfigInitialized,
     configMode,
     sectionToFileMap,
-    setSectionToFileMap
+    setSectionToFileMap,
+    settings
   } = props;
   const [configFiles, setConfigFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -172,8 +172,8 @@ const ConfigFileList = forwardRef((props, ref) => {
       try {
         showInfo('Checking default configuration directory...', 3000);
         
-        // Get the default path from settings
-        const currentDefaultPath = getSetting('files.defaultPath', '~/Documents/config/');
+        // Get the default path from settings prop (wait for settings to be ready)
+        const currentDefaultPath = settings?.files?.defaultPath || '~/Documents/config/';
         
         // Try to load files from default directory
         const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
@@ -220,16 +220,17 @@ const ConfigFileList = forwardRef((props, ref) => {
     };
 
     // Only initialize if we don't have cached data and haven't initialized yet
-    if (!hasConfigInitialized || fileCache.files.length === 0) {
+    // AND settings are ready
+    if (settings && (!hasConfigInitialized || fileCache.files.length === 0)) {
       initializeApp();
-    } else {
+    } else if (hasConfigInitialized && fileCache.files.length > 0) {
       // Use cached data
       console.log('Using cached configuration data');
       setConfigFiles(fileCache.files);
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized]);
+  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized, settings]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
