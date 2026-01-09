@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
-import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription } from 'react-icons/md';
+import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
@@ -8,7 +8,7 @@ import YamlEditorModal from './YamlEditorModal';
 import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
 import ServerFolderBrowser from './ServerFolderBrowser';
-import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
+import { getConfigFiles, setConfigDirectory, mergeConfigFiles, getFileContent } from '../utils/apiClient';
 import { useSettings } from '../state/SettingsProvider';
 import { useConfig } from '../state/ConfigProvider';
 
