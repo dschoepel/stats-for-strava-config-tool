@@ -22,6 +22,7 @@ import { getSetting } from '../utils/settingsManager';
 import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../schemas/gearMaintenanceSchema';
 import ImagePicker from './gear-maintenance/ImagePicker';
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
+import { Tooltip } from './Tooltip';
 
 // Create list collections for Select components
 const resetModeCollection = createListCollection({
@@ -280,20 +281,22 @@ const GearMaintenanceEditor = () => {
             </Text>
           </Box>
           <HStack>
-            <Button
-              onClick={loadConfig}
-              variant="ghost"
-              disabled={loading || saving}
-            >
-              Reset
-            </Button>
+            <Tooltip content="Discard all unsaved changes and reload from file">
+              <Button
+                onClick={loadConfig}
+                variant="ghost"
+                disabled={loading || saving}
+              >
+                Reset
+              </Button>
+            </Tooltip>
             <Button
               onClick={handleSave}
               colorPalette="blue"
               disabled={!isDirty || saving}
             >
               <MdSave />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
             </Button>
           </HStack>
         </Flex>
