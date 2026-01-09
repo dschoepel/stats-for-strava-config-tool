@@ -15,27 +15,21 @@ import IntegrationsConfigEditor from './config/IntegrationsConfigEditor';
 import DaemonConfigEditor from './config/DaemonConfigEditor';
 import ZwiftConfigEditor from './config/ZwiftConfigEditor';
 import MarkdownHelp from './MarkdownHelp';
+import { useSettings } from '../state/SettingsProvider';
+import { useNavigation } from '../state/NavigationProvider';
+import { useConfig } from '../state/ConfigProvider';
+import { useDirtyState } from '../state/DirtyStateProvider';
 
 /**
  * AppRouter component handles page routing and renders the appropriate component
  * based on the current page state.
  */
-const AppRouter = ({
-  currentPage,
-  settings,
-  sectionData,
-  isLoadingSectionData,
-  configListRef,
-  fileCache,
-  hasConfigInitialized,
-  sectionToFileMap,
-  onNavigate,
-  onSaveSectionData,
-  onUnsavedChangesChange,
-  onConfigInitializedChange,
-  onFileCacheChange,
-  onSectionToFileMapChange
-}) => {
+const AppRouter = ({ configListRef, onNavigate }) => {
+  // Use contexts internally
+  const { settings } = useSettings();
+  const { currentPage } = useNavigation();
+  const { sectionData, isLoadingSectionData, saveSectionData } = useConfig();
+  const { setHasUnsavedChanges } = useDirtyState();
   // Helper to navigate back to Configuration page
   const navigateToConfig = () => onNavigate('Configuration');
 
@@ -44,16 +38,9 @@ const AppRouter = ({
     return (
       <ConfigFileList
         ref={configListRef}
-        fileCache={fileCache}
-        setFileCache={onFileCacheChange}
-        hasConfigInitialized={hasConfigInitialized}
-        setHasConfigInitialized={onConfigInitializedChange}
-        sectionToFileMap={sectionToFileMap}
-        setSectionToFileMap={onSectionToFileMapChange}
         onConfigSectionClick={(section, parentPage) => {
           onNavigate(section, parentPage);
         }}
-        settings={settings}
       />
     );
   }
@@ -71,10 +58,10 @@ const AppRouter = ({
       <AthleteConfigEditor
         key={JSON.stringify(sectionData.athlete)}
         initialData={sectionData.athlete || {}}
-        onSave={(data) => onSaveSectionData('athlete', data)}
+        onSave={(data) => saveSectionData('athlete', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -84,10 +71,10 @@ const AppRouter = ({
       <GeneralConfigEditor
         key={JSON.stringify(sectionData.general)}
         initialData={sectionData.general || {}}
-        onSave={(data) => onSaveSectionData('general', data)}
+        onSave={(data) => saveSectionData('general', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -97,10 +84,10 @@ const AppRouter = ({
       <AppearanceConfigEditor
         key={JSON.stringify(sectionData.appearance)}
         initialData={sectionData.appearance || {}}
-        onSave={(data) => onSaveSectionData('appearance', data)}
+        onSave={(data) => saveSectionData('appearance', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -110,10 +97,10 @@ const AppRouter = ({
       <ImportConfigEditor
         key={JSON.stringify(sectionData.import)}
         initialData={sectionData.import || {}}
-        onSave={(data) => onSaveSectionData('import', data)}
+        onSave={(data) => saveSectionData('import', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -123,10 +110,10 @@ const AppRouter = ({
       <MetricsConfigEditor
         key={JSON.stringify(sectionData.metrics)}
         initialData={sectionData.metrics || {}}
-        onSave={(data) => onSaveSectionData('metrics', data)}
+        onSave={(data) => saveSectionData('metrics', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -136,10 +123,10 @@ const AppRouter = ({
       <GearConfigEditor
         key={JSON.stringify(sectionData.gear)}
         initialData={sectionData.gear || {}}
-        onSave={(data) => onSaveSectionData('gear', data)}
+        onSave={(data) => saveSectionData('gear', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -149,10 +136,10 @@ const AppRouter = ({
       <IntegrationsConfigEditor
         key={JSON.stringify(sectionData.integrations)}
         initialData={sectionData.integrations || {}}
-        onSave={(data) => onSaveSectionData('integrations', data)}
+        onSave={(data) => saveSectionData('integrations', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -162,10 +149,10 @@ const AppRouter = ({
       <DaemonConfigEditor
         key={JSON.stringify(sectionData.daemon)}
         initialData={sectionData.daemon || {}}
-        onSave={(data) => onSaveSectionData('daemon', data)}
+        onSave={(data) => saveSectionData('daemon', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }
@@ -175,10 +162,10 @@ const AppRouter = ({
       <ZwiftConfigEditor
         key={JSON.stringify(sectionData.zwift)}
         initialData={sectionData.zwift || {}}
-        onSave={(data) => onSaveSectionData('zwift', data)}
+        onSave={(data) => saveSectionData('zwift', data)}
         onCancel={navigateToConfig}
         isLoading={isLoadingSectionData}
-        onDirtyChange={onUnsavedChangesChange}
+        onDirtyChange={setHasUnsavedChanges}
       />
     );
   }

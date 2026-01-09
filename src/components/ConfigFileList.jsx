@@ -9,19 +9,15 @@ import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
 import ServerFolderBrowser from './ServerFolderBrowser';
 import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
-import { getSetting } from '../utils/settingsManager';
+import { useSettings } from '../state/SettingsProvider';
+import { useConfig } from '../state/ConfigProvider';
 
 const ConfigFileList = forwardRef((props, ref) => {
-  const { 
-    fileCache, 
-    setFileCache, 
-    hasConfigInitialized, 
-    setHasConfigInitialized,
-    configMode,
-    sectionToFileMap,
-    setSectionToFileMap,
-    settings
-  } = props;
+  const { onConfigSectionClick } = props;
+
+  // Use contexts
+  const { settings } = useSettings();
+  const { fileCache, setFileCache, hasConfigInitialized, setHasConfigInitialized, sectionToFileMap, setSectionToFileMap } = useConfig();
   const [configFiles, setConfigFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);

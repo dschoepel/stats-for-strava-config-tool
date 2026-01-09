@@ -3,6 +3,7 @@ import {
   Box,
   VStack,
   HStack,
+  Stack,
   Text,
   Button,
   Input,
@@ -23,6 +24,7 @@ import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../schemas
 import ImagePicker from './gear-maintenance/ImagePicker';
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
 import { Tooltip } from './Tooltip';
+import { ConfirmDialog } from './ConfirmDialog';
 
 // Create list collections for Select components
 const resetModeCollection = createListCollection({
@@ -49,6 +51,8 @@ const GearMaintenanceEditor = () => {
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [imagePickerTarget, setImagePickerTarget] = useState(null);
   const [expandedComponents, setExpandedComponents] = useState({});
+  const [expandedMaintenanceTasks, setExpandedMaintenanceTasks] = useState({});
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: null, data: null });
   const { showSuccess, showError } = useToast();
   
   // Get gear maintenance path from settings
@@ -66,7 +70,61 @@ const GearMaintenanceEditor = () => {
       const data = await response.json();
 
       if (data.success) {
-        setConfig(data.config);
+        // Migrate old format to new format if needed
+        let migratedConfig = { ...data.config };
+        
+        // If we have old-style separate components and gears arrays, migrate them
+        if (migratedConfig.components && migratedConfig.components.length > 0) {
+          const oldComponents = [...migratedConfig.components];
+          
+          // For each old component with attachedTo array, move it into the appropriate gear
+          oldComponents.forEach(oldComponent => {
+            if (oldComponent.attachedTo && oldComponent.attachedTo.length > 0) {
+              oldComponent.attachedTo.forEach(gearId => {
+                // Find or create the gear
+                let gear = migratedConfig.gears.find(g => g.gearId === gearId);
+                if (!gear) {
+                  gear = { gearId, imgSrc: '', components: [] };
+                  migratedConfig.gears.push(gear);
+                }
+                
+                // Ensure gear has components array
+                if (!gear.components) {
+                  gear.components = [];
+                }
+                
+                // Add component to gear (without attachedTo field)
+                const { attachedTo, ...componentWithoutAttachedTo } = oldComponent;
+                gear.components.push(componentWithoutAttachedTo);
+              });
+            } else {
+              // Component not attached to any gear - create a placeholder gear
+              let orphanGear = migratedConfig.gears.find(g => g.gearId === '');
+              if (!orphanGear) {
+                orphanGear = { gearId: '', imgSrc: '', components: [] };
+                migratedConfig.gears.push(orphanGear);
+              }
+              if (!orphanGear.components) {
+                orphanGear.components = [];
+              }
+              const { attachedTo, ...componentWithoutAttachedTo } = oldComponent;
+              orphanGear.components.push(componentWithoutAttachedTo);
+            }
+          });
+          
+          // Clear old components array after migration
+          migratedConfig.components = [];
+        }
+        
+        // Ensure all gears have a components array
+        if (migratedConfig.gears) {
+          migratedConfig.gears = migratedConfig.gears.map(gear => ({
+            ...gear,
+            components: gear.components || []
+          }));
+        }
+        
+        setConfig(migratedConfig);
       } else {
         throw new Error(data.error || 'Failed to load configuration');
       }
@@ -134,9 +192,9 @@ const GearMaintenanceEditor = () => {
 
     if (type === 'component') {
       setConfig(prev => {
-        const newComponents = [...prev.components];
-        newComponents[componentIndex].imgSrc = filename;
-        return { ...prev, components: newComponents };
+        const newGears = [...prev.gears];
+        newGears[gearIndex].components[componentIndex].imgSrc = filename;
+        return { ...prev, gears: newGears };
       });
     } else if (type === 'gear') {
       setConfig(prev => {
@@ -149,83 +207,9 @@ const GearMaintenanceEditor = () => {
     setIsDirty(true);
   };
 
-  // Component CRUD operations
-  const addComponent = () => {
-    const newComponent = {
-      tag: '',
-      label: '',
-      attachedTo: [],
-      maintenance: []
-    };
-    setConfig(prev => ({
-      ...prev,
-      components: [...prev.components, newComponent]
-    }));
-    setIsDirty(true);
-  };
-
-  const deleteComponent = (index) => {
-    if (!confirm('Delete this component?')) return;
-    setConfig(prev => ({
-      ...prev,
-      components: prev.components.filter((_, i) => i !== index)
-    }));
-    setIsDirty(true);
-  };
-
-  const updateComponent = (index, field, value) => {
-    setConfig(prev => {
-      const newComponents = [...prev.components];
-      newComponents[index] = { ...newComponents[index], [field]: value };
-      return { ...prev, components: newComponents };
-    });
-    setIsDirty(true);
-  };
-
-  // Maintenance task operations
-  const addMaintenanceTask = (componentIndex) => {
-    const newTask = {
-      tag: '',
-      label: '',
-      interval: { value: 1000, unit: 'km' }
-    };
-    setConfig(prev => {
-      const newComponents = [...prev.components];
-      newComponents[componentIndex].maintenance = [
-        ...(newComponents[componentIndex].maintenance || []),
-        newTask
-      ];
-      return { ...prev, components: newComponents };
-    });
-    setIsDirty(true);
-  };
-
-  const deleteMaintenanceTask = (componentIndex, taskIndex) => {
-    setConfig(prev => {
-      const newComponents = [...prev.components];
-      newComponents[componentIndex].maintenance = newComponents[componentIndex].maintenance.filter((_, i) => i !== taskIndex);
-      return { ...prev, components: newComponents };
-    });
-    setIsDirty(true);
-  };
-
-  const updateMaintenanceTask = (componentIndex, taskIndex, field, value) => {
-    setConfig(prev => {
-      const newComponents = [...prev.components];
-      if (field.startsWith('interval.')) {
-        const intervalField = field.split('.')[1];
-        newComponents[componentIndex].maintenance[taskIndex].interval[intervalField] = value;
-      } else {
-        newComponents[componentIndex].maintenance[taskIndex][field] = value;
-      }
-      return { ...prev, components: newComponents };
-    });
-    setIsDirty(true);
-  };
-
-  // Gear operations
+  // Gear CRUD operations
   const addGear = () => {
-    const newGear = { gearId: '', imgSrc: '' };
+    const newGear = { gearId: '', imgSrc: '', components: [] };
     setConfig(prev => ({
       ...prev,
       gears: [...prev.gears, newGear]
@@ -233,18 +217,122 @@ const GearMaintenanceEditor = () => {
     setIsDirty(true);
   };
 
-  const deleteGear = (index) => {
+  const deleteGear = (gearIndex) => {
+    const gear = config.gears[gearIndex];
+    const componentCount = gear.components?.length || 0;
+    setConfirmDialog({
+      isOpen: true,
+      type: 'deleteGear',
+      data: { gearIndex, gearId: gear.gearId || 'Unnamed Gear', componentCount }
+    });
+  };
+
+  const handleConfirmDeleteGear = () => {
+    const { gearIndex } = confirmDialog.data;
     setConfig(prev => ({
       ...prev,
-      gears: prev.gears.filter((_, i) => i !== index)
+      gears: prev.gears.filter((_, i) => i !== gearIndex)
     }));
+    setIsDirty(true);
+    setConfirmDialog({ isOpen: false, type: null, data: null });
+  };
+
+  const updateGear = (gearIndex, field, value) => {
+    setConfig(prev => {
+      const newGears = [...prev.gears];
+      newGears[gearIndex] = { ...newGears[gearIndex], [field]: value };
+      return { ...prev, gears: newGears };
+    });
     setIsDirty(true);
   };
 
-  const updateGear = (index, field, value) => {
+  // Component CRUD operations (now nested within gears)
+  const addComponent = (gearIndex) => {
+    const newComponent = {
+      tag: '',
+      label: '',
+      maintenance: []
+    };
     setConfig(prev => {
       const newGears = [...prev.gears];
-      newGears[index] = { ...newGears[index], [field]: value };
+      newGears[gearIndex] = {
+        ...newGears[gearIndex],
+        components: [...(newGears[gearIndex].components || []), newComponent]
+      };
+      return { ...prev, gears: newGears };
+    });
+    setIsDirty(true);
+  };
+
+  const deleteComponent = (gearIndex, componentIndex) => {
+    const component = config.gears[gearIndex].components[componentIndex];
+    setConfirmDialog({
+      isOpen: true,
+      type: 'deleteComponent',
+      data: { gearIndex, componentIndex, name: component.label || 'Unnamed Component' }
+    });
+  };
+
+  const handleConfirmDeleteComponent = () => {
+    const { gearIndex, componentIndex } = confirmDialog.data;
+    setConfig(prev => {
+      const newGears = [...prev.gears];
+      newGears[gearIndex].components = newGears[gearIndex].components.filter((_, i) => i !== componentIndex);
+      return { ...prev, gears: newGears };
+    });
+    setIsDirty(true);
+    setConfirmDialog({ isOpen: false, type: null, data: null });
+  };
+
+  const updateComponent = (gearIndex, componentIndex, field, value) => {
+    setConfig(prev => {
+      const newGears = [...prev.gears];
+      newGears[gearIndex].components[componentIndex] = {
+        ...newGears[gearIndex].components[componentIndex],
+        [field]: value
+      };
+      return { ...prev, gears: newGears };
+    });
+    setIsDirty(true);
+  };
+
+  // Maintenance task operations
+  const addMaintenanceTask = (gearIndex, componentIndex) => {
+    const newTask = {
+      tag: '',
+      label: '',
+      interval: { value: 1000, unit: 'km' }
+    };
+    setConfig(prev => {
+      const newGears = [...prev.gears];
+      newGears[gearIndex].components[componentIndex].maintenance = [
+        ...(newGears[gearIndex].components[componentIndex].maintenance || []),
+        newTask
+      ];
+      return { ...prev, gears: newGears };
+    });
+    setIsDirty(true);
+  };
+
+  const deleteMaintenanceTask = (gearIndex, componentIndex, taskIndex) => {
+    setConfig(prev => {
+      const newGears = [...prev.gears];
+      newGears[gearIndex].components[componentIndex].maintenance = 
+        newGears[gearIndex].components[componentIndex].maintenance.filter((_, i) => i !== taskIndex);
+      return { ...prev, gears: newGears };
+    });
+    setIsDirty(true);
+  };
+
+  const updateMaintenanceTask = (gearIndex, componentIndex, taskIndex, field, value) => {
+    setConfig(prev => {
+      const newGears = [...prev.gears];
+      if (field.startsWith('interval.')) {
+        const intervalField = field.split('.')[1];
+        newGears[gearIndex].components[componentIndex].maintenance[taskIndex].interval[intervalField] = value;
+      } else {
+        newGears[gearIndex].components[componentIndex].maintenance[taskIndex][field] = value;
+      }
       return { ...prev, gears: newGears };
     });
     setIsDirty(true);
@@ -271,21 +359,23 @@ const GearMaintenanceEditor = () => {
     <Box p={4}>
       <VStack gap={6} align="stretch">
         {/* Header */}
-        <Flex justify="space-between" align="center">
+        <Flex justify="space-between" align={{ base: "stretch", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={{ base: 3, sm: 0 }}>
           <Box>
-            <Text fontSize="2xl" fontWeight="bold">
+            <Text fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold">
               Gear Maintenance Configuration
             </Text>
-            <Text fontSize="sm" color="textMuted">
+            <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
               Track gear usage and maintenance intervals
             </Text>
           </Box>
-          <HStack>
+          <Stack direction={{ base: "column", sm: "row" }} justify={{ base: "stretch", sm: "flex-end" }} gap={2} w={{ base: "full", sm: "auto" }}>
             <Tooltip content="Discard all unsaved changes and reload from file">
               <Button
                 onClick={loadConfig}
                 variant="ghost"
                 disabled={loading || saving}
+                size="sm"
+                w={{ base: "full", sm: "auto" }}
               >
                 Reset
               </Button>
@@ -294,16 +384,18 @@ const GearMaintenanceEditor = () => {
               onClick={handleSave}
               colorPalette="blue"
               disabled={!isDirty || saving}
+              size="sm"
+              w={{ base: "full", sm: "auto" }}
             >
               <MdSave />
-              {saving ? 'Saving...' : `Save Changes${isDirty ? ' *' : ''}`}
+              {saving ? 'Saving...' : (isDirty ? 'Save *' : 'Save')}
             </Button>
-          </HStack>
+          </Stack>
         </Flex>
 
         {/* Basic Settings */}
-        <Box p={4} borderWidth={1} borderColor="border" borderRadius="md" bg="cardBg">
-          <Text fontSize="lg" fontWeight="semibold" mb={4}>
+        <Box p={{ base: 3, sm: 4 }} borderWidth={1} borderColor="border" borderRadius="md" bg="cardBg">
+          <Text fontSize={{ base: "md", sm: "lg" }} fontWeight="semibold" mb={4}>
             Basic Settings
           </Text>
           <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
@@ -378,65 +470,18 @@ const GearMaintenanceEditor = () => {
           </Grid>
         </Box>
 
-        {/* Components Section */}
-        <Box p={4} borderWidth={1} borderColor="border" borderRadius="md" bg="cardBg">
-          <Flex justify="space-between" align="center" mb={4}>
-            <Box>
-              <Text fontSize="lg" fontWeight="semibold">
-                Components ({config.components.length})
-              </Text>
-              <Text fontSize="sm" color="textMuted">
-                Define components for your equipment
-              </Text>
-            </Box>
-            <Button onClick={addComponent} size="sm" colorPalette="blue">
-              <MdAdd />
-              Add Component
-            </Button>
-          </Flex>
-
-          {config.components.length === 0 ? (
-            <Text color="textMuted" textAlign="center" py={4}>
-              No components defined yet. Click "Add Component" to get started.
-            </Text>
-          ) : (
-            <VStack gap={3} align="stretch">
-              {config.components.map((component, componentIndex) => (
-                <ComponentEditor
-                  key={componentIndex}
-                  component={component}
-                  componentIndex={componentIndex}
-                  hashtagPrefix={config.hashtagPrefix}
-                  gearMaintenancePath={gearMaintenancePath}
-                  onUpdate={updateComponent}
-                  onDelete={deleteComponent}
-                  onAddTask={addMaintenanceTask}
-                  onUpdateTask={updateMaintenanceTask}
-                  onDeleteTask={deleteMaintenanceTask}
-                  onSelectImage={() => openImagePicker({ type: 'component', componentIndex })}
-                  expanded={expandedComponents[componentIndex]}
-                  onToggleExpand={() => setExpandedComponents(prev => ({
-                    ...prev,
-                    [componentIndex]: !prev[componentIndex]
-                  }))}
-                />
-              ))}
-            </VStack>
-          )}
-        </Box>
-
-        {/* Gears Section */}
-        <Box p={4} borderWidth={1} borderColor="border" borderRadius="md" bg="cardBg">
-          <Flex justify="space-between" align="center" mb={4}>
-            <Box>
-              <Text fontSize="lg" fontWeight="semibold">
+        {/* Gears Section with nested Components */}
+        <Box p={{ base: 3, sm: 4 }} borderWidth={1} borderColor="border" borderRadius="md" bg="cardBg">
+          <Flex justify="space-between" align="center" mb={4} direction={{ base: "column", sm: "row" }} gap={{ base: 2, sm: 0 }}>
+            <Box flex={1}>
+              <Text fontSize={{ base: "md", sm: "lg" }} fontWeight="semibold">
                 Gears ({config.gears.length})
               </Text>
-              <Text fontSize="sm" color="textMuted">
-                Associate images with your Strava gear
+              <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
+                Define your Strava gear and their components
               </Text>
             </Box>
-            <Button onClick={addGear} size="sm" colorPalette="blue">
+            <Button onClick={addGear} size="sm" colorPalette="blue" w={{ base: "full", sm: "auto" }}>
               <MdAdd />
               Add Gear
             </Button>
@@ -444,60 +489,121 @@ const GearMaintenanceEditor = () => {
 
           {config.gears.length === 0 ? (
             <Text color="textMuted" textAlign="center" py={4}>
-              No gears defined. This is optional.
+              No gears defined yet. Click "Add Gear" to get started.
             </Text>
           ) : (
-            <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+            <VStack gap={4} align="stretch">
               {config.gears.map((gear, gearIndex) => (
-                <Box key={gearIndex} p={3} borderWidth={1} borderColor="border" borderRadius="md">
-                  <Flex justify="space-between" align="start" mb={3}>
-                    <Text fontWeight="medium">Gear {gearIndex + 1}</Text>
+                <Box key={gearIndex} p={{ base: 3, sm: 4 }} borderWidth={2} borderColor="border" borderRadius="lg" bg="bg.muted">
+                  {/* Gear Header */}
+                  <Flex justify="space-between" align="start" mb={4} direction={{ base: "column", sm: "row" }} gap={{ base: 3, sm: 0 }}>
+                    <VStack flex={1} align="stretch" gap={3} w={{ base: "full", sm: "auto" }}>
+                      {/* Gear Image */}
+                      {gear.imgSrc && (
+                        <Box>
+                          <ImageThumbnail
+                            src={`/api/gear-maintenance-images/${gear.imgSrc}?path=${encodeURIComponent(gearMaintenancePath)}`}
+                            alt={gear.gearId || 'Gear'}
+                            onDelete={() => updateGear(gearIndex, 'imgSrc', '')}
+                            size="md"
+                          />
+                        </Box>
+                      )}
+                      
+                      {/* Gear Info */}
+                      <VStack flex={1} align="stretch" gap={2}>
+                        <Field.Root>
+                          <Field.Label fontSize={{ base: "xs", sm: "sm" }}>Gear ID (from Strava)</Field.Label>
+                          <Input
+                            value={gear.gearId}
+                            onChange={(e) => updateGear(gearIndex, 'gearId', e.target.value)}
+                            placeholder="b7546092"
+                            size="sm"
+                          />
+                        </Field.Root>
+                        
+                        <HStack w="full">
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => openImagePicker({ type: 'gear', gearIndex })}
+                            flex={1}
+                          >
+                            <MdImage />
+                            {gear.imgSrc ? 'Change Image' : 'Add Image'}
+                          </Button>
+                        </HStack>
+                      </VStack>
+                    </VStack>
+
                     <IconButton
                       aria-label="Delete gear"
-                      size="xs"
+                      size="sm"
                       colorPalette="red"
                       variant="ghost"
                       onClick={() => deleteGear(gearIndex)}
+                      alignSelf={{ base: "flex-end", sm: "flex-start" }}
                     >
                       <MdDelete />
                     </IconButton>
                   </Flex>
 
-                  <VStack gap={3} align="stretch">
-                    <Field.Root>
-                      <Field.Label>Gear ID</Field.Label>
-                      <Input
-                        value={gear.gearId}
-                        onChange={(e) => updateGear(gearIndex, 'gearId', e.target.value)}
-                        placeholder="b7546092"
-                      />
-                    </Field.Root>
+                  {/* Components within this Gear */}
+                  <Box mt={4} pt={4} borderTopWidth={1} borderTopColor="border">
+                    <Flex justify="space-between" align="center" mb={3} direction={{ base: "column", sm: "row" }} gap={{ base: 2, sm: 0 }}>
+                      <Text fontSize={{ base: "sm", sm: "md" }} fontWeight="semibold" flex={1}>
+                        Components ({gear.components?.length || 0})
+                      </Text>
+                      <Button 
+                        onClick={() => addComponent(gearIndex)} 
+                        size="xs" 
+                        colorPalette="blue"
+                        variant="outline"
+                        w={{ base: "full", sm: "auto" }}
+                      >
+                        <MdAdd />
+                        Add Component
+                      </Button>
+                    </Flex>
 
-                    <Field.Root>
-                      <Field.Label>Image</Field.Label>
-                      <HStack>
-                        {gear.imgSrc && (
-                          <ImageThumbnail
-                            src={`/api/gear-maintenance-images/${encodeURIComponent(gear.imgSrc)}?path=${encodeURIComponent(gearMaintenancePath)}`}
-                            alt={gear.gearId}
-                            size="sm"
+                    {(!gear.components || gear.components.length === 0) ? (
+                      <Text color="textMuted" fontSize="sm" textAlign="center" py={2}>
+                        No components. Click "Add Component" to add one.
+                      </Text>
+                    ) : (
+                      <VStack gap={2} align="stretch">
+                        {gear.components.map((component, componentIndex) => (
+                          <ComponentEditor
+                            key={componentIndex}
+                            component={component}
+                            componentIndex={componentIndex}
+                            gearIndex={gearIndex}
+                            hashtagPrefix={config.hashtagPrefix}
+                            gearMaintenancePath={gearMaintenancePath}
+                            onUpdate={(idx, field, value) => updateComponent(gearIndex, idx, field, value)}
+                            onDelete={(idx) => deleteComponent(gearIndex, idx)}
+                            onAddTask={(idx) => addMaintenanceTask(gearIndex, idx)}
+                            onUpdateTask={(idx, taskIdx, field, value) => updateMaintenanceTask(gearIndex, idx, taskIdx, field, value)}
+                            onDeleteTask={(idx, taskIdx) => deleteMaintenanceTask(gearIndex, idx, taskIdx)}
+                            onSelectImage={() => openImagePicker({ type: 'component', gearIndex, componentIndex })}
+                            expanded={expandedComponents[`${gearIndex}-${componentIndex}`]}
+                            onToggleExpand={() => setExpandedComponents(prev => ({
+                              ...prev,
+                              [`${gearIndex}-${componentIndex}`]: !prev[`${gearIndex}-${componentIndex}`]
+                            }))}
+                            maintenanceTasksExpanded={expandedMaintenanceTasks[`${gearIndex}-${componentIndex}`]}
+                            onToggleMaintenanceTasks={() => setExpandedMaintenanceTasks(prev => ({
+                              ...prev,
+                              [`${gearIndex}-${componentIndex}`]: !prev[`${gearIndex}-${componentIndex}`]
+                            }))}
                           />
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openImagePicker({ type: 'gear', gearIndex })}
-                          flex={1}
-                        >
-                          <MdImage />
-                          {gear.imgSrc ? 'Change Image' : 'Select Image'}
-                        </Button>
-                      </HStack>
-                    </Field.Root>
-                  </VStack>
+                        ))}
+                      </VStack>
+                    )}
+                  </Box>
                 </Box>
               ))}
-            </Grid>
+            </VStack>
           )}
         </Box>
       </VStack>
@@ -508,6 +614,30 @@ const GearMaintenanceEditor = () => {
         onClose={() => setImagePickerOpen(false)}
         onSelect={handleImageSelect}
         customPath={gearMaintenancePath}
+      />
+
+      {/* Confirm Delete Component Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen && confirmDialog.type === 'deleteComponent'}
+        onClose={() => setConfirmDialog({ isOpen: false, type: null, data: null })}
+        onConfirm={handleConfirmDeleteComponent}
+        title="Delete Component"
+        message={`Are you sure you want to delete "${confirmDialog.data?.name}"?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColorPalette="red"
+      />
+
+      {/* Confirm Delete Gear Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen && confirmDialog.type === 'deleteGear'}
+        onClose={() => setConfirmDialog({ isOpen: false, type: null, data: null })}
+        onConfirm={handleConfirmDeleteGear}
+        title="Delete Gear"
+        message={`Are you sure you want to delete gear "${confirmDialog.data?.gearId}"${confirmDialog.data?.componentCount > 0 ? ` and its ${confirmDialog.data.componentCount} component(s)` : ''}?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmColorPalette="red"
       />
     </Box>
   );
@@ -526,7 +656,9 @@ const ComponentEditor = ({
   onDeleteTask,
   onSelectImage,
   expanded,
-  onToggleExpand
+  onToggleExpand,
+  maintenanceTasksExpanded,
+  onToggleMaintenanceTasks
 }) => {
   return (
     <Box borderWidth={1} borderColor="border" borderRadius="md" overflow="hidden">
@@ -649,31 +781,48 @@ const ComponentEditor = ({
 
             {/* Maintenance Tasks */}
             <Box>
-              <Flex justify="space-between" align="center" mb={2}>
-                <Text fontWeight="medium">
-                  Maintenance Tasks ({component.maintenance?.length || 0})
-                </Text>
+              <Flex 
+                justify="space-between" 
+                align="center" 
+                mb={2}
+                cursor="pointer"
+                onClick={onToggleMaintenanceTasks}
+                p={2}
+                borderRadius="md"
+                _hover={{ bg: 'bg.muted' }}
+              >
+                <HStack>
+                  <Box as={maintenanceTasksExpanded ? MdExpandMore : MdChevronRight} />
+                  <Text fontWeight="medium">
+                    Maintenance Tasks ({component.maintenance?.length || 0})
+                  </Text>
+                </HStack>
                 <Button
                   size="xs"
                   colorPalette="blue"
-                  onClick={() => onAddTask(componentIndex)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddTask(componentIndex);
+                  }}
                 >
                   <MdAdd />
                   Add Task
                 </Button>
               </Flex>
 
-              {(!component.maintenance || component.maintenance.length === 0) ? (
-                <Text color="textMuted" fontSize="sm">
-                  No maintenance tasks defined
-                </Text>
-              ) : (
-                <VStack gap={2} align="stretch">
+              {maintenanceTasksExpanded && (
+                <Box>
+                  {(!component.maintenance || component.maintenance.length === 0) ? (
+                    <Text color="textMuted" fontSize="sm">
+                      No maintenance tasks defined
+                    </Text>
+                  ) : (
+                    <VStack gap={2} align="stretch">
                   {component.maintenance.map((task, taskIndex) => (
                     <Box key={taskIndex} p={3} borderWidth={1} borderColor="border" borderRadius="md">
                       <Flex justify="space-between" align="start" mb={2}>
                         <Text fontSize="sm" fontWeight="medium">
-                          Task {taskIndex + 1}
+                          Task {taskIndex + 1}{task.label ? ` - ${task.label}` : ''}
                         </Text>
                         <IconButton
                           aria-label="Delete task"
@@ -738,6 +887,8 @@ const ComponentEditor = ({
                     </Box>
                   ))}
                 </VStack>
+              )}
+                </Box>
               )}
             </Box>
           </VStack>
