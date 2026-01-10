@@ -1,4 +1,5 @@
 import { initialSportsList } from './sportsListInitializer';
+import { loadSportsList, saveSportsList } from '../services';
 
 // initialSportsList is now imported from sportsListInitializer.js to maintain single source of truth
 export { initialSportsList };
@@ -7,9 +8,8 @@ export { initialSportsList };
 export async function readSportsList(settings = {}) {
   try {
     const defaultPath = settings.files?.defaultPath || '';
-    const response = await fetch(`/api/sports-list?defaultPath=${encodeURIComponent(defaultPath)}`);
-    const data = await response.json();
-    
+    const data = await loadSportsList(defaultPath);
+
     if (data.success) {
       return data.sportsList;
     } else {
@@ -26,20 +26,13 @@ export async function readSportsList(settings = {}) {
 export async function writeSportsList(settings, sportsList) {
   try {
     const defaultPath = settings.files?.defaultPath || '';
-    const response = await fetch('/api/sports-list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ defaultPath, sportsList }),
-    });
-    
-    const data = await response.json();
-    
+    const filePath = `${defaultPath}/sports-list.yaml`;
+    const data = await saveSportsList(filePath, sportsList);
+
     if (!data.success) {
       throw new Error(data.error || 'Failed to save sports list');
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error writing sports list:', error);

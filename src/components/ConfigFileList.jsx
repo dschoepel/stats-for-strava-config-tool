@@ -8,7 +8,14 @@ import YamlEditorModal from './YamlEditorModal';
 import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
 import ServerFolderBrowser from './ServerFolderBrowser';
-import { getConfigFiles, setConfigDirectory, mergeConfigFiles, getFileContent } from '../utils/apiClient';
+import {
+  listConfigFiles,
+  scanConfigFiles,
+  parseSections as parseSectionsService,
+  validateSections as validateSectionsService,
+  mergeConfig as mergeConfigService,
+  readFile
+} from '../services';
 import { useSettings } from '../state/SettingsProvider';
 import { useConfig } from '../state/ConfigProvider';
 
@@ -48,22 +55,12 @@ const ConfigFileList = forwardRef((props, ref) => {
   // Validate that all required sections are present
   const validateSections = useCallback(async (mapping) => {
     try {
-      const response = await fetch('/api/validate-sections', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sectionMapping: Object.fromEntries(mapping || sectionToFileMap)
-        }),
-      });
-      
-      const result = await response.json();
-      
+      const result = await validateSectionsService(Object.fromEntries(mapping || sectionToFileMap));
+
       if (result.success) {
         setValidationStatus(result);
         setMissingSections(result.missingSections || []);
-        
+
         if (!result.isComplete) {
           showWarning(`Configuration incomplete: ${result.missingSections.length} section(s) missing`);
         }
@@ -76,18 +73,10 @@ const ConfigFileList = forwardRef((props, ref) => {
   // Parse sections from loaded files
   const parseSections = useCallback(async (files) => {
     if (!files || files.length === 0) return;
-    
+
     try {
-      const response = await fetch('/api/parse-sections', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ files }),
-      });
-      
-      const result = await response.json();
-      
+      const result = await parseSectionsService(files);
+
       if (result.success) {
         // Use detailed mapping instead of simple section mapping for full section info
         const mappingToUse = result.detailedMapping || result.sectionMapping;
@@ -139,9 +128,8 @@ const ConfigFileList = forwardRef((props, ref) => {
     try {
       // Get the current default path from settings
       const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
-      const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
-      const result = await response.json();
-      
+      const result = await listConfigFiles(currentDefaultPath);
+
       if (result.success && result.files.length > 0) {
         // Check if any files have different content hashes
         let hasChanges = false;
@@ -180,8 +168,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
         
         // Try to load files from default directory
-        const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
-        const result = await response.json();
+        const result = await listConfigFiles(currentDefaultPath);
         
         if (result.success) {
           // Create hash map for quick lookup
@@ -249,8 +236,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         
         // Reload files from new path
         try {
-          const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(newDefaultPath)}`);
-          const result = await response.json();
+          const result = await listConfigFiles(newDefaultPath);
           
           if (result.success) {
             const fileHashes = new Map();
@@ -306,8 +292,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       
       // Check cache first if not forcing refresh
       if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
-        const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
-        const result = await response.json();
+        const result = await listConfigFiles(currentDefaultPath);
         
         if (result.success && result.files.length > 0) {
           // Compare file content hashes
@@ -337,15 +322,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         }
       }
       
-      const response = await fetch('/api/config-files', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ directory: dirPath }),
-      });
-      
-      const result = await response.json();
+      const result = await scanConfigFiles(dirPath);
       
       if (result.success) {
         // Create hash map for quick lookup
@@ -395,20 +372,12 @@ const ConfigFileList = forwardRef((props, ref) => {
     try {
       showInfo('Creating complete configuration file...', 3000);
       
-      const response = await fetch('/api/merge-config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          files: configFiles.map(f => ({ name: f.name, path: f.path })),
-          outputPath: `${selectedDirectory}/config.yaml`,
-          createBackup: true,
-          fillMissing: true  // Add missing sections with defaults
-        }),
+      const result = await mergeConfigService({
+        files: configFiles.map(f => ({ name: f.name, path: f.path })),
+        outputPath: `${selectedDirectory}/config.yaml`,
+        createBackup: true,
+        fillMissing: true  // Add missing sections with defaults
       });
-      
-      const result = await response.json();
       
       if (result.success) {
         showSuccess(`Created complete configuration with ${result.sectionsCount} sections`);
@@ -455,9 +424,8 @@ const ConfigFileList = forwardRef((props, ref) => {
   const handleViewFile = async (fileInfo) => {
     try {
       showInfo(`Loading ${fileInfo.name}...`, 2000);
-      
-      const response = await fetch(`/api/file-content?path=${encodeURIComponent(fileInfo.path)}`);
-      const result = await response.json();
+
+      const result = await readFile(fileInfo.path);
       
       if (result.success) {
         setModalFileName(fileInfo.name);
@@ -482,9 +450,8 @@ const ConfigFileList = forwardRef((props, ref) => {
   const handleEditFile = async (fileInfo) => {
     try {
       showInfo(`Loading ${fileInfo.name} for editing...`, 2000);
-      
-      const response = await fetch(`/api/file-content?path=${encodeURIComponent(fileInfo.path)}`);
-      const result = await response.json();
+
+      const result = await readFile(fileInfo.path);
       
       if (result.success) {
         setEditorFileName(fileInfo.name);

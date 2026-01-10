@@ -15,6 +15,7 @@ import {
   Badge
 } from '@chakra-ui/react';
 import { MdFolder, MdFolderOpen, MdDescription, MdArrowUpward, MdHome, MdCheck, MdClose } from 'react-icons/md';
+import { browseFiles, readFile } from '../services';
 
 const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
   const [currentPath, setCurrentPath] = useState('');
@@ -31,12 +32,7 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
     setError(null);
     
     try {
-      const url = dirPath 
-        ? `/api/browse-files?path=${encodeURIComponent(dirPath)}`
-        : '/api/browse-files';
-      
-      const response = await fetch(url);
-      const result = await response.json();
+      const result = await browseFiles(dirPath);
       
       if (result.success) {
         setCurrentPath(result.currentPath);
@@ -107,12 +103,7 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
     try {
       const filesWithContent = await Promise.all(
         filesToLoad.map(async (file) => {
-          const response = await fetch('/api/file-content', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: file.fullPath })
-          });
-          const result = await response.json();
+          const result = await readFile(file.fullPath);
           
           if (result.success) {
             return {

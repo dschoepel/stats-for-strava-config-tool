@@ -13,6 +13,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { MdFolder, MdArrowUpward, MdHome, MdCheck, MdClose } from 'react-icons/md';
+import { browseFiles } from '../services';
 
 /**
  * ServerFolderBrowser - Browse and select a folder on the server
@@ -30,12 +31,7 @@ const ServerFolderBrowser = ({ isOpen, onClose, onFolderSelected, initialPath = 
     setError(null);
     
     try {
-      const url = dirPath 
-        ? `/api/browse-files?path=${encodeURIComponent(dirPath)}`
-        : '/api/browse-files';
-      
-      const response = await fetch(url);
-      const result = await response.json();
+      const result = await browseFiles(dirPath);
       
       if (result.success) {
         setCurrentPath(result.currentPath);

@@ -11,6 +11,7 @@ import {
 } from '@chakra-ui/react';
 import { MdUpload, MdClose } from 'react-icons/md';
 import { useToast } from '../../hooks/useToast';
+import { uploadGearImage } from '../../services';
 
 /**
  * ImageUploader - Upload images to gear maintenance directory
@@ -74,18 +75,7 @@ const ImageUploader = ({ onUploadComplete, customPath = null }) => {
       const file = files[i];
       
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        if (customPath) {
-          formData.append('path', customPath);
-        }
-
-        const response = await fetch('/api/gear-maintenance-images', {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
+        const result = await uploadGearImage(file, customPath);
 
         if (result.success) {
           showSuccess(`${file.name} uploaded successfully`);

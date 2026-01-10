@@ -5,6 +5,7 @@
 
 import { getSetting } from './settingsManager.js';
 import * as YAML from 'yaml';
+import { readFile, saveFile } from '../services';
 
 const WIDGET_DEFINITIONS_FILENAME = 'widget-definitions.yaml';
 
@@ -443,15 +444,14 @@ metricsDisplayOrder: ['distance', 'movingTime', 'elevation']`,
 export async function readWidgetDefinitions() {
   try {
     const filePath = getWidgetDefinitionsPath();
-    
-    const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`);
-    const result = await response.json();
-    
+
+    const result = await readFile(filePath);
+
     if (result.success && result.content) {
       const parsed = fromYAML(result.content);
       return parsed;
     }
-    
+
     // File doesn't exist yet, return defaults
     return initialWidgetDefinitions;
   } catch (error) {
@@ -469,19 +469,8 @@ export async function writeWidgetDefinitions(definitions) {
   try {
     const filePath = getWidgetDefinitionsPath();
     const yamlContent = toYAML(definitions);
-    
-    const response = await fetch('/api/file-content', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        path: filePath,
-        content: yamlContent
-      })
-    });
-    
-    const result = await response.json();
+
+    const result = await saveFile(filePath, yamlContent);
     
     if (!result.success) {
       throw new Error(result.error || 'Failed to write widget definitions');

@@ -16,6 +16,7 @@ import { MdFolder, MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { useToast } from '../../hooks/useToast';
+import { expandPath as expandPathService, updateEnv } from '../../services';
 
 const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});
@@ -28,14 +29,9 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
   // Expand tilde to full path
   const expandPath = async (path) => {
     if (!path || !path.startsWith('~')) return path;
-    
+
     try {
-      const response = await fetch('/api/expand-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path })
-      });
-      const data = await response.json();
+      const data = await expandPathService(path);
       return data.success ? data.expandedPath : path;
     } catch (error) {
       console.error('Failed to expand path:', error);
@@ -163,16 +159,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
     // If default path changed, update .env file
     if (newDefaultPath) {
       try {
-        const response = await fetch('/api/update-env', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            key: 'DEFAULT_STATS_CONFIG_PATH',
-            value: newDefaultPath
-          })
-        });
-
-        const result = await response.json();
+        const result = await updateEnv('DEFAULT_STATS_CONFIG_PATH', newDefaultPath);
         
         if (result.success) {
           console.log('✅ DEFAULT_STATS_CONFIG_PATH updated successfully');
@@ -190,16 +177,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
     // If gear maintenance path changed, update .env file
     if (newGearMaintenancePath) {
       try {
-        const response = await fetch('/api/update-env', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            key: 'DEFAULT_GEAR_MAINTENANCE_PATH',
-            value: newGearMaintenancePath
-          })
-        });
-
-        const result = await response.json();
+        const result = await updateEnv('DEFAULT_GEAR_MAINTENANCE_PATH', newGearMaintenancePath);
         
         if (result.success) {
           console.log('✅ DEFAULT_GEAR_MAINTENANCE_PATH updated successfully');

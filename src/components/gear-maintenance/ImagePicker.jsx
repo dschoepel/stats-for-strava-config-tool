@@ -16,6 +16,7 @@ import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, Dialo
 import ImageThumbnail from './ImageThumbnail';
 import ImageUploader from './ImageUploader';
 import { useToast } from '../../hooks/useToast';
+import { listGearImages, deleteGearImage } from '../../services';
 
 /**
  * ImagePicker - Modal to select from uploaded images or upload new ones
@@ -30,12 +31,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
   const loadImages = async () => {
     setLoading(true);
     try {
-      const url = customPath 
-        ? `/api/gear-maintenance-images?path=${encodeURIComponent(customPath)}`
-        : '/api/gear-maintenance-images';
-      
-      const response = await fetch(url);
-      const data = await response.json();
+      const data = await listGearImages(customPath);
 
       if (data.success) {
         setImages(data.images);
@@ -60,12 +56,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
     if (!confirm(`Delete ${filename}?`)) return;
 
     try {
-      const url = customPath
-        ? `/api/gear-maintenance-images?filename=${encodeURIComponent(filename)}&path=${encodeURIComponent(customPath)}`
-        : `/api/gear-maintenance-images?filename=${encodeURIComponent(filename)}`;
-
-      const response = await fetch(url, { method: 'DELETE' });
-      const data = await response.json();
+      const data = await deleteGearImage(filename, customPath);
 
       if (data.success) {
         showSuccess(`${filename} deleted successfully`);

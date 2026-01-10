@@ -7,6 +7,7 @@ import Editor from '@monaco-editor/react';
 import * as YAML from 'yaml';
 import { getSetting } from '../utils/settingsManager';
 import { ConfirmDialog } from './ConfirmDialog';
+import { checkFileExists, saveFile } from '../services';
 
 const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave, isNewFile = false, skipValidation = false }) => {
   const [content, setContent] = useState('');
@@ -101,13 +102,7 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     }
     
     try {
-      const checkResponse = await fetch('/api/check-file-exists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath })
-      });
-
-      const checkResult = await checkResponse.json();
+      const checkResult = await checkFileExists(filePath);
       
       console.log('[YamlEditorModal] File check result:', checkResult, 'isDirty:', isDirty, 'isNewFile:', isNewFile);
       
@@ -149,16 +144,7 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     setError(null);
 
     try {
-      const response = await fetch('/api/save-file', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          path: filePath,
-          content: content
-        })
-      });
-
-      const result = await response.json();
+      const result = await saveFile(filePath, content);
       console.log('[YamlEditorModal] Save result:', result);
 
       if (result.success) {

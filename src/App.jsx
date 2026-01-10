@@ -18,7 +18,7 @@ import { useNavigation } from './state/NavigationProvider'
 function App() {
   const { toasts, removeToast } = useToast();
   const { theme, toggleTheme, toggleSidebar, isSidebarCollapsed, settings } = useSettings();
-  const { confirmDialog } = useDialog();
+  const { confirmDialog, closeDialog } = useDialog();
   const { setSportsListDirty, setWidgetDefinitionsDirty, checkAndConfirmModalClose } = useDirtyState();
   const { currentPage, breadcrumbs, navigateTo, hasHydrated } = useNavigation();
 
@@ -245,7 +245,7 @@ function App() {
         confirmText="Leave Anyway"
         confirmColorPalette="orange"
         onConfirm={confirmDialog.onConfirm || (() => {})}
-        onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
+        onClose={closeDialog}
       />
     </Flex>
   )
