@@ -5,6 +5,7 @@ import { PiCircleFill, PiFileFill } from 'react-icons/pi';
 import { Tooltip } from './Tooltip';
 import { getSetting } from '../utils/settingsManager';
 import ServerFolderBrowser from './ServerFolderBrowser';
+import { saveFile } from '../services';
 
 const DownloadFilesModal = ({ files, isOpen, onClose }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
@@ -113,16 +114,7 @@ const DownloadFilesModal = ({ files, isOpen, onClose }) => {
           const cleanPath = savePath.replace(/[\\/]+$/, '').replace(/\\/g, '/');
           const fullPath = `${cleanPath}/${file.name}`;
           
-          const response = await fetch('/api/save-file', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              path: fullPath, 
-              content: file.content 
-            })
-          });
-          
-          const result = await response.json();
+          const result = await saveFile(fullPath, file.content);
           results.push({ filename: file.name, success: result.success, error: result.error });
         }
         

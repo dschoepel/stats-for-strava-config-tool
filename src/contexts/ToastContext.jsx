@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 const ToastContext = createContext(null);
 
@@ -23,7 +23,8 @@ export const ToastProvider = ({ children }) => {
   const showWarning = useCallback((message, duration) => addToast(message, 'warning', duration), [addToast]);
   const showError = useCallback((message, duration) => addToast(message, 'error', duration), [addToast]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     toasts,
     addToast,
     removeToast,
@@ -31,7 +32,15 @@ export const ToastProvider = ({ children }) => {
     showSuccess,
     showWarning,
     showError
-  };
+  }), [
+    toasts,
+    addToast,
+    removeToast,
+    showInfo,
+    showSuccess,
+    showWarning,
+    showError
+  ]);
 
   return (
     <ToastContext.Provider value={value}>

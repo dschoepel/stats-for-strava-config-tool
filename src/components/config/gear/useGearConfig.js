@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useSettings } from '../../../state/SettingsProvider';
+import { listConfigFiles, readFile } from '../../../services';
+import * as YAML from 'yaml';
 
 // Locale to currency mapping
 const localeToCurrency = {
@@ -18,14 +21,15 @@ const localeToCurrency = {
  * Handles currency loading from appearance config and gear validation
  */
 export const useGearConfig = () => {
+  const { settings } = useSettings();
   const [defaultCurrency, setDefaultCurrency] = useState('USD');
 
   // Load appearance config to get locale and derive currency
   useEffect(() => {
     const loadAppearanceConfig = async () => {
       try {
-        const response = await fetch('/api/config-files');
-        const configFiles = await response.json();
+        const defaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
+        const configFiles = await listConfigFiles(defaultPath);
         
         // Find the file containing appearance section
         const appearanceFile = configFiles.files.find(file => 
@@ -33,15 +37,10 @@ export const useGearConfig = () => {
         );
         
         if (appearanceFile) {
-          const contentResponse = await fetch(`/api/file-content?file=${encodeURIComponent(appearanceFile.path)}`);
-          const fileData = await contentResponse.json();
-          
-          const parseSectionsResponse = await fetch('/api/parse-sections', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ yamlContent: fileData.content })
-          });
-          const sections = await parseSectionsResponse.json();
+          const fileData = await readFile(appearanceFile.path);
+
+          // Parse YAML content directly
+          const sections = YAML.parse(fileData.content);
           
           if (sections.appearance) {
             const locale = sections.appearance.locale || 'en_US';
@@ -56,7 +55,7 @@ export const useGearConfig = () => {
     };
 
     loadAppearanceConfig();
-  }, []);
+  }, [settings]);
 
   // Custom validation for gear fields
   const validateGearFields = (formData, getNestedValue) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { processYamlFiles } from '../utils/yamlFileHandler';
 import { getSetting } from '../utils/settingsManager';
+import { checkFileExists as checkFileExistsService, readFile } from '../services';
 
 /**
  * Custom hook to manage YAML utility file operations
@@ -153,15 +154,9 @@ export const useYamlUtilityFiles = () => {
   const checkFileExists = async (fileName) => {
     const defaultPath = getSetting('files.defaultPath', '');
     const filePath = `${defaultPath}/${fileName}`;
-    
+
     try {
-      const response = await fetch('/api/check-file-exists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath })
-      });
-      
-      const result = await response.json();
+      const result = await checkFileExistsService(filePath);
       return { exists: result.exists, filePath };
     } catch (error) {
       console.error('Error checking file existence:', error);
@@ -171,13 +166,7 @@ export const useYamlUtilityFiles = () => {
 
   const loadFileContent = async (filePath) => {
     try {
-      const response = await fetch('/api/file-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: filePath })
-      });
-      
-      const result = await response.json();
+      const result = await readFile(filePath);
       return result.content || null;
     } catch (error) {
       console.error('Error loading file content:', error);

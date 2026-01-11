@@ -1,12 +1,12 @@
 'use client'
 
 import App from '../src/App'
-import { ToastProvider } from '../src/contexts/ToastContext'
+import { ClientOnly } from '../src/components/ClientOnly'
 
 export default function Home() {
   return (
-    <ToastProvider>
+    <ClientOnly>
       <App />
-    </ToastProvider>
+    </ClientOnly>
   )
 }

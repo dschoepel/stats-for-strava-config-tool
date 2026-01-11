@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nPhase 1: Extract global logic into domain-specific providers\n\nRefactor App.jsx to extract state management into 5 context providers:\n- SettingsProvider: Settings, theme, sidebar state, hydration\n- DialogProvider: Confirm dialog management\n- DirtyStateProvider: Unsaved changes tracking and confirmation\n- NavigationProvider: Navigation with dirty state checks\n- ConfigProvider: File cache, section data, initialization\n\nChanges:\n- Created src/state/ folder with 5 new providers\n- Reduced App.jsx by ~200 lines\n- Reduced AppRouter props from 14 to 2\n- Updated Providers.jsx with new provider composition\n- Moved ToastProvider to Providers.jsx for better hierarchy\n- Updated ConfigFileList to use contexts instead of props\n\nBenefits:\n- Eliminated 40-50 instances of prop drilling\n- Replaced fragile window event synchronization with proper context\n- Cleaner separation of concerns\n- Better code maintainability\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)"
+    ]
+  }
+}

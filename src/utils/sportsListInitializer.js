@@ -5,6 +5,7 @@
 
 import { getSetting } from './settingsManager.js';
 import { INITIAL_SPORTS_LIST } from '../../app/api/config/defaults.js';
+import { checkFileExists, saveSportsList } from '../services';
 
 // Re-export for backwards compatibility
 export const initialSportsList = INITIAL_SPORTS_LIST;
@@ -27,12 +28,7 @@ function getSportsListPath() {
 async function sportsListFileExists() {
   try {
     const filePath = getSportsListPath();
-    const response = await fetch('/api/check-file-exists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filePath: filePath })
-    });
-    const result = await response.json();
+    const result = await checkFileExists(filePath);
     return result.exists;
   } catch (error) {
     console.error('Error checking sports list file:', error);
@@ -48,18 +44,10 @@ async function sportsListFileExists() {
 async function createDefaultSportsList(defaultPath) {
   try {
     console.log('Creating default sports list file...');
-    
-    const response = await fetch('/api/sports-list', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        defaultPath: defaultPath || '~/Documents/strava-config-tool/',
-        sportsList: initialSportsList 
-      })
-    });
-    
-    const result = await response.json();
-    
+
+    const filePath = getSportsListPath();
+    const result = await saveSportsList(filePath, initialSportsList);
+
     if (result.success) {
       console.log('✅ Default sports list created');
       return true;

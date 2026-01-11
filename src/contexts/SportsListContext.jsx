@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { readSportsList, initialSportsList } from '../utils/sportsListManager';
 
 const SportsListContext = createContext();
@@ -34,8 +34,8 @@ export const SportsListProvider = ({ children }) => {
     loadSportsList();
   }, [loadSportsList]);
 
-  // Get flat array of all sport types
-  const getAllSportTypes = useCallback(() => {
+  // Memoize the flat array of all sport types (prevents recreation on every call)
+  const allSportTypes = useMemo(() => {
     const allSports = [];
     Object.values(sportsList).forEach(categoryArray => {
       if (Array.isArray(categoryArray)) {
@@ -45,12 +45,21 @@ export const SportsListProvider = ({ children }) => {
     return allSports;
   }, [sportsList]);
 
-  const value = {
+  // Get flat array of all sport types (now returns memoized value)
+  const getAllSportTypes = useCallback(() => allSportTypes, [allSportTypes]);
+
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     sportsList,
     isLoading,
     loadSportsList,
     getAllSportTypes
-  };
+  }), [
+    sportsList,
+    isLoading,
+    loadSportsList,
+    getAllSportTypes
+  ]);
 
   return (
     <SportsListContext.Provider value={value}>

@@ -1,7 +1,7 @@
 // Settings utility for Stats for Strava Config Tool
 // Uses file-based storage in {defaultPath}/settings/config-tool-settings.yaml
 
-import { getFileContent, saveFile, expandPath } from './apiClient';
+import { readFile, saveFile, expandPath, loadRuntimeConfig as loadRuntimeConfigService } from '../services';
 import packageJson from '../../package.json';
 import { DEFAULT_CONFIG_PATH } from '../../app/api/config/defaults.js';
 
@@ -28,9 +28,8 @@ async function loadRuntimeConfig() {
   
   runtimeConfigPromise = (async () => {
     try {
-      const response = await fetch('/api/runtime-config');
-      const data = await response.json();
-      
+      const data = await loadRuntimeConfigService();
+
       if (data.success && data.config.defaultPath) {
         DEFAULT_SETTINGS_PATH = data.config.defaultPath;
         console.log('Runtime config loaded, defaultPath:', DEFAULT_SETTINGS_PATH);
@@ -154,19 +153,14 @@ export const loadSettingsFromFile = async () => {
     const defaultPath = currentSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
     const filePath = getSettingsFilePath(defaultPath);
     
-    const response = await fetch('/api/file-content', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: filePath })
-    });
-    
-    if (!response.ok) {
+    const data = await readFile(filePath);
+
+    if (!data.success) {
       console.log('Settings file not found, using defaults');
       return getDefaultSettings();
     }
-    
-    const data = await response.json();
-    if (data.success && data.content) {
+
+    if (data.content) {
       // Parse YAML content
       const lines = data.content.split('\n');
       const settings = parseYamlSettings(lines);
@@ -205,12 +199,7 @@ export const expandTildePath = async (inputPath) => {
   if (!inputPath || !inputPath.startsWith('~')) return inputPath;
   
   try {
-    const response = await fetch('/api/expand-path', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: inputPath })
-    });
-    const data = await response.json();
+    const data = await expandPath(inputPath);
     return data.success ? data.expandedPath : inputPath;
   } catch (error) {
     console.error('Failed to expand path:', error);
@@ -251,18 +240,9 @@ export const saveSettings = async (settings) => {
     const defaultPath = validatedSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
     const filePath = getSettingsFilePath(defaultPath);
     const yamlContent = exportSettingsAsYaml(validatedSettings);
-    
-    const response = await fetch('/api/save-file', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        path: filePath, 
-        content: yamlContent 
-      })
-    });
-    
-    const result = await response.json();
-    
+
+    const result = await saveFile(filePath, yamlContent);
+
     if (result.success) {
       // Dispatch custom event for settings change
       window.dispatchEvent(new CustomEvent('settingsChanged', { 
@@ -354,7 +334,23 @@ export const setSetting = (path, value) => {
  * @returns {string} YAML formatted settings
  */
 export const exportSettingsAsYaml = (settingsObj = null) => {
-  const settings = settingsObj || loadSettings();
+  let settings = settingsObj;
+  
+  // If no settings object provided, load from localStorage synchronously
+  if (!settings) {
+    try {
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        settings = mergeSettings(getDefaultSettings(), parsed);
+      } else {
+        settings = getDefaultSettings();
+      }
+    } catch (error) {
+      console.error('Error loading settings for export:', error);
+      settings = getDefaultSettings();
+    }
+  }
   
   // Simple YAML serialization (basic implementation)
   const yamlify = (obj, indent = 0) => {

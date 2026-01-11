@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getFileContent, updateSection, backupConfig } from '../utils/apiClient';
+import { readFile, updateSection, backupConfig } from '../services';
 import { loadSettings } from '../utils/settingsManager';
 
 /**
@@ -32,7 +32,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     
     if (!filePath) return null;
     
-    const result = await getFileContent(filePath);
+    const result = await readFile(filePath);
     
     if (!result.success) {
       console.error('Failed to load file:', filePath, result.error);
@@ -165,7 +165,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       
       if (filePath) {
         console.log('Found section info, using file path:', filePath);
-        const result = await getFileContent(filePath);
+        const result = await readFile(filePath);
         
         if (result.success) {
           // Parse YAML and extract the section data

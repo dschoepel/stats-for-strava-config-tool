@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
-import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription } from 'react-icons/md';
+import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
 import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
@@ -8,20 +8,23 @@ import YamlEditorModal from './YamlEditorModal';
 import ConfigFileGrid from './config-files/ConfigFileGrid';
 import SectionMappingTable from './config-files/SectionMappingTable';
 import ServerFolderBrowser from './ServerFolderBrowser';
-import { getConfigFiles, setConfigDirectory, validateSections, parseSections, mergeConfigFiles, getFileContent } from '../utils/apiClient';
-import { getSetting } from '../utils/settingsManager';
+import {
+  listConfigFiles,
+  scanConfigFiles,
+  parseSections as parseSectionsService,
+  validateSections as validateSectionsService,
+  mergeConfig as mergeConfigService,
+  readFile
+} from '../services';
+import { useSettings } from '../state/SettingsProvider';
+import { useConfig } from '../state/ConfigProvider';
 
 const ConfigFileList = forwardRef((props, ref) => {
-  const { 
-    fileCache, 
-    setFileCache, 
-    hasConfigInitialized, 
-    setHasConfigInitialized,
-    configMode,
-    sectionToFileMap,
-    setSectionToFileMap,
-    settings
-  } = props;
+  const { onConfigSectionClick } = props;
+
+  // Use contexts
+  const { settings, hasHydrated: settingsHydrated } = useSettings();
+  const { fileCache, updateFileCache, hasConfigInitialized, updateHasConfigInitialized, sectionToFileMap, updateSectionToFileMap } = useConfig();
   const [configFiles, setConfigFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -42,25 +45,22 @@ const ConfigFileList = forwardRef((props, ref) => {
 
   const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
 
+  // Calculate configuration mode based on files and validation
+  const configMode = !hasConfigInitialized ? null :
+    validationStatus && !validationStatus.isComplete ? 'invalid' :
+    configFiles.length === 0 ? null :
+    configFiles.length === 1 ? 'single-file' :
+    'multi-file';
+
   // Validate that all required sections are present
   const validateSections = useCallback(async (mapping) => {
     try {
-      const response = await fetch('/api/validate-sections', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          sectionMapping: Object.fromEntries(mapping || sectionToFileMap)
-        }),
-      });
-      
-      const result = await response.json();
-      
+      const result = await validateSectionsService(Object.fromEntries(mapping || sectionToFileMap));
+
       if (result.success) {
         setValidationStatus(result);
         setMissingSections(result.missingSections || []);
-        
+
         if (!result.isComplete) {
           showWarning(`Configuration incomplete: ${result.missingSections.length} section(s) missing`);
         }
@@ -73,23 +73,15 @@ const ConfigFileList = forwardRef((props, ref) => {
   // Parse sections from loaded files
   const parseSections = useCallback(async (files) => {
     if (!files || files.length === 0) return;
-    
+
     try {
-      const response = await fetch('/api/parse-sections', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ files }),
-      });
-      
-      const result = await response.json();
-      
+      const result = await parseSectionsService(files);
+
       if (result.success) {
         // Use detailed mapping instead of simple section mapping for full section info
         const mappingToUse = result.detailedMapping || result.sectionMapping;
         const newMapping = new Map(Object.entries(mappingToUse));
-        setSectionToFileMap(newMapping);
+        updateSectionToFileMap(newMapping);
         
         console.log('Section mapping (using detailed):', mappingToUse);
         if (result.conflicts.length > 0) {
@@ -110,7 +102,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     } catch (error) {
       console.warn('Section parsing failed:', error.message);
     }
-  }, [setSectionToFileMap, showWarning, showSuccess, validateSections]);
+  }, [updateSectionToFileMap, showWarning, showSuccess, validateSections]);
   
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -135,10 +127,9 @@ const ConfigFileList = forwardRef((props, ref) => {
     
     try {
       // Get the current default path from settings
-      const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
-      const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
-      const result = await response.json();
-      
+      const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
+      const result = await listConfigFiles(currentDefaultPath);
+
       if (result.success && result.files.length > 0) {
         // Check if any files have different content hashes
         let hasChanges = false;
@@ -173,12 +164,11 @@ const ConfigFileList = forwardRef((props, ref) => {
       try {
         showInfo('Checking default configuration directory...', 3000);
         
-        // Get the default path from settings using getSetting (which waits for runtime config)
-        const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
+        // Get the default path from settings (from SettingsProvider)
+        const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
         
         // Try to load files from default directory
-        const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
-        const result = await response.json();
+        const result = await listConfigFiles(currentDefaultPath);
         
         if (result.success) {
           // Create hash map for quick lookup
@@ -192,12 +182,12 @@ const ConfigFileList = forwardRef((props, ref) => {
           setConfigFiles(result.files);
           setSelectedDirectory(result.directory);
           setDefaultPath(result.directory);
-          setFileCache({
+          updateFileCache({
             files: result.files,
             fileHashes: fileHashes,
             directory: result.directory
           });
-          setHasConfigInitialized(true);
+          updateHasConfigInitialized(true);
           
           // Parse sections to build mapping
           await parseSections(result.files);
@@ -212,7 +202,7 @@ const ConfigFileList = forwardRef((props, ref) => {
           setDefaultPath(result.directory || 'Not configured');
           showWarning(`Default directory not accessible: ${result.directory}. Use "Browse Directory" to select another location.`);
           setError(result.error);
-          setHasConfigInitialized(true);
+          updateHasConfigInitialized(true);
         }
       } catch (error) {
         showError(`Failed to initialize: ${error.message}`);
@@ -221,8 +211,8 @@ const ConfigFileList = forwardRef((props, ref) => {
     };
 
     // Only initialize if we don't have cached data and haven't initialized yet
-    // AND settings are ready
-    if (settings && (!hasConfigInitialized || fileCache.files.length === 0)) {
+    // AND settings are fully hydrated
+    if (settingsHydrated && settings && (!hasConfigInitialized || fileCache.files.length === 0)) {
       initializeApp();
     } else if (hasConfigInitialized && fileCache.files.length > 0) {
       // Use cached data
@@ -231,7 +221,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized, settings]);
+  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, updateFileCache, updateHasConfigInitialized, settings, settingsHydrated]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
@@ -246,8 +236,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         
         // Reload files from new path
         try {
-          const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(newDefaultPath)}`);
-          const result = await response.json();
+          const result = await listConfigFiles(newDefaultPath);
           
           if (result.success) {
             const fileHashes = new Map();
@@ -260,12 +249,12 @@ const ConfigFileList = forwardRef((props, ref) => {
             setConfigFiles(result.files);
             setSelectedDirectory(result.directory);
             setDefaultPath(result.directory);
-            setFileCache({
+            updateFileCache({
               files: result.files,
               fileHashes: fileHashes,
               directory: result.directory
             });
-            setHasConfigInitialized(true);
+            updateHasConfigInitialized(true);
             
             await parseSections(result.files);
             
@@ -289,7 +278,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     return () => {
       window.removeEventListener('settingsChanged', handleSettingsChanged);
     };
-  }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, setFileCache, setHasConfigInitialized, parseSections]);
+  }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, updateFileCache, updateHasConfigInitialized, parseSections]);
 
 
 
@@ -299,12 +288,11 @@ const ConfigFileList = forwardRef((props, ref) => {
       setError(null);
       
       // Get the current default path from settings
-      const currentDefaultPath = getSetting('files.defaultPath', '/data/statistics-for-strava/config/');
+      const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
       
       // Check cache first if not forcing refresh
       if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
-        const response = await fetch(`/api/config-files?defaultPath=${encodeURIComponent(currentDefaultPath)}`);
-        const result = await response.json();
+        const result = await listConfigFiles(currentDefaultPath);
         
         if (result.success && result.files.length > 0) {
           // Compare file content hashes
@@ -334,15 +322,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         }
       }
       
-      const response = await fetch('/api/config-files', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ directory: dirPath }),
-      });
-      
-      const result = await response.json();
+      const result = await scanConfigFiles(dirPath);
       
       if (result.success) {
         // Create hash map for quick lookup
@@ -355,7 +335,7 @@ const ConfigFileList = forwardRef((props, ref) => {
           
         setConfigFiles(result.files);
         setSelectedDirectory(result.directory);
-        setFileCache({
+        updateFileCache({
           files: result.files,
           fileHashes: fileHashes,
           directory: result.directory
@@ -379,7 +359,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fileCache, parseSections, showWarning, showError, showSuccess, setFileCache]);
+  }, [fileCache, parseSections, showWarning, showError, showSuccess, updateFileCache]);
 
   // Merge all config files into a single config.yaml
   const handleMergeToSingleFile = useCallback(async () => {
@@ -392,20 +372,12 @@ const ConfigFileList = forwardRef((props, ref) => {
     try {
       showInfo('Creating complete configuration file...', 3000);
       
-      const response = await fetch('/api/merge-config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          files: configFiles.map(f => ({ name: f.name, path: f.path })),
-          outputPath: `${selectedDirectory}/config.yaml`,
-          createBackup: true,
-          fillMissing: true  // Add missing sections with defaults
-        }),
+      const result = await mergeConfigService({
+        files: configFiles.map(f => ({ name: f.name, path: f.path })),
+        outputPath: `${selectedDirectory}/config.yaml`,
+        createBackup: true,
+        fillMissing: true  // Add missing sections with defaults
       });
-      
-      const result = await response.json();
       
       if (result.success) {
         showSuccess(`Created complete configuration with ${result.sectionsCount} sections`);
@@ -452,9 +424,8 @@ const ConfigFileList = forwardRef((props, ref) => {
   const handleViewFile = async (fileInfo) => {
     try {
       showInfo(`Loading ${fileInfo.name}...`, 2000);
-      
-      const response = await fetch(`/api/file-content?path=${encodeURIComponent(fileInfo.path)}`);
-      const result = await response.json();
+
+      const result = await readFile(fileInfo.path);
       
       if (result.success) {
         setModalFileName(fileInfo.name);
@@ -479,9 +450,8 @@ const ConfigFileList = forwardRef((props, ref) => {
   const handleEditFile = async (fileInfo) => {
     try {
       showInfo(`Loading ${fileInfo.name} for editing...`, 2000);
-      
-      const response = await fetch(`/api/file-content?path=${encodeURIComponent(fileInfo.path)}`);
-      const result = await response.json();
+
+      const result = await readFile(fileInfo.path);
       
       if (result.success) {
         setEditorFileName(fileInfo.name);
@@ -510,6 +480,25 @@ const ConfigFileList = forwardRef((props, ref) => {
     await handleRefreshFiles();
     handleCloseEditor();
   };
+
+  // Show loading state while settings are hydrating
+  if (!settingsHydrated) {
+    return (
+      <Box p={6}>
+        <VStack align="stretch" gap={6}>
+          <Box>
+            <Heading as="h3" size="lg" color="text" mb={2}>
+              <Icon color="primary" mr={2}><MdFolder /></Icon> Configuration Files
+            </Heading>
+            <Flex align="center" gap={3} mt={4}>
+              <Spinner size="sm" color="primary" />
+              <Text color="textMuted">Loading settings...</Text>
+            </Flex>
+          </Box>
+        </VStack>
+      </Box>
+    );
+  }
 
   return (
     <Box p={6}>

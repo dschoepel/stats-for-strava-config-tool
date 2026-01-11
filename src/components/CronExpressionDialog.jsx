@@ -19,15 +19,18 @@ const CronExpressionDialog = ({ isOpen, onClose, initialValue, onSave }) => {
 
   // Suppress known warnings from react-js-cron library (uses deprecated antd props)
   useEffect(() => {
+    if (!isOpen) return;
+
     const originalError = console.error;
     const originalWarn = console.warn;
     
     console.error = (...args) => {
       const message = args[0]?.toString() || '';
-      // Suppress known react-js-cron antd warnings
+      // Suppress known react-js-cron antd warnings about deprecated props
       if (
         message.includes('popupClassName') ||
-        message.includes('dropdownAlign')
+        message.includes('dropdownAlign') ||
+        message.includes('does not recognize')
       ) {
         return;
       }
@@ -36,10 +39,11 @@ const CronExpressionDialog = ({ isOpen, onClose, initialValue, onSave }) => {
     
     console.warn = (...args) => {
       const message = args[0]?.toString() || '';
-      // Suppress known react-js-cron antd warnings
+      // Suppress known react-js-cron antd warnings about deprecated props
       if (
         message.includes('popupClassName') ||
-        message.includes('dropdownAlign')
+        message.includes('dropdownAlign') ||
+        message.includes('does not recognize')
       ) {
         return;
       }

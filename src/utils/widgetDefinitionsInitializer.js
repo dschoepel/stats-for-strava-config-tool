@@ -3,12 +3,13 @@
  * Initializes widget definitions on app startup and syncs with config file
  */
 
-import { 
-  readWidgetDefinitions, 
-  writeWidgetDefinitions, 
-  initialWidgetDefinitions 
+import {
+  readWidgetDefinitions,
+  writeWidgetDefinitions,
+  initialWidgetDefinitions
 } from './widgetDefinitionsManager.js';
 import { getSetting } from './settingsManager.js';
+import { readFile } from '../services';
 
 /**
  * Get the full path to the widget definitions file
@@ -28,8 +29,7 @@ function getWidgetDefinitionsPath() {
 async function widgetDefinitionsFileExists() {
   try {
     const filePath = getWidgetDefinitionsPath();
-    const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`);
-    const result = await response.json();
+    const result = await readFile(filePath);
     return result.success;
   } catch (error) {
     return false;
@@ -59,13 +59,12 @@ async function createDefaultWidgetDefinitions() {
  */
 async function readDashboardWidgetsFromConfig(configFilePath) {
   try {
-    const response = await fetch(`/api/file-content?path=${encodeURIComponent(configFilePath)}`);
-    const result = await response.json();
-    
+    const result = await readFile(configFilePath);
+
     if (!result.success || !result.content) {
       return [];
     }
-    
+
     // Parse YAML content to find dashboard.layout
     const content = result.content;
     const lines = content.split('\n');
