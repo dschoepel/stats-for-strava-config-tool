@@ -334,7 +334,23 @@ export const setSetting = (path, value) => {
  * @returns {string} YAML formatted settings
  */
 export const exportSettingsAsYaml = (settingsObj = null) => {
-  const settings = settingsObj || loadSettings();
+  let settings = settingsObj;
+  
+  // If no settings object provided, load from localStorage synchronously
+  if (!settings) {
+    try {
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        settings = mergeSettings(getDefaultSettings(), parsed);
+      } else {
+        settings = getDefaultSettings();
+      }
+    } catch (error) {
+      console.error('Error loading settings for export:', error);
+      settings = getDefaultSettings();
+    }
+  }
   
   // Simple YAML serialization (basic implementation)
   const yamlify = (obj, indent = 0) => {

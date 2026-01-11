@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '../contexts/ToastContext';
 import { loadSettings, loadSettingsFromFile, saveSettings as saveSettingsUtil, getSetting } from '../utils/settingsManager';
@@ -158,7 +158,8 @@ export const SettingsProvider = ({ children }) => {
     handleSettingsChange(defaultSettings);
   }, [handleSettingsChange]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     settings,
     hasHydrated,
     isSidebarCollapsed,
@@ -167,7 +168,16 @@ export const SettingsProvider = ({ children }) => {
     toggleTheme,
     toggleSidebar,
     resetSettings
-  };
+  }), [
+    settings,
+    hasHydrated,
+    isSidebarCollapsed,
+    theme,
+    updateSettings,
+    toggleTheme,
+    toggleSidebar,
+    resetSettings
+  ]);
 
   return (
     <SettingsContext.Provider value={value}>

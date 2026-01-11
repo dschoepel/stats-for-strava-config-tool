@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useCallback } from 'react';
+import { createContext, useContext, useCallback, useMemo } from 'react';
 import { useNavigation as useNavigationHook } from '../hooks/useNavigation';
 import { useDirtyState } from './DirtyStateProvider';
 
@@ -37,13 +37,20 @@ export const NavigationProvider = ({ children }) => {
     });
   }, [checkAndConfirmNavigation, originalNavigateToBreadcrumb]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     currentPage,
     breadcrumbs,
     hasHydrated,
     navigateTo,
     navigateToBreadcrumb
-  };
+  }), [
+    currentPage,
+    breadcrumbs,
+    hasHydrated,
+    navigateTo,
+    navigateToBreadcrumb
+  ]);
 
   return (
     <NavigationContext.Provider value={value}>

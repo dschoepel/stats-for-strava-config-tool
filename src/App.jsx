@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
 import Navbar from './components/Navbar'
@@ -21,6 +21,27 @@ function App() {
   const { confirmDialog, closeDialog } = useDialog();
   const { setSportsListDirty, setWidgetDefinitionsDirty, checkAndConfirmModalClose } = useDirtyState();
   const { currentPage, breadcrumbs, navigateTo, hasHydrated } = useNavigation();
+
+  // Suppress known third-party library warnings (react-js-cron with deprecated antd props)
+  useEffect(() => {
+    const originalError = console.error;
+    
+    console.error = (...args) => {
+      const message = args[0]?.toString() || '';
+      // Suppress known react-js-cron/antd warnings about deprecated props
+      if (
+        message.includes('dropdownAlign') ||
+        message.includes('popupClassName')
+      ) {
+        return;
+      }
+      originalError.apply(console, args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
 
   // Keep local UI state only
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)

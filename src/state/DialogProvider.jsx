@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 const DialogContext = createContext();
 
@@ -50,11 +50,16 @@ export const DialogProvider = ({ children }) => {
     });
   }, []);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
     confirmDialog,
     showConfirmDialog,
     closeDialog
-  };
+  }), [
+    confirmDialog,
+    showConfirmDialog,
+    closeDialog
+  ]);
 
   return (
     <DialogContext.Provider value={value}>

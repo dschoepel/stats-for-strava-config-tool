@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { useDialog } from './DialogProvider';
 
 const DirtyStateContext = createContext();
@@ -65,7 +65,9 @@ export const DirtyStateProvider = ({ children }) => {
     }
   }, [sportsListDirty, widgetDefinitionsDirty, showConfirmDialog, closeDialog]);
 
-  const value = {
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  // Note: State setters are stable references from useState and safe to include
+  const value = useMemo(() => ({
     hasUnsavedChanges,
     sportsListDirty,
     widgetDefinitionsDirty,
@@ -75,7 +77,14 @@ export const DirtyStateProvider = ({ children }) => {
     clearAllDirtyState,
     checkAndConfirmNavigation,
     checkAndConfirmModalClose
-  };
+  }), [
+    hasUnsavedChanges,
+    sportsListDirty,
+    widgetDefinitionsDirty,
+    clearAllDirtyState,
+    checkAndConfirmNavigation,
+    checkAndConfirmModalClose
+  ]);
 
   return (
     <DirtyStateContext.Provider value={value}>

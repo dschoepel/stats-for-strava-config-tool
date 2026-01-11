@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useConfigData } from '../hooks/useConfigData';
 import { useToast } from '../contexts/ToastContext';
 import { useNavigation } from './NavigationProvider';
@@ -28,6 +28,10 @@ export const ConfigProvider = ({ children }) => {
   const [hasConfigInitialized, setHasConfigInitialized] = useState(false);
   const [sectionToFileMap, setSectionToFileMap] = useState(new Map());
 
+  // Memoize complex objects to prevent unnecessary re-renders
+  const memoizedFileCache = useMemo(() => fileCache, [fileCache]);
+  const memoizedSectionToFileMap = useMemo(() => sectionToFileMap, [sectionToFileMap]);
+
   // Use the config data hook for managing section data
   const {
     sectionData,
@@ -41,6 +45,19 @@ export const ConfigProvider = ({ children }) => {
     await originalSaveSectionData(sectionName, data);
     // Dirty state is cleared by useConfigData hook
   }, [originalSaveSectionData]);
+
+  // Semantic wrapper functions for state updates (better than exposing raw setters)
+  const updateFileCache = useCallback((cache) => {
+    setFileCache(cache);
+  }, []);
+
+  const updateSectionToFileMap = useCallback((map) => {
+    setSectionToFileMap(map);
+  }, []);
+
+  const updateHasConfigInitialized = useCallback((initialized) => {
+    setHasConfigInitialized(initialized);
+  }, []);
 
   // Initialize widget definitions and sports list when config files are loaded
   useEffect(() => {
@@ -81,18 +98,30 @@ export const ConfigProvider = ({ children }) => {
     }
   }, [currentPage, sectionToFileMap, loadSectionData]);
 
-  const value = {
-    fileCache,
-    sectionToFileMap,
+  // Memoize context value to prevent unnecessary re-renders of consumers
+  const value = useMemo(() => ({
+    fileCache: memoizedFileCache,
+    sectionToFileMap: memoizedSectionToFileMap,
     hasConfigInitialized,
     sectionData,
     isLoadingSectionData,
-    setFileCache,
-    setSectionToFileMap,
-    setHasConfigInitialized,
+    updateFileCache,
+    updateSectionToFileMap,
+    updateHasConfigInitialized,
     loadSectionData,
     saveSectionData
-  };
+  }), [
+    memoizedFileCache,
+    memoizedSectionToFileMap,
+    hasConfigInitialized,
+    sectionData,
+    isLoadingSectionData,
+    updateFileCache,
+    updateSectionToFileMap,
+    updateHasConfigInitialized,
+    loadSectionData,
+    saveSectionData
+  ]);
 
   return (
     <ConfigContext.Provider value={value}>

@@ -24,7 +24,7 @@ const ConfigFileList = forwardRef((props, ref) => {
 
   // Use contexts
   const { settings, hasHydrated: settingsHydrated } = useSettings();
-  const { fileCache, setFileCache, hasConfigInitialized, setHasConfigInitialized, sectionToFileMap, setSectionToFileMap } = useConfig();
+  const { fileCache, updateFileCache, hasConfigInitialized, updateHasConfigInitialized, sectionToFileMap, updateSectionToFileMap } = useConfig();
   const [configFiles, setConfigFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -81,7 +81,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         // Use detailed mapping instead of simple section mapping for full section info
         const mappingToUse = result.detailedMapping || result.sectionMapping;
         const newMapping = new Map(Object.entries(mappingToUse));
-        setSectionToFileMap(newMapping);
+        updateSectionToFileMap(newMapping);
         
         console.log('Section mapping (using detailed):', mappingToUse);
         if (result.conflicts.length > 0) {
@@ -102,7 +102,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     } catch (error) {
       console.warn('Section parsing failed:', error.message);
     }
-  }, [setSectionToFileMap, showWarning, showSuccess, validateSections]);
+  }, [updateSectionToFileMap, showWarning, showSuccess, validateSections]);
   
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -182,12 +182,12 @@ const ConfigFileList = forwardRef((props, ref) => {
           setConfigFiles(result.files);
           setSelectedDirectory(result.directory);
           setDefaultPath(result.directory);
-          setFileCache({
+          updateFileCache({
             files: result.files,
             fileHashes: fileHashes,
             directory: result.directory
           });
-          setHasConfigInitialized(true);
+          updateHasConfigInitialized(true);
           
           // Parse sections to build mapping
           await parseSections(result.files);
@@ -202,7 +202,7 @@ const ConfigFileList = forwardRef((props, ref) => {
           setDefaultPath(result.directory || 'Not configured');
           showWarning(`Default directory not accessible: ${result.directory}. Use "Browse Directory" to select another location.`);
           setError(result.error);
-          setHasConfigInitialized(true);
+          updateHasConfigInitialized(true);
         }
       } catch (error) {
         showError(`Failed to initialize: ${error.message}`);
@@ -221,7 +221,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, setFileCache, setHasConfigInitialized, settings, settingsHydrated]);
+  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, updateFileCache, updateHasConfigInitialized, settings, settingsHydrated]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
@@ -249,12 +249,12 @@ const ConfigFileList = forwardRef((props, ref) => {
             setConfigFiles(result.files);
             setSelectedDirectory(result.directory);
             setDefaultPath(result.directory);
-            setFileCache({
+            updateFileCache({
               files: result.files,
               fileHashes: fileHashes,
               directory: result.directory
             });
-            setHasConfigInitialized(true);
+            updateHasConfigInitialized(true);
             
             await parseSections(result.files);
             
@@ -278,7 +278,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     return () => {
       window.removeEventListener('settingsChanged', handleSettingsChanged);
     };
-  }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, setFileCache, setHasConfigInitialized, parseSections]);
+  }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, updateFileCache, updateHasConfigInitialized, parseSections]);
 
 
 
@@ -335,7 +335,7 @@ const ConfigFileList = forwardRef((props, ref) => {
           
         setConfigFiles(result.files);
         setSelectedDirectory(result.directory);
-        setFileCache({
+        updateFileCache({
           files: result.files,
           fileHashes: fileHashes,
           directory: result.directory
@@ -359,7 +359,7 @@ const ConfigFileList = forwardRef((props, ref) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fileCache, parseSections, showWarning, showError, showSuccess, setFileCache]);
+  }, [fileCache, parseSections, showWarning, showError, showSuccess, updateFileCache]);
 
   // Merge all config files into a single config.yaml
   const handleMergeToSingleFile = useCallback(async () => {
