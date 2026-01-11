@@ -15,7 +15,9 @@ import {
   Flex,
   Grid,
   createListCollection,
-  Checkbox
+  Checkbox,
+  Listbox,
+  Checkmark
 } from '@chakra-ui/react';
 import { Field } from '@chakra-ui/react';
 import { MdAdd, MdDelete, MdImage, MdExpandMore, MdChevronRight, MdSave, MdClose } from 'react-icons/md';
@@ -249,9 +251,16 @@ const GearMaintenanceEditor = () => {
   const updateComponent = (componentIndex, field, value) => {
     setConfig(prev => {
       const newComponents = [...prev.components];
+      const currentComponent = newComponents[componentIndex];
+      
+      // If value is a function, call it with the current field value
+      const newValue = typeof value === 'function' 
+        ? value(currentComponent[field])
+        : value;
+      
       newComponents[componentIndex] = {
-        ...newComponents[componentIndex],
-        [field]: value
+        ...currentComponent,
+        [field]: newValue
       };
       return { ...prev, components: newComponents };
     });
@@ -570,12 +579,13 @@ const GearMaintenanceEditor = () => {
                           <VStack gap={2} align="stretch">
                             {gearComponents.map(({ component, globalIndex }) => (
                               <ComponentEditor
-                                key={globalIndex}
+                                key={`${globalIndex}-${(component.attachedTo || []).join(',')}`}
                                 component={component}
                                 componentIndex={globalIndex}
+                                allComponents={config.components}
                                 hashtagPrefix={config.hashtagPrefix}
                                 gearMaintenancePath={gearMaintenancePath}
-                                availableGears={config.gears.filter(g => g.gearId)}
+                                availableGears={config.gears}
                                 onUpdate={(idx, field, value) => updateComponent(idx, field, value)}
                                 onDelete={(idx) => deleteComponent(idx)}
                                 onAddTask={(idx) => addMaintenanceTask(idx)}
@@ -645,6 +655,7 @@ const GearMaintenanceEditor = () => {
 const ComponentEditor = ({
   component,
   componentIndex,
+  allComponents,
   hashtagPrefix,
   gearMaintenancePath,
   availableGears,
@@ -741,34 +752,37 @@ const ComponentEditor = ({
                 {availableGears.length === 0 ? (
                   <Text color="textMuted" fontSize="sm">No gears available. Add gears first.</Text>
                 ) : (
-                  <VStack align="stretch" gap={2}>
-                    {availableGears.map((gear) => {
-                      const isChecked = (component.attachedTo || []).includes(gear.gearId);
-                      return (
-                        <Checkbox.Root
-                          key={gear.gearId}
-                          checked={isChecked}
-                          onCheckedChange={(e) => {
-                            const currentAttached = component.attachedTo || [];
-                            const newAttached = e.checked
-                              ? [...currentAttached, gear.gearId]
-                              : currentAttached.filter(id => id !== gear.gearId);
-                            onUpdate(componentIndex, 'attachedTo', newAttached);
-                          }}
-                          colorPalette="blue"
-                          size="sm"
-                        >
-                          <Checkbox.HiddenInput />
-                          <Checkbox.Control>
-                            <Checkbox.Indicator />
-                          </Checkbox.Control>
-                          <Checkbox.Label fontSize="sm">
-                            {gear.gearId}
-                          </Checkbox.Label>
-                        </Checkbox.Root>
-                      );
+                  <Listbox.Root
+                    collection={createListCollection({
+                      items: availableGears
+                        .filter(gear => gear.gearId)
+                        .map(gear => ({
+                          label: gear.gearId,
+                          value: gear.gearId
+                        }))
                     })}
-                  </VStack>
+                    value={component.attachedTo || []}
+                    onValueChange={(details) => {
+                      onUpdate(componentIndex, 'attachedTo', details.value);
+                    }}
+                    selectionMode="multiple"
+                    size="sm"
+                  >
+                    <Listbox.Content maxH="200px" overflowY="auto">
+                      {availableGears
+                        .filter(gear => gear.gearId)
+                        .map((gear) => (
+                          <Listbox.Item item={gear.gearId} key={gear.gearId}>
+                            <Checkmark
+                              filled
+                              size="sm"
+                              checked={(component.attachedTo || []).includes(gear.gearId)}
+                            />
+                            <Listbox.ItemText>{gear.gearId}</Listbox.ItemText>
+                          </Listbox.Item>
+                        ))}
+                    </Listbox.Content>
+                  </Listbox.Root>
                 )}
               </Box>
               <Field.HelperText>
