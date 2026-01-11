@@ -14,7 +14,13 @@ import { SportsListProvider } from '../contexts/SportsListContext';
 export function Providers({ children }) {
   return (
     <ChakraProvider value={system}>
-      <ThemeProvider attribute="class" disableTransitionOnChange suppressHydrationWarning>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        enableSystem={false}
+        disableTransitionOnChange
+        suppressHydrationWarning
+      >
         <ToastProvider>
           <SettingsProvider>
             <DialogProvider>

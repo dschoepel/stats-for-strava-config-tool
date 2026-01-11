@@ -15,6 +15,7 @@ import { MdClose, MdSearch, MdRefresh } from 'react-icons/md';
 import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogCloseTrigger, DialogBackdrop, DialogPositioner } from '@chakra-ui/react';
 import ImageThumbnail from './ImageThumbnail';
 import ImageUploader from './ImageUploader';
+import { ConfirmDialog } from '../ConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import { listGearImages, deleteGearImage } from '../../services';
 
@@ -26,6 +27,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, filename: null });
   const { showSuccess, showError } = useToast();
 
   const loadImages = async () => {
@@ -52,14 +54,19 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleDelete = async (filename) => {
-    if (!confirm(`Delete ${filename}?`)) return;
+  const handleDeleteClick = (filename) => {
+    setDeleteConfirm({ isOpen: true, filename });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { filename } = deleteConfirm;
+    setDeleteConfirm({ isOpen: false, filename: null });
 
     try {
       const data = await deleteGearImage(filename, customPath);
 
       if (data.success) {
-        showSuccess(`${filename} deleted successfully`);
+        showSuccess(`${filename} deleted from gear-maintenance folder`);
         loadImages();
       } else {
         throw new Error(data.error || 'Delete failed');
@@ -81,6 +88,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
   );
 
   return (
+    <>
     <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="xl">
       <Portal>
         <DialogBackdrop />
@@ -202,7 +210,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
                       <ImageThumbnail
                         src={image.url}
                         alt={image.name}
-                        onDelete={() => handleDelete(image.name)}
+                        onDelete={() => handleDeleteClick(image.name)}
                         size="md"
                       />
                       <Text
@@ -244,6 +252,19 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
         </DialogPositioner>
       </Portal>
     </DialogRoot>
+
+    {/* Confirm Delete Image Dialog */}
+    <ConfirmDialog
+      isOpen={deleteConfirm.isOpen}
+      onClose={() => setDeleteConfirm({ isOpen: false, filename: null })}
+      onConfirm={handleConfirmDelete}
+      title="Delete Image from Gear Maintenance Folder"
+      message={`Are you sure you want to permanently delete "${deleteConfirm.filename}" from the gear-maintenance folder? This action cannot be undone.`}
+      confirmText={`Delete "${deleteConfirm.filename}"`}
+      cancelText="Keep Image"
+      confirmColorPalette="red"
+    />
+  </>
   );
 };
 

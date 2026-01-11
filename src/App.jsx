@@ -105,7 +105,7 @@ function App() {
           </Breadcrumb.Root>
           <Box p={8} color="text">
             <AppRouter
-              configListRef={configListRef}
+              ref={configListRef}
               onNavigate={handleNavClick}
             />
           </Box>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSettings } from '../../../state/SettingsProvider';
 import { listConfigFiles, readFile } from '../../../services';
 import * as YAML from 'yaml';
 
@@ -20,13 +21,15 @@ const localeToCurrency = {
  * Handles currency loading from appearance config and gear validation
  */
 export const useGearConfig = () => {
+  const { settings } = useSettings();
   const [defaultCurrency, setDefaultCurrency] = useState('USD');
 
   // Load appearance config to get locale and derive currency
   useEffect(() => {
     const loadAppearanceConfig = async () => {
       try {
-        const configFiles = await listConfigFiles();
+        const defaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
+        const configFiles = await listConfigFiles(defaultPath);
         
         // Find the file containing appearance section
         const appearanceFile = configFiles.files.find(file => 
@@ -52,7 +55,7 @@ export const useGearConfig = () => {
     };
 
     loadAppearanceConfig();
-  }, []);
+  }, [settings]);
 
   // Custom validation for gear fields
   const validateGearFields = (formData, getNestedValue) => {

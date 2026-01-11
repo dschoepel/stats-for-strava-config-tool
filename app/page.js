@@ -1,7 +1,12 @@
 'use client'
 
 import App from '../src/App'
+import { ClientOnly } from '../src/components/ClientOnly'
 
 export default function Home() {
-  return <App />
+  return (
+    <ClientOnly>
+      <App />
+    </ClientOnly>
+  )
 }
