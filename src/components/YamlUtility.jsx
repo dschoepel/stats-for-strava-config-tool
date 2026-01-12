@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import { Box, VStack, Heading, Text, Button, Flex, HStack, IconButton, Icon } from '@chakra-ui/react';
+import React, { useState, lazy, Suspense } from 'react';
+import { Box, VStack, Heading, Text, Button, Flex, HStack, IconButton, Icon, Spinner } from '@chakra-ui/react';
 import { MdClose, MdSettings, MdWarning, MdSearch, MdAdd } from 'react-icons/md';
 import FileSelector from './FileSelector';
 import ServerFileBrowser from './ServerFileBrowser';
-import YamlViewer from './YamlViewer';
-import YamlEditorModal from './YamlEditorModal';
-import Toast from './Toast';
+const YamlViewer = lazy(() => import('./YamlViewer'));
+const YamlEditorModal = lazy(() => import('./YamlEditorModal'));
 import FileCreationDialog from './yaml-utility/FileCreationDialog';
 import FileExistsConflictDialog from './yaml-utility/FileExistsConflictDialog';
 import LoadedFilesList from './yaml-utility/LoadedFilesList';
@@ -14,11 +13,12 @@ import { useYamlUtilityFiles } from '../hooks/useYamlUtilityFiles';
 import { useYamlUtilityDialogs } from '../hooks/useYamlUtilityDialogs';
 import { getSetting, loadSettings } from '../utils/settingsManager';
 import { backupConfig } from '../utils/apiClient';
+import { useToast } from '../hooks/useToast';
 
 const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
-  const [toast, setToast] = useState(null);
   const [showServerBrowser, setShowServerBrowser] = useState(false);
   const prevBreadcrumbsRef = React.useRef(breadcrumbs);
+  const { showError } = useToast();
 
   // File management hook
   const {
@@ -188,7 +188,7 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
     
     if (!filePathToLoad) {
       console.error('[YamlUtility] No file path to load');
-      setToast({ message: 'File path is missing', type: 'error' });
+      showError('File path is missing');
       return;
     }
     
@@ -197,7 +197,7 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
     if (content) {
       openNewFileEditor(newFileName, content, filePathToLoad);
     } else {
-      setToast({ message: 'Failed to load existing file', type: 'error' });
+      showError('Failed to load existing file');
     }
   };
 
@@ -300,13 +300,34 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
         )}
 
         {showViewer && selectedFiles.length > 0 && (
-          <YamlViewer 
-            files={selectedFiles}
-            onClose={handleCloseViewer}
-            onClearFiles={handleClearFiles}
-            onLoadMoreFiles={handleLoadMoreFiles}
-            onFilesUpdated={setSelectedFiles}
-          />
+          <Suspense fallback={
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              minH={{ base: "200px", sm: "300px" }}
+              bg="cardBg"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor="border"
+              p={6}
+            >
+              <VStack gap={3}>
+                <Spinner size="xl" color="primary" />
+                <Text fontSize={{ base: "sm", sm: "md" }} color="textMuted">
+                  Loading YAML viewer...
+                </Text>
+              </VStack>
+            </Box>
+          }>
+            <YamlViewer
+              files={selectedFiles}
+              onClose={handleCloseViewer}
+              onClearFiles={handleClearFiles}
+              onLoadMoreFiles={handleLoadMoreFiles}
+              onFilesUpdated={setSelectedFiles}
+            />
+          </Suspense>
         )}
 
         {selectedFiles.length === 0 && !showViewer && (
@@ -338,24 +359,17 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
       />
 
       {/* New File Editor Modal */}
-      <YamlEditorModal
-        isOpen={showNewFileEditor}
-        onClose={closeNewFileEditor}
-        fileName={newFileName}
-        fileContent={existingFileContent || "# New YAML Configuration File\n# Add your configuration below\n\n"}
-        filePath={existingFilePath || `${getSetting('files.defaultPath', '')}/${newFileName}`}
-        onSave={handleSaveNewFile}
-        isNewFile={!existingFileContent}
-      />
-
-      {/* Toast notifications */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+      <Suspense fallback={null}>
+        <YamlEditorModal
+          isOpen={showNewFileEditor}
+          onClose={closeNewFileEditor}
+          fileName={newFileName}
+          fileContent={existingFileContent || "# New YAML Configuration File\n# Add your configuration below\n\n"}
+          filePath={existingFilePath || `${getSetting('files.defaultPath', '')}/${newFileName}`}
+          onSave={handleSaveNewFile}
+          isNewFile={!existingFileContent}
         />
-      )}
+      </Suspense>
 
       {/* Server File Browser Modal */}
       <ServerFileBrowser
