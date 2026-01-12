@@ -7,16 +7,14 @@ import SettingsDialog from './components/SettingsDialog'
 import SportsListEditor from './components/SportsListEditor'
 import WidgetDefinitionsEditor from './components/WidgetDefinitionsEditor'
 import AppRouter from './components/AppRouter'
-import { ToastContainer } from './components/Toast'
+import { Toaster } from './components/ui/toaster'
 import { ConfirmDialog } from './components/ConfirmDialog'
-import { useToast } from './contexts/ToastContext'
 import { useSettings } from './state/SettingsProvider'
 import { useDialog } from './state/DialogProvider'
 import { useDirtyState } from './state/DirtyStateProvider'
 import { useNavigation } from './state/NavigationProvider'
 
 function App() {
-  const { toasts, removeToast } = useToast();
   const { theme, toggleTheme, toggleSidebar, isSidebarCollapsed, settings } = useSettings();
   const { confirmDialog, closeDialog } = useDialog();
   const { setSportsListDirty, setWidgetDefinitionsDirty, checkAndConfirmModalClose } = useDirtyState();
@@ -256,7 +254,7 @@ function App() {
       )}
       
       {/* Toast notifications */}
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      <Toaster />
       
       {/* Confirmation Dialog */}
       <ConfirmDialog

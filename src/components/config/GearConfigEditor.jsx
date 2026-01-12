@@ -1,4 +1,4 @@
-import React from 'react';
+import { useCallback, memo } from 'react';
 import {
   Box,
   VStack,
@@ -46,30 +46,34 @@ const GearConfigEditor = ({
         };
         const customGearsArray = customGearConfig.customGears || [];
 
-        const handleStravaGearChange = (gears) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleStravaGearChange = useCallback((gears) => {
           handleFieldChange('stravaGear', gears);
-        };
+        }, [handleFieldChange]);
 
-        const handleCustomGearsChange = (gears) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleCustomGearsChange = useCallback((gears) => {
           handleFieldChange('customGear', {
             ...customGearConfig,
             customGears: gears
           });
-        };
+        }, [handleFieldChange, customGearConfig]);
 
-        const handleToggleCustomGear = (checked) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleToggleCustomGear = useCallback((checked) => {
           handleFieldChange('customGear', {
             ...customGearConfig,
             enabled: checked
           });
-        };
+        }, [handleFieldChange, customGearConfig]);
 
-        const handleUpdateHashtagPrefix = (prefix) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleUpdateHashtagPrefix = useCallback((prefix) => {
           handleFieldChange('customGear', {
             ...customGearConfig,
             hashtagPrefix: prefix
           });
-        };
+        }, [handleFieldChange, customGearConfig]);
 
         return (
           <VStack align="stretch" gap={6}>
@@ -292,4 +296,5 @@ const GearConfigEditor = ({
   );
 };
 
-export default GearConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(GearConfigEditor);

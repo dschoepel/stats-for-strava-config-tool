@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef, memo } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
 import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings } from 'react-icons/md';
 import { useToast } from '../hooks/useToast';
-import { ToastContainer } from './Toast';
 import FileViewerModal from './FileViewerModal';
 import YamlEditorModal from './YamlEditorModal';
 import ConfigFileGrid from './config-files/ConfigFileGrid';
@@ -45,12 +44,14 @@ const ConfigFileList = forwardRef((props, ref) => {
 
   const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
 
-  // Calculate configuration mode based on files and validation
-  const configMode = !hasConfigInitialized ? null :
-    validationStatus && !validationStatus.isComplete ? 'invalid' :
-    configFiles.length === 0 ? null :
-    configFiles.length === 1 ? 'single-file' :
-    'multi-file';
+  // Memoize configuration mode calculation
+  const configMode = useMemo(() => {
+    if (!hasConfigInitialized) return null;
+    if (validationStatus && !validationStatus.isComplete) return 'invalid';
+    if (configFiles.length === 0) return null;
+    if (configFiles.length === 1) return 'single-file';
+    return 'multi-file';
+  }, [hasConfigInitialized, validationStatus, configFiles.length]);
 
   // Validate that all required sections are present
   const validateSections = useCallback(async (mapping) => {
@@ -104,6 +105,86 @@ const ConfigFileList = forwardRef((props, ref) => {
     }
   }, [updateSectionToFileMap, showWarning, showSuccess, validateSections]);
   
+  // scanDirectory function - needs to be defined before useImperativeHandle
+  const scanDirectory = useCallback(async (dirPath, forceRefresh = false) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Get the current default path from settings
+      const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
+      
+      // Check cache first if not forcing refresh
+      if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
+        const result = await listConfigFiles(currentDefaultPath);
+        
+        if (result.success && result.files.length > 0) {
+          // Compare file content hashes
+          let hasChanges = false;
+          
+          // Check if file count changed
+          if (result.files.length !== fileCache.files.length) {
+            hasChanges = true;
+          } else {
+            // Compare hashes for each file
+            for (const file of result.files) {
+              const cachedHash = fileCache.fileHashes.get(file.name);
+              if (!cachedHash || cachedHash !== file.hash) {
+                hasChanges = true;
+                break;
+              }
+            }
+          }
+          
+          if (!hasChanges) {
+            // No content changes detected, use cached data
+            setConfigFiles(fileCache.files);
+            setSelectedDirectory(fileCache.directory);
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+      
+      const result = await scanConfigFiles(dirPath);
+      
+      if (result.success) {
+        // Create hash map for quick lookup
+        const fileHashes = new Map();
+        result.files.forEach(file => {
+          if (file.hash) {
+            fileHashes.set(file.name, file.hash);
+          }
+        });
+          
+        setConfigFiles(result.files);
+        setSelectedDirectory(result.directory);
+        updateFileCache({
+          files: result.files,
+          fileHashes: fileHashes,
+          directory: result.directory
+        });
+        
+        // Parse sections to build mapping
+        await parseSections(result.files);
+        
+        if (result.files.length === 0) {
+          showWarning('No configuration files found. Looking for config.yaml and config-*.yaml files.');
+          setError('No configuration files found in the selected directory.');
+        } else {
+          showSuccess(`Found ${result.files.length} configuration file${result.files.length > 1 ? 's' : ''}`);
+        }
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      showError(`Failed to scan directory: ${error.message}`);
+      setError(`Failed to scan directory: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fileCache, parseSections, showWarning, showError, showSuccess, updateFileCache, settings.files?.defaultPath]);
+  
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     checkForUpdates: async () => {
@@ -120,7 +201,7 @@ const ConfigFileList = forwardRef((props, ref) => {
   }));
 
   // Check for file changes without full reload by comparing content hashes
-  const checkForFileChanges = async () => {
+  const checkForFileChanges = useCallback(async () => {
     if (!selectedDirectory || fileCache.fileHashes.size === 0) {
       return;
     }
@@ -157,7 +238,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       // Silently fail for background checks
       console.warn('Background file check failed:', error.message);
     }
-  };
+  }, [selectedDirectory, fileCache.fileHashes, fileCache.files.length, settings.files?.defaultPath, showInfo, scanDirectory]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -280,87 +361,6 @@ const ConfigFileList = forwardRef((props, ref) => {
     };
   }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, updateFileCache, updateHasConfigInitialized, parseSections]);
 
-
-
-  const scanDirectory = useCallback(async (dirPath, forceRefresh = false) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Get the current default path from settings
-      const currentDefaultPath = settings.files?.defaultPath || '/data/statistics-for-strava/config/';
-      
-      // Check cache first if not forcing refresh
-      if (!forceRefresh && fileCache.directory === dirPath && fileCache.files.length > 0 && fileCache.fileHashes.size > 0) {
-        const result = await listConfigFiles(currentDefaultPath);
-        
-        if (result.success && result.files.length > 0) {
-          // Compare file content hashes
-          let hasChanges = false;
-          
-          // Check if file count changed
-          if (result.files.length !== fileCache.files.length) {
-            hasChanges = true;
-          } else {
-            // Compare hashes for each file
-            for (const file of result.files) {
-              const cachedHash = fileCache.fileHashes.get(file.name);
-              if (!cachedHash || cachedHash !== file.hash) {
-                hasChanges = true;
-                break;
-              }
-            }
-          }
-          
-          if (!hasChanges) {
-            // No content changes detected, use cached data
-            setConfigFiles(fileCache.files);
-            setSelectedDirectory(fileCache.directory);
-            setIsLoading(false);
-            return;
-          }
-        }
-      }
-      
-      const result = await scanConfigFiles(dirPath);
-      
-      if (result.success) {
-        // Create hash map for quick lookup
-        const fileHashes = new Map();
-        result.files.forEach(file => {
-          if (file.hash) {
-            fileHashes.set(file.name, file.hash);
-          }
-        });
-          
-        setConfigFiles(result.files);
-        setSelectedDirectory(result.directory);
-        updateFileCache({
-          files: result.files,
-          fileHashes: fileHashes,
-          directory: result.directory
-        });
-        
-        // Parse sections to build mapping
-        await parseSections(result.files);
-        
-        if (result.files.length === 0) {
-          showWarning('No configuration files found. Looking for config.yaml and config-*.yaml files.');
-          setError('No configuration files found in the selected directory.');
-        } else {
-          showSuccess(`Found ${result.files.length} configuration file${result.files.length > 1 ? 's' : ''}`);
-        }
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      showError(`Failed to scan directory: ${error.message}`);
-      setError(`Failed to scan directory: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fileCache, parseSections, showWarning, showError, showSuccess, updateFileCache]);
-
   // Merge all config files into a single config.yaml
   const handleMergeToSingleFile = useCallback(async () => {
     if (!configFiles || configFiles.length === 0) {
@@ -403,25 +403,25 @@ const ConfigFileList = forwardRef((props, ref) => {
     }
   }, [configFiles, selectedDirectory, showInfo, showSuccess, showError, scanDirectory]);
 
-  const handleBrowseDirectory = () => {
+  const handleBrowseDirectory = useCallback(() => {
     setShowFolderBrowser(true);
-  };
+  }, []);
 
-  const handleFolderSelected = async (folderPath) => {
+  const handleFolderSelected = useCallback(async (folderPath) => {
     if (folderPath && folderPath.trim()) {
       showInfo(`Scanning directory: ${folderPath}`, 3000);
       await scanDirectory(folderPath.trim());
     }
-  };
+  }, [showInfo, scanDirectory]);
 
-  const handleRefreshFiles = async () => {
+  const handleRefreshFiles = useCallback(async () => {
     if (!selectedDirectory) return;
-    
+
     showInfo('Refreshing files...', 2000);
     await scanDirectory(selectedDirectory, true); // Force refresh
-  };
+  }, [selectedDirectory, showInfo, scanDirectory]);
 
-  const handleViewFile = async (fileInfo) => {
+  const handleViewFile = useCallback(async (fileInfo) => {
     try {
       showInfo(`Loading ${fileInfo.name}...`, 2000);
 
@@ -439,15 +439,15 @@ const ConfigFileList = forwardRef((props, ref) => {
       showError(`Failed to load file: ${error.message}`);
       setError(`Failed to load file: ${error.message}`);
     }
-  };
+  }, [showInfo, showSuccess, showError]);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setModalFileName('');
     setModalFileContent('');
-  };
+  }, []);
 
-  const handleEditFile = async (fileInfo) => {
+  const handleEditFile = useCallback(async (fileInfo) => {
     try {
       showInfo(`Loading ${fileInfo.name} for editing...`, 2000);
 
@@ -465,21 +465,21 @@ const ConfigFileList = forwardRef((props, ref) => {
     } catch (error) {
       showError(`Failed to load file: ${error.message}`);
     }
-  };
+  }, [showInfo, showSuccess, showError]);
 
-  const handleCloseEditor = () => {
+  const handleCloseEditor = useCallback(() => {
     setIsEditorOpen(false);
     setEditorFileName('');
     setEditorFileContent('');
     setEditorFilePath('');
-  };
+  }, []);
 
-  const handleSaveFile = async () => {
+  const handleSaveFile = useCallback(async () => {
     showSuccess(`${editorFileName} saved successfully`);
     // Refresh the file list to show updated file info
     await handleRefreshFiles();
     handleCloseEditor();
-  };
+  }, [editorFileName, showSuccess, handleRefreshFiles, handleCloseEditor]);
 
   // Show loading state while settings are hydrating
   if (!settingsHydrated) {
@@ -801,8 +801,6 @@ const ConfigFileList = forwardRef((props, ref) => {
           </VStack>
         </Box>
       )}
-
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
       
       <FileViewerModal 
         isOpen={isModalOpen}
@@ -832,4 +830,4 @@ const ConfigFileList = forwardRef((props, ref) => {
 
 ConfigFileList.displayName = 'ConfigFileList';
 
-export default ConfigFileList;
+export default memo(ConfigFileList);

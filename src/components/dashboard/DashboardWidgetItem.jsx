@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Flex, Text, Button, Input, VStack, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { MdDragIndicator, MdExpandMore, MdChevronRight, MdArrowUpward, MdArrowDownward, MdDelete, MdClose } from 'react-icons/md';
@@ -346,4 +346,4 @@ DashboardWidgetItem.propTypes = {
   onDragEnd: PropTypes.func.isRequired
 };
 
-export default DashboardWidgetItem;
+export default memo(DashboardWidgetItem);

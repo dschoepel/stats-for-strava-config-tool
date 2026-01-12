@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo, lazy, Suspense } from 'react';
 import {
   Box,
   VStack,
@@ -25,7 +25,7 @@ import { useToast } from '../hooks/useToast';
 import { getSetting } from '../utils/settingsManager';
 import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../schemas/gearMaintenanceSchema';
 import { loadGearMaintenance, saveGearMaintenance } from '../services';
-import ImagePicker from './gear-maintenance/ImagePicker';
+const ImagePicker = lazy(() => import('./gear-maintenance/ImagePicker'));
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
 import { Tooltip } from './Tooltip';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -63,7 +63,7 @@ const GearMaintenanceEditor = () => {
   // Get gear maintenance path from settings
   const gearMaintenancePath = getSetting('files.gearMaintenancePath', '/data/statistics-for-strava/storage/gear-maintenance');
 
-  const loadConfig = async () => {
+  const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
       // Get settings for default path
@@ -93,14 +93,14 @@ const GearMaintenanceEditor = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
 
   useEffect(() => {
     loadConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     // Validate that all components have at least one gear attached
     const componentsWithoutGear = config.components.filter(c => !c.attachedTo || c.attachedTo.length === 0);
     if (componentsWithoutGear.length > 0) {
@@ -138,12 +138,12 @@ const GearMaintenanceEditor = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [config, showError, showSuccess, loadConfig]);
 
-  const handleFieldChange = (field, value) => {
+  const handleFieldChange = useCallback((field, value) => {
     setConfig(prev => ({ ...prev, [field]: value }));
     setIsDirty(true);
-  };
+  }, []);
 
   const openImagePicker = (target) => {
     setImagePickerTarget(target);
@@ -173,16 +173,17 @@ const GearMaintenanceEditor = () => {
   };
 
   // Gear CRUD operations
-  const addGear = () => {
+  const addGear = useCallback(() => {
     const newGear = { gearId: '', imgSrc: '' };
     setConfig(prev => ({
       ...prev,
       gears: [...prev.gears, newGear]
     }));
     setIsDirty(true);
-  };
+  }, []);
 
-  const deleteGear = (gearIndex) => {
+  const deleteGear = useCallback((gearIndex) => {
+    if (!config) return;
     const gear = config.gears[gearIndex];
     // Count components attached to this gear
     const componentCount = config.components.filter(c =>
@@ -193,7 +194,7 @@ const GearMaintenanceEditor = () => {
       type: 'deleteGear',
       data: { gearIndex, gearId: gear.gearId || 'Unnamed Gear', componentCount }
     });
-  };
+  }, [config]);
 
   const handleConfirmDeleteGear = () => {
     const { gearIndex } = confirmDialog.data;
@@ -205,17 +206,17 @@ const GearMaintenanceEditor = () => {
     setConfirmDialog({ isOpen: false, type: null, data: null });
   };
 
-  const updateGear = (gearIndex, field, value) => {
+  const updateGear = useCallback((gearIndex, field, value) => {
     setConfig(prev => {
       const newGears = [...prev.gears];
       newGears[gearIndex] = { ...newGears[gearIndex], [field]: value };
       return { ...prev, gears: newGears };
     });
     setIsDirty(true);
-  };
+  }, []);
 
   // Component CRUD operations (top-level components with attachedTo field)
-  const addComponent = (gearId) => {
+  const addComponent = useCallback((gearId) => {
     const newComponent = {
       tag: '',
       label: '',
@@ -227,16 +228,17 @@ const GearMaintenanceEditor = () => {
       components: [...prev.components, newComponent]
     }));
     setIsDirty(true);
-  };
+  }, []);
 
-  const deleteComponent = (componentIndex) => {
+  const deleteComponent = useCallback((componentIndex) => {
+    if (!config) return;
     const component = config.components[componentIndex];
     setConfirmDialog({
       isOpen: true,
       type: 'deleteComponent',
       data: { componentIndex, name: component.label || 'Unnamed Component' }
     });
-  };
+  }, [config]);
 
   const handleConfirmDeleteComponent = () => {
     const { componentIndex } = confirmDialog.data;
@@ -248,16 +250,16 @@ const GearMaintenanceEditor = () => {
     setConfirmDialog({ isOpen: false, type: null, data: null });
   };
 
-  const updateComponent = (componentIndex, field, value) => {
+  const updateComponent = useCallback((componentIndex, field, value) => {
     setConfig(prev => {
       const newComponents = [...prev.components];
       const currentComponent = newComponents[componentIndex];
-      
+
       // If value is a function, call it with the current field value
-      const newValue = typeof value === 'function' 
+      const newValue = typeof value === 'function'
         ? value(currentComponent[field])
         : value;
-      
+
       newComponents[componentIndex] = {
         ...currentComponent,
         [field]: newValue
@@ -265,7 +267,7 @@ const GearMaintenanceEditor = () => {
       return { ...prev, components: newComponents };
     });
     setIsDirty(true);
-  };
+  }, []);
 
   // Maintenance task operations
   const addMaintenanceTask = useCallback((componentIndex) => {
@@ -303,7 +305,7 @@ const GearMaintenanceEditor = () => {
     }, 0);
   }, []);
 
-  const deleteMaintenanceTask = (componentIndex, taskIndex) => {
+  const deleteMaintenanceTask = useCallback((componentIndex, taskIndex) => {
     setConfig(prev => {
       const newComponents = [...prev.components];
       newComponents[componentIndex].maintenance =
@@ -311,9 +313,9 @@ const GearMaintenanceEditor = () => {
       return { ...prev, components: newComponents };
     });
     setIsDirty(true);
-  };
+  }, []);
 
-  const updateMaintenanceTask = (componentIndex, taskIndex, field, value) => {
+  const updateMaintenanceTask = useCallback((componentIndex, taskIndex, field, value) => {
     setConfig(prev => {
       const newComponents = [...prev.components];
       if (field.startsWith('interval.')) {
@@ -325,7 +327,23 @@ const GearMaintenanceEditor = () => {
       return { ...prev, components: newComponents };
     });
     setIsDirty(true);
-  };
+  }, []);
+
+  // Memoize component filtering for each gear to avoid expensive IIFE on every render
+  const gearComponentsMap = useMemo(() => {
+    if (!config || !config.gears || !config.components) return new Map();
+
+    const map = new Map();
+    config.gears.forEach((gear, gearIndex) => {
+      const gearComponents = config.components
+        .map((component, idx) => ({ component, globalIndex: idx }))
+        .filter(({ component }) =>
+          component.attachedTo && component.attachedTo.includes(gear.gearId)
+        );
+      map.set(gearIndex, gearComponents);
+    });
+    return map;
+  }, [config]);
 
   if (loading) {
     return (
@@ -539,12 +557,8 @@ const GearMaintenanceEditor = () => {
 
                   {/* Components within this Gear */}
                   {(() => {
-                    // Filter components attached to this gear
-                    const gearComponents = config.components
-                      .map((component, idx) => ({ component, globalIndex: idx }))
-                      .filter(({ component }) =>
-                        component.attachedTo && component.attachedTo.includes(gear.gearId)
-                      );
+                    // Get memoized components for this gear
+                    const gearComponents = gearComponentsMap.get(gearIndex) || [];
 
                     return (
                       <Box mt={4} pt={4} borderTopWidth={1} borderTopColor="border">
@@ -617,12 +631,45 @@ const GearMaintenanceEditor = () => {
       </VStack>
 
       {/* Image Picker Modal */}
-      <ImagePicker
-        isOpen={imagePickerOpen}
-        onClose={() => setImagePickerOpen(false)}
-        onSelect={handleImageSelect}
-        customPath={gearMaintenancePath}
-      />
+      {imagePickerOpen && (
+        <Suspense fallback={
+          <Box
+            position="fixed"
+            top="0"
+            left="0"
+            width="100vw"
+            height="100vh"
+            bg="blackAlpha.800"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            zIndex="9999"
+          >
+            <Box
+              bg="cardBg"
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="border"
+              p={8}
+              boxShadow="xl"
+            >
+              <VStack gap={3}>
+                <Spinner size="xl" color="primary" />
+                <Text fontSize={{ base: "sm", sm: "md" }} color="textMuted">
+                  Loading image picker...
+                </Text>
+              </VStack>
+            </Box>
+          </Box>
+        }>
+          <ImagePicker
+            isOpen={imagePickerOpen}
+            onClose={() => setImagePickerOpen(false)}
+            onSelect={handleImageSelect}
+            customPath={gearMaintenancePath}
+          />
+        </Suspense>
+      )}
 
       {/* Confirm Delete Component Dialog */}
       <ConfirmDialog
@@ -651,8 +698,8 @@ const GearMaintenanceEditor = () => {
   );
 };
 
-// Component Editor Sub-component
-const ComponentEditor = ({
+// Component Editor Sub-component (memoized to prevent unnecessary re-renders)
+const ComponentEditor = memo(({
   component,
   componentIndex,
   allComponents,
@@ -941,6 +988,6 @@ const ComponentEditor = ({
       )}
     </Box>
   );
-};
+});
 
-export default GearMaintenanceEditor;
+export default memo(GearMaintenanceEditor);

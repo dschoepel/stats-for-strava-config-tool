@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import BaseConfigEditor from './BaseConfigEditor';
 
 /**
@@ -37,4 +38,5 @@ const GeneralConfigEditor = ({
   );
 };
 
-export default GeneralConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(GeneralConfigEditor);

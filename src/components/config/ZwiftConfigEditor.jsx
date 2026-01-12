@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { Box, Text, Input, Flex, VStack, Heading, Icon } from '@chakra-ui/react';
 import { MdInfo } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
@@ -25,8 +25,8 @@ const ZwiftConfigEditor = ({
     });
   }, []);
 
-  // Custom validation for Zwift fields
-  const validateZwiftFields = (formData, getNestedValue) => {
+  // Memoize custom validation function to prevent BaseConfigEditor re-renders
+  const validateZwiftFields = useCallback((formData, getNestedValue) => {
     const errors = {};
     
     const level = getNestedValue(formData, 'level');
@@ -47,9 +47,9 @@ const ZwiftConfigEditor = ({
         errors['racingScore'] = 'Zwift racing score must be between 0 and 1000';
       }
     }
-    
+
     return errors;
-  };
+  }, [maxZwiftLevel]); // Depends on maxZwiftLevel for validation
 
   return (
     <BaseConfigEditor
@@ -168,4 +168,5 @@ const ZwiftConfigEditor = ({
   );
 };
 
-export default ZwiftConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(ZwiftConfigEditor);

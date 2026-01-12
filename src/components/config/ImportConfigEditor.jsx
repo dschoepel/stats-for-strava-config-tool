@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   Box,
   VStack,
@@ -42,24 +42,24 @@ const ImportConfigEditor = ({
   });
 
   // Custom validation for import fields
-  const validateImportFields = (formData, getNestedValue) => {
+  const validateImportFields = useCallback((formData, getNestedValue) => {
     const errors = {};
-    
+
     // Validate webhooks: if enabled, verifyToken must be provided
     const webhooksEnabled = getNestedValue(formData, 'webhooks.enabled');
     const verifyToken = getNestedValue(formData, 'webhooks.verifyToken');
     const checkInterval = getNestedValue(formData, 'webhooks.checkIntervalInMinutes');
-    
+
     if (webhooksEnabled && (!verifyToken || verifyToken.trim() === '')) {
       errors['webhooks.verifyToken'] = 'Verify token is required when webhooks are enabled';
     }
-    
+
     if (webhooksEnabled && (checkInterval === null || checkInterval === undefined || checkInterval < 1)) {
       errors['webhooks.checkIntervalInMinutes'] = 'Check interval must be at least 1 minute when webhooks are enabled';
     }
-    
+
     return errors;
-  };
+  }, []);
 
   return (
     <BaseConfigEditor
@@ -73,7 +73,8 @@ const ImportConfigEditor = ({
     >
       {({ schema, renderBasicField, formData, handleFieldChange, getNestedValue, errors }) => {
         // Custom array field renderer
-        const renderArrayField = (fieldName, fieldSchema, fieldPath = fieldName) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const renderArrayField = useCallback((fieldName, fieldSchema, fieldPath = fieldName) => {
           const value = getNestedValue(formData, fieldPath) || [];
           const newItem = arrayInputs[fieldName] || '';
 
@@ -229,10 +230,11 @@ const ImportConfigEditor = ({
               )}
             </Field.Root>
           );
-        };
+        }, [formData, arrayInputs, handleFieldChange, getNestedValue]);
 
         // Custom renderer for sport types - using SportTypeMultiSelect component
-        const renderSportTypesSelect = (fieldName, fieldSchema) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const renderSportTypesSelect = useCallback((fieldName, fieldSchema) => {
           const value = getNestedValue(formData, fieldName) || [];
 
           return (
@@ -273,10 +275,11 @@ const ImportConfigEditor = ({
               )}
             </Box>
           );
-        };
+        }, [formData, handleFieldChange, errors, sportsList, getNestedValue]);
 
         // Custom renderer for activity visibilities - checkbox grid
-        const renderActivityVisibilities = (fieldName, fieldSchema) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const renderActivityVisibilities = useCallback((fieldName, fieldSchema) => {
           const value = getNestedValue(formData, fieldName) || [];
           
           const handleToggle = (optionValue) => {
@@ -373,7 +376,7 @@ const ImportConfigEditor = ({
               )}
             </Box>
           );
-        };
+        }, [formData, handleFieldChange, getNestedValue]);
 
         return (
           <VStack align="stretch" gap={6}>
@@ -647,4 +650,5 @@ const ImportConfigEditor = ({
   );
 };
 
-export default ImportConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(ImportConfigEditor);

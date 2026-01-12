@@ -1,41 +1,56 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useCallback, useMemo } from 'react';
+import { toaster } from '../components/ui/toaster';
 
 const ToastContext = createContext(null);
 
 export const ToastProvider = ({ children }) => {
-  const [toasts, setToasts] = useState([]);
-
-  const addToast = useCallback((message, type = 'info', duration = 5000) => {
-    const id = Date.now() + Math.random();
-    const newToast = { id, message, type, duration };
-    
-    setToasts(prev => [...prev, newToast]);
-    
-    return id;
+  const showInfo = useCallback((message, duration = 5000) => {
+    queueMicrotask(() => {
+      toaster.create({
+        title: message,
+        type: 'info',
+        duration
+      });
+    });
   }, []);
 
-  const removeToast = useCallback((id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+  const showSuccess = useCallback((message, duration = 5000) => {
+    queueMicrotask(() => {
+      toaster.create({
+        title: message,
+        type: 'success',
+        duration
+      });
+    });
   }, []);
 
-  const showInfo = useCallback((message, duration) => addToast(message, 'info', duration), [addToast]);
-  const showSuccess = useCallback((message, duration) => addToast(message, 'success', duration), [addToast]);
-  const showWarning = useCallback((message, duration) => addToast(message, 'warning', duration), [addToast]);
-  const showError = useCallback((message, duration) => addToast(message, 'error', duration), [addToast]);
+  const showWarning = useCallback((message, duration = 5000) => {
+    queueMicrotask(() => {
+      toaster.create({
+        title: message,
+        type: 'warning',
+        duration
+      });
+    });
+  }, []);
+
+  const showError = useCallback((message, duration = 5000) => {
+    queueMicrotask(() => {
+      toaster.create({
+        title: message,
+        type: 'error',
+        duration
+      });
+    });
+  }, []);
 
   // Memoize context value to prevent unnecessary re-renders of consumers
   const value = useMemo(() => ({
-    toasts,
-    addToast,
-    removeToast,
     showInfo,
     showSuccess,
     showWarning,
     showError
   }), [
-    toasts,
-    addToast,
-    removeToast,
     showInfo,
     showSuccess,
     showWarning,

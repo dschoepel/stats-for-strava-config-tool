@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { Box, Button, Flex, Text, VStack, HStack, Icon, ColorPicker, Portal, parseColor, Input, Code, Badge } from '@chakra-ui/react';
-import { MdInfo, MdWarning, MdDashboard, MdExpandMore, MdChevronRight } from 'react-icons/md';
+import React, { useState, useRef, useCallback, useMemo, memo, lazy, Suspense } from 'react';
+import { Box, Button, Flex, Text, VStack, HStack, Icon, ColorPicker, Portal, parseColor, Input, Code, Badge, Spinner } from '@chakra-ui/react';
+import { MdInfo, MdWarning, MdDashboard, MdExpandMore, MdChevronRight, MdAdd, MdClose } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import CountrySelector from '../config-fields/CountrySelector';
-import DashboardEditor from '../DashboardEditor';
+const DashboardEditor = lazy(() => import('../DashboardEditor'));
 import SportTypeMultiSelect from './appearance/SportTypeMultiSelect';
 import SportTypeSortingOrder from './appearance/SportTypeSortingOrder';
 import CollapsibleSection from './appearance/CollapsibleSection';
@@ -36,14 +36,14 @@ const AppearanceConfigEditor = ({
     sportTypesSortingOrder: false
   });
 
-  const toggleGroup = (groupName) => {
+  const toggleGroup = useCallback((groupName) => {
     setExpandedGroups(prev => ({
       ...prev,
       [groupName]: !prev[groupName]
     }));
-  };
+  }, []);
 
-  const collapseAll = () => {
+  const collapseAll = useCallback(() => {
     setExpandedGroups({
       globalSettings: false,
       dateFormat: false,
@@ -52,9 +52,9 @@ const AppearanceConfigEditor = ({
       photos: false,
       sportTypesSortingOrder: false
     });
-  };
+  }, []);
 
-  const expandAll = () => {
+  const expandAll = useCallback(() => {
     setExpandedGroups({
       globalSettings: true,
       dateFormat: true,
@@ -63,10 +63,10 @@ const AppearanceConfigEditor = ({
       photos: true,
       sportTypesSortingOrder: true
     });
-  };
+  }, []);
 
   // Render sport type multi-select - now uses extracted component
-  const renderSportTypeMultiSelect = (fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError, subsectionKey) => {
+  const renderSportTypeMultiSelect = useCallback((fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError, subsectionKey) => {
     return (
       <SportTypeMultiSelect
         fieldName={fieldName}
@@ -79,10 +79,10 @@ const AppearanceConfigEditor = ({
         subsectionKey={subsectionKey}
       />
     );
-  };
+  }, [sportsList]);
 
   // Render sport type sorting order - now uses extracted component
-  const renderSportTypeSortingOrder = (fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError) => {
+  const renderSportTypeSortingOrder = useCallback((fieldName, fieldSchema, fieldPath, value, handleFieldChange, hasError) => {
     return (
       <SportTypeSortingOrder
         fieldName={fieldName}
@@ -94,7 +94,43 @@ const AppearanceConfigEditor = ({
         sportsList={sportsList}
       />
     );
-  };
+  }, [sportsList]);
+
+  // Modal handlers wrapped in useCallback
+  const handleOpenCountrySelector = useCallback(() => {
+    setShowCountrySelector(true);
+  }, []);
+
+  const handleCloseCountrySelector = useCallback(() => {
+    setShowCountrySelector(false);
+  }, []);
+
+  const handleOpenDashboardEditor = useCallback(() => {
+    setShowDashboardEditor(true);
+  }, []);
+
+  const handleCloseDashboardEditor = useCallback(() => {
+    setShowDashboardEditor(false);
+  }, []);
+
+  const handleSaveDashboard = useCallback((updatedLayout) => {
+    // Update the dashboard.layout in the form data
+    // This will trigger the dirty state in BaseConfigEditor
+    if (countryChangeHandlerRef.current) {
+      countryChangeHandlerRef.current('dashboard.layout', updatedLayout);
+    }
+    setDashboardLayout(updatedLayout);
+    setShowDashboardEditor(false);
+    setDashboardJustSaved(true);
+    // Clear the indicator after 8 seconds
+    setTimeout(() => setDashboardJustSaved(false), 8000);
+  }, []);
+
+  const handleCountryChange = useCallback((countryCode) => {
+    if (countryChangeHandlerRef.current) {
+      countryChangeHandlerRef.current('photos.defaultEnabledFilters.countryCode', countryCode);
+    }
+  }, []);
 
   return (
     <>
@@ -280,8 +316,8 @@ const AppearanceConfigEditor = ({
                           </Text>
                         </Flex>
                       )}
-                      <Button 
-                        onClick={() => setShowDashboardEditor(true)}
+                      <Button
+                        onClick={handleOpenDashboardEditor}
                         size={{ base: "xs", sm: "sm" }}
                         width={{ base: "100%", sm: "auto" }}
                         whiteSpace="normal"
@@ -581,7 +617,7 @@ const AppearanceConfigEditor = ({
                           borderColor={errors['photos.defaultEnabledFilters.countryCode'] ? 'red.500' : 'border'}
                         />
                         <Button
-                          onClick={() => setShowCountrySelector(true)}
+                          onClick={handleOpenCountrySelector}
                           size={{ base: "xs", sm: "md" }}
                           width={{ base: "100%", sm: "auto" }}
                           whiteSpace="normal"
@@ -617,35 +653,52 @@ const AppearanceConfigEditor = ({
       {showCountrySelector && (
         <CountrySelector
           value={initialData?.photos?.defaultEnabledFilters?.countryCode}
-          onChange={(countryCode) => {
-            if (countryChangeHandlerRef.current) {
-              countryChangeHandlerRef.current('photos.defaultEnabledFilters.countryCode', countryCode);
-            }
-          }}
-          onClose={() => setShowCountrySelector(false)}
+          onChange={handleCountryChange}
+          onClose={handleCloseCountrySelector}
         />
       )}
 
       {showDashboardEditor && (
-        <DashboardEditor
-          dashboardLayout={dashboardLayout}
-          onClose={() => setShowDashboardEditor(false)}
-          onSave={(updatedLayout) => {
-            // Update the dashboard.layout in the form data
-            // This will trigger the dirty state in BaseConfigEditor
-            if (countryChangeHandlerRef.current) {
-              countryChangeHandlerRef.current('dashboard.layout', updatedLayout);
-            }
-            setDashboardLayout(updatedLayout);
-            setShowDashboardEditor(false);
-            setDashboardJustSaved(true);
-            // Clear the indicator after 8 seconds
-            setTimeout(() => setDashboardJustSaved(false), 8000);
-          }}
-        />
+        <Suspense fallback={
+          <Box
+            position="fixed"
+            top="0"
+            left="0"
+            width="100vw"
+            height="100vh"
+            bg="blackAlpha.800"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            zIndex="9999"
+          >
+            <Box
+              bg="cardBg"
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="border"
+              p={8}
+              boxShadow="xl"
+            >
+              <VStack gap={3}>
+                <Spinner size="xl" color="primary" />
+                <Text fontSize={{ base: "sm", sm: "md" }} color="textMuted">
+                  Loading dashboard editor...
+                </Text>
+              </VStack>
+            </Box>
+          </Box>
+        }>
+          <DashboardEditor
+            dashboardLayout={dashboardLayout}
+            onClose={handleCloseDashboardEditor}
+            onSave={handleSaveDashboard}
+          />
+        </Suspense>
       )}
     </>
   );
 };
 
-export default AppearanceConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(AppearanceConfigEditor);

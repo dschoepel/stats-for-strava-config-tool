@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
-import Editor from '@monaco-editor/react';
-import { Box, Flex, Text, Button, Icon } from '@chakra-ui/react';
+import { useRef, useCallback, useMemo, memo, lazy, Suspense } from 'react';
+const Editor = lazy(() => import('@monaco-editor/react').then(module => ({ default: module.default })));
+import { Box, Flex, Text, Button, Icon, Spinner, VStack } from '@chakra-ui/react';
 import { MdFolder, MdSearch, MdContentCopy, MdDownload, MdCheckCircle, MdWarning, MdEdit } from 'react-icons/md';
 import { formatFileSize, validateYamlContent } from '../utils/yamlFileHandler';
 import { getSetting } from '../utils/settingsManager';
@@ -18,25 +18,27 @@ const MonacoYamlViewer = ({
   height = '100%'
 }) => {
   const editorRef = useRef(null);
-  
-  // Get editor settings
-  const fontSize = getSetting('editor.fontSize', 14);
-  const tabSize = getSetting('editor.tabSize', 2);
-  const wordWrap = getSetting('editor.wordWrap', true) ? 'on' : 'off';
-  const showLineNumbers = getSetting('ui.showLineNumbers', true) ? 'on' : 'off';
-  
+
+  // Memoize editor settings (expensive localStorage reads)
+  const editorSettings = useMemo(() => ({
+    fontSize: getSetting('editor.fontSize', 14),
+    tabSize: getSetting('editor.tabSize', 2),
+    wordWrap: getSetting('editor.wordWrap', true) ? 'on' : 'off',
+    showLineNumbers: getSetting('ui.showLineNumbers', true) ? 'on' : 'off'
+  }), []);
+
   // Force word wrap off on small screens for better mobile experience
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 425;
-  const effectiveWordWrap = isMobile ? 'off' : wordWrap;
+  const effectiveWordWrap = isMobile ? 'off' : editorSettings.wordWrap;
 
-  const handleEditorMount = (editor) => {
+  const handleEditorMount = useCallback((editor) => {
     editorRef.current = editor;
-    
+
     // Focus the editor
     editor.focus();
-  };
+  }, []);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     if (onCopy) {
       onCopy();
     } else {
@@ -46,17 +48,53 @@ const MonacoYamlViewer = ({
         console.error('Failed to copy to clipboard:', err);
       }
     }
-  };
+  }, [onCopy, fileContent]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     if (editorRef.current) {
       // Trigger the find widget (Ctrl+F)
       editorRef.current.trigger('keyboard', 'actions.find');
     }
-  };
+  }, []);
 
-  const isValid = validateYamlContent(fileContent);
-  
+  // Memoize validation result
+  const isValid = useMemo(() => validateYamlContent(fileContent), [fileContent]);
+
+  // Memoize formatted date string
+  const formattedDate = useMemo(() => {
+    if (!lastModified) return '';
+    const date = new Date(lastModified);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+  }, [lastModified]);
+
+  // Memoize Monaco editor options object
+  const editorOptions = useMemo(() => ({
+    readOnly: true,
+    minimap: { enabled: !isMobile },
+    scrollBeyondLastLine: false,
+    fontSize: isMobile ? 12 : editorSettings.fontSize,
+    wordWrap: effectiveWordWrap,
+    tabSize: editorSettings.tabSize,
+    automaticLayout: true,
+    lineNumbers: editorSettings.showLineNumbers,
+    renderWhitespace: 'selection',
+    scrollbar: {
+      vertical: 'visible',
+      horizontal: 'visible',
+      useShadows: false,
+      verticalScrollbarSize: isMobile ? 8 : 10,
+      horizontalScrollbarSize: isMobile ? 8 : 10
+    },
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    contextmenu: true,
+    selectOnLineNumbers: true,
+    matchBrackets: 'always',
+    folding: true,
+    foldingHighlight: true,
+    showFoldingControls: 'always'
+  }), [isMobile, editorSettings.fontSize, effectiveWordWrap, editorSettings.tabSize, editorSettings.showLineNumbers]);
+
   return (
     <Box 
       className={className}
@@ -96,18 +134,14 @@ const MonacoYamlViewer = ({
               {fileName}
             </Text>
             {fileSize && lastModified && (
-              <Text 
-                fontSize={{ base: "2xs", sm: "sm" }} 
-                color="text" 
-                opacity={0.8} 
+              <Text
+                fontSize={{ base: "2xs", sm: "sm" }}
+                color="text"
+                opacity={0.8}
                 whiteSpace={{ base: "normal", sm: "nowrap" }}
                 lineHeight="1.2"
               >
-                {formatFileSize(fileSize)} • 
-                Modified: {(() => {
-                  const date = new Date(lastModified);
-                  return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-                })()}
+                {formatFileSize(fileSize)} • Modified: {formattedDate}
               </Text>
             )}
             <Box 
@@ -180,42 +214,34 @@ const MonacoYamlViewer = ({
       )}
 
       <Box flex={1} overflow="hidden" minH={0}>
-        <Editor
-          height={height}
-          language="yaml"
-          value={fileContent}
-          theme="vs-dark"
-          onMount={handleEditorMount}
-          options={{
-            readOnly: true,
-            minimap: { enabled: !isMobile },
-            scrollBeyondLastLine: false,
-            fontSize: isMobile ? 12 : fontSize,
-            wordWrap: effectiveWordWrap,
-            tabSize: tabSize,
-            automaticLayout: true,
-            lineNumbers: showLineNumbers,
-            renderWhitespace: 'selection',
-            scrollbar: {
-              vertical: 'visible',
-              horizontal: 'visible',
-              useShadows: false,
-              verticalScrollbarSize: isMobile ? 8 : 10,
-              horizontalScrollbarSize: isMobile ? 8 : 10
-            },
-            overviewRulerBorder: false,
-            hideCursorInOverviewRuler: true,
-            contextmenu: true,
-            selectOnLineNumbers: true,
-            matchBrackets: 'always',
-            folding: true,
-            foldingHighlight: true,
-            showFoldingControls: 'always'
-          }}
-        />
+        <Suspense fallback={
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            minH="400px"
+            bg="cardBg"
+          >
+            <VStack gap={3}>
+              <Spinner size="lg" color="primary" />
+              <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
+                Loading editor...
+              </Text>
+            </VStack>
+          </Box>
+        }>
+          <Editor
+            height={height}
+            language="yaml"
+            value={fileContent}
+            theme="vs-dark"
+            onMount={handleEditorMount}
+            options={editorOptions}
+          />
+        </Suspense>
       </Box>
     </Box>
   );
 };
 
-export default MonacoYamlViewer;
+export default memo(MonacoYamlViewer);

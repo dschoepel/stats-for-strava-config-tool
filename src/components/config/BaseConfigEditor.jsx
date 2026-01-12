@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -16,6 +16,27 @@ import {
 } from '@chakra-ui/react';
 import { getSchemaBySection } from '../../schemas/configSchemas';
 import { useToast } from '../../contexts/ToastContext';
+
+// Pure utility functions (moved outside component for performance)
+const getNestedValue = (obj, path) => {
+  return path.split('.').reduce((current, key) => current?.[key], obj);
+};
+
+const setNestedValue = (obj, path, value) => {
+  const keys = path.split('.');
+  let current = obj;
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!current[key] || typeof current[key] !== 'object') {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+
+  current[keys[keys.length - 1]] = value;
+  return obj;
+};
 
 /**
  * BaseConfigEditor - Common form logic for all config section editors
@@ -73,29 +94,8 @@ const BaseConfigEditor = ({
     }
   }, [isDirty, onDirtyChange]);
 
-  // Nested value helpers
-  const getNestedValue = (obj, path) => {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
-  };
-
-  const setNestedValue = (obj, path, value) => {
-    const keys = path.split('.');
-    let current = obj;
-    
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
-      if (!current[key] || typeof current[key] !== 'object') {
-        current[key] = {};
-      }
-      current = current[key];
-    }
-    
-    current[keys[keys.length - 1]] = value;
-    return obj;
-  };
-
-  // Field change handler
-  const handleFieldChange = (fieldPath, value) => {
+  // Memoize field change handler to prevent child re-renders
+  const handleFieldChange = useCallback((fieldPath, value) => {
     setFormData(prevData => {
       const newData = JSON.parse(JSON.stringify(prevData));
       setNestedValue(newData, fieldPath, value);
@@ -115,7 +115,7 @@ const BaseConfigEditor = ({
       });
       return newErrors;
     });
-  };
+  }, []); // No dependencies - uses stable setters
 
   // Base validation
   const validateForm = () => {
@@ -389,4 +389,5 @@ BaseConfigEditor.propTypes = {
   customFieldRenderers: PropTypes.object
 };
 
-export default BaseConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(BaseConfigEditor);

@@ -45,6 +45,14 @@ const config = defineConfig({
       },
     },
 
+    // Toast panel background (for info/loading toasts)
+    "bg.panel": {
+      value: {
+        base: "#FFFFFF",     // white for info toasts
+        _dark: "#94A3B8",    // slate-400 (lighter for better text contrast)
+      },
+    },
+
     // Input field background
     inputBg: {
       value: {
