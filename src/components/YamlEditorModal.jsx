@@ -1,13 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
-import { Box, Flex, Heading, Text, Button, IconButton } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Button, IconButton, Spinner, VStack } from '@chakra-ui/react';
 import { MdClose } from 'react-icons/md';
 import { FaSave } from 'react-icons/fa';
-import Editor from '@monaco-editor/react';
+const Editor = lazy(() => import('@monaco-editor/react').then(module => ({ default: module.default })));
 import * as YAML from 'yaml';
 import { getSetting } from '../utils/settingsManager';
 import { ConfirmDialog } from './ConfirmDialog';
 import { checkFileExists, saveFile } from '../services';
+
+// Pure validation function moved outside component
+const validateYaml = (yamlContent) => {
+  try {
+    YAML.parse(yamlContent);
+    return { valid: true };
+  } catch (err) {
+    return {
+      valid: false,
+      error: err.message,
+      line: err.linePos?.[0]?.line || null
+    };
+  }
+};
 
 const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onSave, isNewFile = false, skipValidation = false }) => {
   const [content, setContent] = useState('');
@@ -15,15 +29,38 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Get editor settings
-  const fontSize = getSetting('editor.fontSize', 14);
-  const tabSize = getSetting('editor.tabSize', 2);
-  const wordWrap = getSetting('editor.wordWrap', true) ? 'on' : 'off';
-  const showLineNumbers = getSetting('ui.showLineNumbers', true) ? 'on' : 'off';
   const [validationError, setValidationError] = useState(null);
   const [showOverwriteDialog, setShowOverwriteDialog] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
+
+  // Memoize editor settings (expensive localStorage reads)
+  const editorSettings = useMemo(() => ({
+    fontSize: getSetting('editor.fontSize', 14),
+    tabSize: getSetting('editor.tabSize', 2),
+    wordWrap: getSetting('editor.wordWrap', true) ? 'on' : 'off',
+    showLineNumbers: getSetting('ui.showLineNumbers', true) ? 'on' : 'off'
+  }), []);
+
+  // Memoize content statistics
+  const contentStats = useMemo(() => ({
+    lines: content.split('\n').length,
+    bytes: new Blob([content]).size
+  }), [content]);
+
+  // Memoize Monaco editor options
+  const editorOptions = useMemo(() => ({
+    minimap: { enabled: true },
+    fontSize: editorSettings.fontSize,
+    lineNumbers: editorSettings.showLineNumbers,
+    rulers: [80],
+    wordWrap: editorSettings.wordWrap,
+    scrollBeyondLastLine: false,
+    automaticLayout: true,
+    tabSize: editorSettings.tabSize,
+    insertSpaces: true,
+    formatOnPaste: true,
+    formatOnType: true
+  }), [editorSettings.fontSize, editorSettings.showLineNumbers, editorSettings.wordWrap, editorSettings.tabSize]);
 
   useEffect(() => {
     if (isOpen && fileContent) {
@@ -49,26 +86,39 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty, isOpen]);
 
-  const handleEditorChange = (value) => {
+  const handleEditorChange = useCallback((value) => {
     setContent(value || '');
     setIsDirty(value !== originalContent);
     setValidationError(null); // Clear validation error when editing
-  };
+  }, [originalContent]);
 
-  const validateYaml = (yamlContent) => {
+  const performSave = useCallback(async () => {
+    console.log('[YamlEditorModal] performSave called, saving to:', filePath);
+    setIsSaving(true);
+    setError(null);
+
     try {
-      YAML.parse(yamlContent);
-      return { valid: true };
-    } catch (err) {
-      return { 
-        valid: false, 
-        error: err.message,
-        line: err.linePos?.[0]?.line || null
-      };
-    }
-  };
+      const result = await saveFile(filePath, content);
+      console.log('[YamlEditorModal] Save result:', result);
 
-  const handleSave = async () => {
+      if (result.success) {
+        setOriginalContent(content);
+        setIsDirty(false);
+        if (onSave) {
+          // Pass both the result and the content
+          onSave({ ...result, content: content });
+        }
+      } else {
+        throw new Error(result.error || 'Failed to save file');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [filePath, content, onSave]);
+
+  const handleSave = useCallback(async () => {
     // Validate YAML before saving
     const validation = validateYaml(content);
     if (!validation.valid) {
@@ -136,35 +186,9 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
       console.warn('File existence check failed, proceeding with save:', error);
       await performSave();
     }
-  };
+  }, [content, fileName, skipValidation, filePath, onSave, onClose, isNewFile, isDirty, performSave]);
 
-  const performSave = async () => {
-    console.log('[YamlEditorModal] performSave called, saving to:', filePath);
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      const result = await saveFile(filePath, content);
-      console.log('[YamlEditorModal] Save result:', result);
-
-      if (result.success) {
-        setOriginalContent(content);
-        setIsDirty(false);
-        if (onSave) {
-          // Pass both the result and the content
-          onSave({ ...result, content: content });
-        }
-      } else {
-        throw new Error(result.error || 'Failed to save file');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (isDirty) {
       setConfirmDialog({
         isOpen: true,
@@ -178,12 +202,12 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     } else {
       onClose();
     }
-  };
+  }, [isDirty, onClose]);
 
-  const handleEditorMount = (editor) => {
+  const handleEditorMount = useCallback((editor) => {
     // Configure Monaco editor settings
     editor.focus();
-  };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -308,27 +332,32 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
         )}
 
         <Box flex={1} overflow="hidden" minH={0}>
-          <Editor
-            height="100%"
-            defaultLanguage="yaml"
-            value={content}
-            onChange={handleEditorChange}
-            onMount={handleEditorMount}
-            theme="vs-dark"
-            options={{
-              minimap: { enabled: true },
-              fontSize: fontSize,
-              lineNumbers: showLineNumbers,
-              rulers: [80],
-              wordWrap: wordWrap,
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-              tabSize: tabSize,
-              insertSpaces: true,
-              formatOnPaste: true,
-              formatOnType: true
-            }}
-          />
+          <Suspense fallback={
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              minH="400px"
+              bg="cardBg"
+            >
+              <VStack gap={3}>
+                <Spinner size="lg" color="primary" />
+                <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
+                  Loading editor...
+                </Text>
+              </VStack>
+            </Box>
+          }>
+            <Editor
+              height="100%"
+              defaultLanguage="yaml"
+              value={content}
+              onChange={handleEditorChange}
+              onMount={handleEditorMount}
+              theme="vs-dark"
+              options={editorOptions}
+            />
+          </Suspense>
         </Box>
 
         <Flex
@@ -344,7 +373,7 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
           direction={{ base: "column", sm: "row" }}
         >
           <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted" flexShrink={0}>
-            Lines: {content.split('\n').length} | Size: {new Blob([content]).size} bytes
+            Lines: {contentStats.lines} | Size: {contentStats.bytes} bytes
           </Text>
           <Flex gap={{ base: 2, sm: 3 }} wrap="wrap" justify={{ base: "stretch", sm: "flex-end" }} w={{ base: "100%", sm: "auto" }}>
             <Button
@@ -426,4 +455,4 @@ YamlEditorModal.propTypes = {
   skipValidation: PropTypes.bool
 };
 
-export default YamlEditorModal;
+export default memo(YamlEditorModal);

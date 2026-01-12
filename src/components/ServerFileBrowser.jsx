@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -26,8 +26,11 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
   const [error, setError] = useState(null);
   const [parentPath, setParentPath] = useState(null);
 
+  // Memoize selected files count to avoid recomputing
+  const selectedCount = useMemo(() => selectedFiles.size, [selectedFiles]);
+
   // Load directory contents
-  const loadDirectory = async (dirPath = '') => {
+  const loadDirectory = useCallback(async (dirPath = '') => {
     setIsLoading(true);
     setError(null);
     
@@ -47,7 +50,7 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Load home directory on mount
   useEffect(() => {
@@ -55,23 +58,23 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
       loadDirectory();
       setSelectedFiles(new Set());
     }
-  }, [isOpen]);
+  }, [isOpen, loadDirectory]);
 
-  const handleFolderClick = (folder) => {
+  const handleFolderClick = useCallback((folder) => {
     loadDirectory(folder.fullPath);
-  };
+  }, [loadDirectory]);
 
-  const handleGoUp = () => {
+  const handleGoUp = useCallback(() => {
     if (parentPath) {
       loadDirectory(parentPath);
     }
-  };
+  }, [parentPath, loadDirectory]);
 
-  const handleGoHome = () => {
+  const handleGoHome = useCallback(() => {
     loadDirectory('');
-  };
+  }, [loadDirectory]);
 
-  const handleFileToggle = (file) => {
+  const handleFileToggle = useCallback((file) => {
     setSelectedFiles(prev => {
       const newSet = new Set(prev);
       if (newSet.has(file.fullPath)) {
@@ -81,17 +84,17 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     setSelectedFiles(new Set(files.map(f => f.fullPath)));
-  };
+  }, [files]);
 
-  const handleDeselectAll = () => {
+  const handleDeselectAll = useCallback(() => {
     setSelectedFiles(new Set());
-  };
+  }, []);
 
-  const handleConfirm = async () => {
+  const handleConfirm = useCallback(async () => {
     if (selectedFiles.size === 0) {
       setError('Please select at least one file');
       return;
@@ -129,7 +132,7 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
     } catch (err) {
       setError('Failed to load files: ' + err.message);
     }
-  };
+  }, [selectedFiles, files, onFilesSelected, onClose]);
 
   if (!isOpen) return null;
 
@@ -206,9 +209,9 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
             </Text>
           </HStack>
           
-          {selectedFiles.size > 0 && (
+          {selectedCount > 0 && (
             <HStack gap={2}>
-              <Badge colorPalette="blue">{selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected</Badge>
+              <Badge colorPalette="blue">{selectedCount} file{selectedCount !== 1 ? 's' : ''} selected</Badge>
               <Button size="xs" onClick={handleSelectAll} variant="outline">Select All</Button>
               <Button size="xs" onClick={handleDeselectAll} variant="outline">Deselect All</Button>
             </HStack>
@@ -298,9 +301,9 @@ const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
           <Button
             onClick={handleConfirm}
             colorPalette="blue"
-            disabled={selectedFiles.size === 0}
+            disabled={selectedCount === 0}
           >
-            Load {selectedFiles.size > 0 ? `${selectedFiles.size} File${selectedFiles.size !== 1 ? 's' : ''}` : 'Files'}
+            Load {selectedCount > 0 ? `${selectedCount} File${selectedCount !== 1 ? 's' : ''}` : 'Files'}
           </Button>
         </Flex>
       </Box>
@@ -314,4 +317,4 @@ ServerFileBrowser.propTypes = {
   onFilesSelected: PropTypes.func.isRequired
 };
 
-export default ServerFileBrowser;
+export default memo(ServerFileBrowser);

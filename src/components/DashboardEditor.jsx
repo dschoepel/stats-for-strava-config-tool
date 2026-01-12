@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Box, Button, Flex, Heading, Text, VStack, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { MdClose, MdSave, MdBarChart, MdLightbulb } from 'react-icons/md';
 import { readWidgetDefinitions } from '../utils/widgetDefinitionsManager';
 import { ConfirmDialog } from './ConfirmDialog';
 import DashboardWidgetItem from './dashboard/DashboardWidgetItem';
 
-export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
+// Generate unique ID for widgets
+let widgetIdCounter = 0;
+const generateWidgetId = () => `widget-${Date.now()}-${++widgetIdCounter}`;
+
+function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [layout, setLayout] = useState([]);
@@ -30,61 +34,73 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   }, []);
 
   useEffect(() => {
-    setLayout(dashboardLayout || []);
+    // Add unique IDs to widgets if they don't have them
+    const layoutWithIds = (dashboardLayout || []).map(widget => ({
+      ...widget,
+      _id: widget._id || generateWidgetId()
+    }));
+    setLayout(layoutWithIds);
   }, [dashboardLayout]);
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const moveUp = (index) => {
+  const moveUp = useCallback((index) => {
     if (index === 0) return;
-    const newLayout = [...layout];
-    [newLayout[index - 1], newLayout[index]] = [newLayout[index], newLayout[index - 1]];
-    setLayout(newLayout);
+    setLayout(prevLayout => {
+      const newLayout = [...prevLayout];
+      [newLayout[index - 1], newLayout[index]] = [newLayout[index], newLayout[index - 1]];
+      return newLayout;
+    });
     setIsDirty(true);
-  };
+  }, []);
 
-  const moveDown = (index) => {
-    if (index === layout.length - 1) return;
-    const newLayout = [...layout];
-    [newLayout[index], newLayout[index + 1]] = [newLayout[index + 1], newLayout[index]];
-    setLayout(newLayout);
+  const moveDown = useCallback((index) => {
+    setLayout(prevLayout => {
+      if (index === prevLayout.length - 1) return prevLayout;
+      const newLayout = [...prevLayout];
+      [newLayout[index], newLayout[index + 1]] = [newLayout[index + 1], newLayout[index]];
+      return newLayout;
+    });
     setIsDirty(true);
-  };
+  }, []);
 
-  const handleDragStart = (e, index) => {
+  const handleDragStart = useCallback((e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', e.currentTarget);
-  };
+  }, []);
 
-  const handleDragOver = (e, index) => {
+  const handleDragOver = useCallback((e, index) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
-    
-    const newLayout = [...layout];
-    const draggedItem = newLayout[draggedIndex];
-    newLayout.splice(draggedIndex, 1);
-    newLayout.splice(index, 0, draggedItem);
-    
-    setLayout(newLayout);
-    setDraggedIndex(index);
-  };
 
-  const handleDragEnd = () => {
+    setLayout(prevLayout => {
+      const newLayout = [...prevLayout];
+      const draggedItem = newLayout[draggedIndex];
+      newLayout.splice(draggedIndex, 1);
+      newLayout.splice(index, 0, draggedItem);
+      return newLayout;
+    });
+    setDraggedIndex(index);
+  }, [draggedIndex]);
+
+  const handleDragEnd = useCallback(() => {
     setDraggedIndex(null);
     setIsDirty(true);
-  };
+  }, []);
 
-  const handleSave = () => {
-    onSave(layout);
+  const handleSave = useCallback(() => {
+    // Remove _id before saving as it's only for internal tracking
+    const layoutToSave = layout.map(({ _id, ...widget }) => widget);
+    onSave(layoutToSave);
     setIsDirty(false);
-  };
+  }, [layout, onSave]);
 
-  const handleCancel = () => {
+  const handleConfirmUnsavedChanges = useCallback(() => {
+    setLayout(dashboardLayout || []);
+    setIsDirty(false);
+    onClose();
+  }, [dashboardLayout, onClose]);
+
+  const handleCancel = useCallback(() => {
     if (isDirty) {
       setConfirmDialog({
         isOpen: true,
@@ -94,75 +110,82 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     } else {
       onClose();
     }
-  };
+  }, [isDirty, onClose]);
 
-  const handleConfirmUnsavedChanges = () => {
-    setLayout(dashboardLayout || []);
-    setIsDirty(false);
-    onClose();
-  };
+  const handleOverlayClick = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      handleCancel();
+    }
+  }, [handleCancel]);
 
-  const handleDeleteWidget = (index) => {
+  const handleDeleteWidget = useCallback((index) => {
     setConfirmDialog({
       isOpen: true,
       type: 'deleteWidget',
       data: index
     });
-  };
+  }, []);
 
-  const handleConfirmDeleteWidget = () => {
+  const handleConfirmDeleteWidget = useCallback(() => {
     const newLayout = layout.filter((_, i) => i !== confirmDialog.data);
     setLayout(newLayout);
     setIsDirty(true);
     setConfirmDialog({ isOpen: false, type: null, data: null });
-  };
+  }, [layout, confirmDialog.data]);
 
-  const handleWidthChange = (index, newWidth) => {
-    const newLayout = [...layout];
-    newLayout[index] = { ...newLayout[index], width: Number(newWidth) };
-    setLayout(newLayout);
+  const handleWidthChange = useCallback((index, newWidth) => {
+    setLayout(prevLayout => {
+      const newLayout = [...prevLayout];
+      newLayout[index] = { ...newLayout[index], width: Number(newWidth) };
+      return newLayout;
+    });
     setIsDirty(true);
-  };
+  }, []);
 
-  const handleEnabledToggle = (index) => {
-    const newLayout = [...layout];
-    newLayout[index] = { ...newLayout[index], enabled: !newLayout[index].enabled };
-    setLayout(newLayout);
+  const handleEnabledToggle = useCallback((index) => {
+    setLayout(prevLayout => {
+      const newLayout = [...prevLayout];
+      newLayout[index] = { ...newLayout[index], enabled: !newLayout[index].enabled };
+      return newLayout;
+    });
     setIsDirty(true);
-  };
+  }, []);
 
-  const toggleWidgetExpansion = (index) => {
+  const toggleWidgetExpansion = useCallback((index) => {
     setExpandedWidgets(prev => ({
       ...prev,
       [index]: !prev[index]
     }));
-  };
+  }, []);
 
-  const toggleConfigEditor = (index) => {
+  const toggleConfigEditor = useCallback((index) => {
     setExpandedConfigs(prev => ({
       ...prev,
       [index]: !prev[index]
     }));
-  };
+  }, []);
 
-  const handleConfigChange = (index, configKey, value) => {
-    const newLayout = [...layout];
-    newLayout[index] = {
-      ...newLayout[index],
-      config: {
-        ...newLayout[index].config,
-        [configKey]: value
-      }
-    };
-    setLayout(newLayout);
+  const handleConfigChange = useCallback((index, configKey, value) => {
+    setLayout(prevLayout => {
+      const newLayout = [...prevLayout];
+      newLayout[index] = {
+        ...newLayout[index],
+        config: {
+          ...newLayout[index].config,
+          [configKey]: value
+        }
+      };
+      return newLayout;
+    });
     setIsDirty(true);
-  };
+  }, []);
 
-  const handleAddWidget = (widgetName) => {
+  const handleAddWidget = useCallback((widgetName) => {
     const widgetDef = widgetDefinitions[widgetName];
     if (!widgetDef) return;
 
     const newWidget = {
+      _id: generateWidgetId(),
       widget: widgetName,
       width: 100,
       enabled: true
@@ -172,13 +195,14 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
       newWidget.config = widgetDef.defaultConfig ? { ...widgetDef.defaultConfig } : {};
     }
 
-    setLayout([...layout, newWidget]);
+    setLayout(prevLayout => [...prevLayout, newWidget]);
     setIsDirty(true);
-  };
+  }, [widgetDefinitions]);
 
-  const getAvailableWidgets = () => {
+  // Memoize available widgets to avoid filtering/sorting on every render
+  const availableWidgets = useMemo(() => {
     const widgetsInLayout = layout.map(w => w.widget);
-    
+
     return Object.values(widgetDefinitions).filter(def => {
       if (def.allowMultiple) return true;
       return !widgetsInLayout.includes(def.name);
@@ -187,7 +211,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
       const nameB = b.displayName || b.name || '';
       return nameA.localeCompare(nameB);
     });
-  };
+  }, [layout, widgetDefinitions]);
 
   return (
     <Box
@@ -272,7 +296,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
               ) : (
                 layout.map((widget, index) => (
                   <DashboardWidgetItem
-                    key={index}
+                    key={widget._id}
                     widget={widget}
                     index={index}
                     isExpanded={expandedWidgets[index]}
@@ -325,7 +349,7 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                   fontSize="sm"
                 >
                   <option value="" disabled>Select a widget to add...</option>
-                  {getAvailableWidgets().map(def => (
+                  {availableWidgets.map(def => (
                     <option key={def.name} value={def.name}>
                       {def.displayName}
                       {def.allowMultiple ? ' (can add multiple)' : ''}
@@ -386,3 +410,5 @@ export default function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     </Box>
   );
 }
+
+export default memo(DashboardEditor);

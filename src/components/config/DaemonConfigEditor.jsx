@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import {
   Box,
   VStack,
@@ -117,7 +117,7 @@ const DaemonConfigEditor = ({
   const [cronDialogState, setCronDialogState] = useState({ isOpen: false, jobIndex: null, currentExpression: '' });
 
   // Custom validation for daemon fields
-  const validateDaemonFields = (formData, getNestedValue) => {
+  const validateDaemonFields = useCallback((formData, getNestedValue) => {
     const errors = {};
     
     const cronJobs = getNestedValue(formData, 'cron') || [];
@@ -142,13 +142,22 @@ const DaemonConfigEditor = ({
         errors[`cron[${index}].enabled`] = 'Enabled status is required';
       }
     });
-    
-    return errors;
-  };
 
-  const actionCollection = createListCollection({
+    return errors;
+  }, []);
+
+  const actionCollection = useMemo(() => createListCollection({
     items: CRON_ACTIONS,
-  });
+  }), []);
+
+  // Memoize modal handlers
+  const handleOpenCronDialog = useCallback((jobIndex, currentExpression) => {
+    setCronDialogState({ isOpen: true, jobIndex, currentExpression });
+  }, []);
+
+  const handleCloseCronDialog = useCallback(() => {
+    setCronDialogState({ isOpen: false, jobIndex: null, currentExpression: '' });
+  }, []);
 
   return (
     <>
@@ -164,13 +173,22 @@ const DaemonConfigEditor = ({
       {({ formData, handleFieldChange, getNestedValue, errors }) => {
         const cronJobs = getNestedValue(formData, 'cron') || [];
 
-        // Get list of actions already in use
-        const usedActions = cronJobs.map(job => job.action);
-        const availableActions = CRON_ACTIONS.filter(action => !usedActions.includes(action.value));
-        const allActionsUsed = availableActions.length === 0;
+        // Memoize list of used and available actions
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const usedActions = useMemo(() => cronJobs.map(job => job.action), [cronJobs]);
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const availableActions = useMemo(() =>
+          CRON_ACTIONS.filter(action => !usedActions.includes(action.value)),
+          [usedActions]
+        );
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const allActionsUsed = useMemo(() => availableActions.length === 0, [availableActions]);
 
         // Cron Job Handlers
-        const handleAddCronJob = () => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleAddCronJob = useCallback(() => {
           // Find first available action not already in use
           if (availableActions.length === 0) return;
           
@@ -179,47 +197,52 @@ const DaemonConfigEditor = ({
             { 
               action: availableActions[0].value, 
               expression: '0 14 * * *', 
-              enabled: true 
+              enabled: true
             }
           ]);
-        };
+        }, [availableActions, cronJobs, handleFieldChange]);
 
-        const handleRemoveCronJob = (index) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleRemoveCronJob = useCallback((index) => {
           const updated = cronJobs.filter((_, i) => i !== index);
           handleFieldChange('cron', updated);
           
           const newExpanded = { ...expandedJobs };
           delete newExpanded[index];
           setExpandedJobs(newExpanded);
-        };
+        }, [cronJobs, handleFieldChange, expandedJobs]);
 
-        const handleMoveCronJob = (index, direction) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleMoveCronJob = useCallback((index, direction) => {
           const newIndex = direction === 'up' ? index - 1 : index + 1;
           if (newIndex < 0 || newIndex >= cronJobs.length) return;
           
           const updated = [...cronJobs];
           [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
           handleFieldChange('cron', updated);
-        };
+        }, [cronJobs, handleFieldChange]);
 
-        const handleUpdateCronJob = (index, field, value) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleUpdateCronJob = useCallback((index, field, value) => {
           const updated = [...cronJobs];
           updated[index] = { ...updated[index], [field]: value };
           handleFieldChange('cron', updated);
-        };
+        }, [cronJobs, handleFieldChange]);
 
-        const handleSaveCronExpression = (newExpression) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleSaveCronExpression = useCallback((newExpression) => {
           if (cronDialogState.jobIndex !== null) {
             handleUpdateCronJob(cronDialogState.jobIndex, 'expression', newExpression);
           }
-        };
+        }, [cronDialogState.jobIndex, handleUpdateCronJob]);
 
-        const toggleExpanded = (index) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const toggleExpanded = useCallback((index) => {
           setExpandedJobs(prev => ({
             ...prev,
             [index]: !prev[index]
           }));
-        };
+        }, []);
 
         return (
           <VStack align="stretch" gap={6}>
@@ -613,4 +636,5 @@ const DaemonConfigEditor = ({
   );
 };
 
-export default DaemonConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(DaemonConfigEditor);

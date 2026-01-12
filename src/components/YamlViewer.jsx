@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton, Icon } from '@chakra-ui/react';
+import React, { useState, useCallback, memo, lazy, Suspense } from 'react';
+import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton, Icon, Spinner } from '@chakra-ui/react';
 import { MdClose, MdFolder, MdDescription, MdDownload } from 'react-icons/md';
 import { PiArrowsSplitFill, PiLinkSimpleHorizontalBold } from 'react-icons/pi';
 import { formatFileSize } from '../utils/yamlFileHandler';
-import CombineFilesModal from './CombineFilesModal';
-import SplitConfigModal from './SplitConfigModal';
-import DownloadFilesModal from './DownloadFilesModal';
-import YamlEditorModal from './YamlEditorModal';
-import MonacoYamlViewer from './MonacoYamlViewer';
+const CombineFilesModal = lazy(() => import('./CombineFilesModal'));
+const SplitConfigModal = lazy(() => import('./SplitConfigModal'));
+const DownloadFilesModal = lazy(() => import('./DownloadFilesModal'));
+const YamlEditorModal = lazy(() => import('./YamlEditorModal'));
+const MonacoYamlViewer = lazy(() => import('./MonacoYamlViewer'));
 import ServerFileBrowser from './ServerFileBrowser';
 
 const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpdated }) => {
@@ -29,17 +29,27 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
   }
 
   const currentFile = allFiles[selectedFileIndex];
-  
+
+  // Pure function for clipboard copying
+  const copyToClipboard = useCallback(async (content) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      // You could add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  }, []);
+
   // Custom copy and edit handlers for the current file
-  const handleCopyFile = async () => {
+  const handleCopyFile = useCallback(async () => {
     await copyToClipboard(currentFile.content);
-  };
+  }, [currentFile.content, copyToClipboard]);
 
-  const handleEditFile = () => {
+  const handleEditFile = useCallback(() => {
     setShowEditModal(true);
-  };
+  }, []);
 
-  const handleSaveEdit = (result) => {
+  const handleSaveEdit = useCallback((result) => {
     // Extract content from result object or use result directly if it's a string
     const updatedContent = typeof result === 'string' ? result : result.content;
     
@@ -56,20 +66,9 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     if (onFilesUpdated) {
       onFilesUpdated(updatedFiles);
     }
-  };
+  }, [allFiles, selectedFileIndex, onFilesUpdated]);
 
-
-
-  const copyToClipboard = async (content) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      // You could add a toast notification here
-    } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
-    }
-  };
-
-  const handleCombineFiles = (combinedFile) => {
+  const handleCombineFiles = useCallback((combinedFile) => {
     // Add the combined file to the list and select it
     const updatedFiles = [...allFiles, combinedFile];
     setAllFiles(updatedFiles);
@@ -79,9 +78,9 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     if (onFilesUpdated) {
       onFilesUpdated(updatedFiles);
     }
-  };
+  }, [allFiles, onFilesUpdated]);
 
-  const handleSplitConfig = (splitFiles) => {
+  const handleSplitConfig = useCallback((splitFiles) => {
     // Add the split files to the list
     const updatedFiles = [...allFiles, ...splitFiles];
     setAllFiles(updatedFiles);
@@ -92,9 +91,9 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     if (onFilesUpdated) {
       onFilesUpdated(updatedFiles);
     }
-  };
+  }, [allFiles, onFilesUpdated]);
 
-  const handleRemoveFile = (indexToRemove) => {
+  const handleRemoveFile = useCallback((indexToRemove) => {
     const updatedFiles = allFiles.filter((_, index) => index !== indexToRemove);
     setAllFiles(updatedFiles);
     // Notify parent component to update and save to localStorage
@@ -110,23 +109,23 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
     } else if (selectedFileIndex >= updatedFiles.length) {
       setSelectedFileIndex(updatedFiles.length - 1);
     }
-  };
+  }, [allFiles, selectedFileIndex, onFilesUpdated, onClose]);
 
-  const handleLoadMoreFiles = () => {
+  const handleLoadMoreFiles = useCallback(() => {
     onLoadMoreFiles(() => {
       // Don't update local state here - the parent will update via props
       // This prevents double-adding and state sync issues
     });
-  };
+  }, [onLoadMoreFiles]);
 
-  const handleLoadServerFiles = (serverFiles) => {
+  const handleLoadServerFiles = useCallback((serverFiles) => {
     const updatedFiles = [...allFiles, ...serverFiles];
     setAllFiles(updatedFiles);
     setShowServerBrowser(false);
     if (onFilesUpdated) {
       onFilesUpdated(updatedFiles);
     }
-  };
+  }, [allFiles, onFilesUpdated]);
 
   return (
     <VStack
@@ -344,49 +343,76 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
       </Flex>
 
       <Box flex={1} overflow="hidden">
-        <MonacoYamlViewer
+        <Suspense fallback={
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            minH="400px"
+            bg="cardBg"
+            borderRadius="md"
+            p={4}
+          >
+            <VStack gap={3}>
+              <Spinner size="lg" color="primary" />
+              <Text fontSize="sm" color="textMuted">
+                Loading viewer...
+              </Text>
+            </VStack>
+          </Box>
+        }>
+          <MonacoYamlViewer
+            fileName={currentFile.name}
+            fileContent={currentFile.content}
+            fileSize={currentFile.size}
+            lastModified={currentFile.lastModified}
+            showFileInfo={true}
+            showActions={true}
+            onCopy={handleCopyFile}
+            onEdit={handleEditFile}
+            className="page-viewer"
+            height="100%"
+          />
+        </Suspense>
+      </Box>
+
+      <Suspense fallback={null}>
+        <CombineFilesModal
+          files={allFiles}
+          isOpen={showCombineModal}
+          onClose={() => setShowCombineModal(false)}
+          onCombine={handleCombineFiles}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SplitConfigModal
+          file={currentFile}
+          isOpen={showSplitModal}
+          onClose={() => setShowSplitModal(false)}
+          onSplit={handleSplitConfig}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <DownloadFilesModal
+          files={allFiles}
+          isOpen={showDownloadModal}
+          onClose={() => setShowDownloadModal(false)}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <YamlEditorModal
           fileName={currentFile.name}
           fileContent={currentFile.content}
-          fileSize={currentFile.size}
-          lastModified={currentFile.lastModified}
-          showFileInfo={true}
-          showActions={true}
-          onCopy={handleCopyFile}
-          onEdit={handleEditFile}
-          className="page-viewer"
-          height="100%"
+          filePath={currentFile.path}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSaveEdit}
+          skipValidation={true}
         />
-      </Box>
-      
-      <CombineFilesModal
-        files={allFiles}
-        isOpen={showCombineModal}
-        onClose={() => setShowCombineModal(false)}
-        onCombine={handleCombineFiles}
-      />
-      
-      <SplitConfigModal
-        file={currentFile}
-        isOpen={showSplitModal}
-        onClose={() => setShowSplitModal(false)}
-        onSplit={handleSplitConfig}
-      />
-      
-      <DownloadFilesModal
-        files={allFiles}
-        isOpen={showDownloadModal}
-        onClose={() => setShowDownloadModal(false)}
-      />
-
-      <YamlEditorModal
-        fileName={currentFile.name}
-        fileContent={currentFile.content}
-        filePath={currentFile.path}
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onSave={handleSaveEdit}
-        skipValidation={true}
-      />
+      </Suspense>
 
       {/* Server File Browser Modal */}
       <ServerFileBrowser
@@ -398,4 +424,4 @@ const YamlViewer = ({ files, onClose, onClearFiles, onLoadMoreFiles, onFilesUpda
   );
 };
 
-export default YamlViewer;
+export default memo(YamlViewer);

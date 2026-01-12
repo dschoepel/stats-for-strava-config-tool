@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Box, Image, Text, IconButton, VStack } from '@chakra-ui/react';
 import { MdClose } from 'react-icons/md';
 
@@ -96,4 +96,4 @@ const ImageThumbnail = ({
   );
 };
 
-export default ImageThumbnail;
+export default memo(ImageThumbnail);

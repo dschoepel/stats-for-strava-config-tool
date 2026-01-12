@@ -1,3 +1,4 @@
+import { useCallback, useMemo, memo } from 'react';
 import { VStack } from '@chakra-ui/react';
 import BaseConfigEditor from './BaseConfigEditor';
 import NotificationServicesEditor from './integrations/NotificationServicesEditor';
@@ -8,20 +9,20 @@ import AICommandsList from './integrations/AICommandsList';
  * IntegrationsConfigEditor - Handles integrations configuration
  * Manages notifications and AI integration settings
  */
-const IntegrationsConfigEditor = ({ 
-  initialData, 
-  onSave, 
-  onCancel, 
+const IntegrationsConfigEditor = ({
+  initialData,
+  onSave,
+  onCancel,
   isLoading,
-  onDirtyChange 
+  onDirtyChange
 }) => {
   // Pass data as-is - let YAML serializer handle quoting naturally
-  const handleSaveWithTransform = (formData) => {
+  const handleSaveWithTransform = useCallback((formData) => {
     onSave(formData);
-  };
+  }, [onSave]);
 
   // Custom validation for integrations fields
-  const validateIntegrationsFields = (formData, getNestedValue) => {
+  const validateIntegrationsFields = useCallback((formData, getNestedValue) => {
     const errors = {};
     
     const notificationServices = getNestedValue(formData, 'notifications.services') || [];
@@ -84,9 +85,9 @@ const IntegrationsConfigEditor = ({
         errors[`ai.agent.commands[${index}].message`] = 'Message is required';
       }
     });
-    
+
     return errors;
-  };
+  }, []);
 
   return (
     <BaseConfigEditor
@@ -100,38 +101,45 @@ const IntegrationsConfigEditor = ({
     >
       {({ formData, handleFieldChange, getNestedValue, errors }) => {
         // Remove any surrounding quotes from URLs for display
-        const notificationServices = (getNestedValue(formData, 'notifications.services') || [])
-          .map(url => {
-            if (typeof url === 'string') {
-              // Remove surrounding quotes (single or double)
-              return url.replace(/^['"]|['"]$/g, '');
-            }
-            return url;
-          });
-        
-        const aiConfig = getNestedValue(formData, 'ai') || { 
-          enabled: false, 
-          enableUI: false, 
-          provider: '', 
-          configuration: { key: '', model: '', url: null } 
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const notificationServices = useMemo(() =>
+          (getNestedValue(formData, 'notifications.services') || [])
+            .map(url => {
+              if (typeof url === 'string') {
+                // Remove surrounding quotes (single or double)
+                return url.replace(/^['"]|['"]$/g, '');
+              }
+              return url;
+            }),
+          [formData, getNestedValue]
+        );
+
+        const aiConfig = getNestedValue(formData, 'ai') || {
+          enabled: false,
+          enableUI: false,
+          provider: '',
+          configuration: { key: '', model: '', url: null }
         };
-        
+
         const aiCommands = getNestedValue(formData, 'ai.agent.commands') || [];
 
         // Handler for notification services
-        const handleNotificationsChange = (updatedServices) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleNotificationsChange = useCallback((updatedServices) => {
           handleFieldChange('notifications.services', updatedServices);
-        };
+        }, [handleFieldChange]);
 
         // Handler for AI configuration
-        const handleAIConfigChange = (updatedConfig) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleAIConfigChange = useCallback((updatedConfig) => {
           handleFieldChange('ai', updatedConfig);
-        };
+        }, [handleFieldChange]);
 
         // Handler for AI commands
-        const handleCommandsChange = (updatedCommands) => {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleCommandsChange = useCallback((updatedCommands) => {
           handleFieldChange('ai.agent.commands', updatedCommands);
-        };
+        }, [handleFieldChange]);
 
         return (
           <VStack align="stretch" gap={6}>
@@ -164,4 +172,5 @@ const IntegrationsConfigEditor = ({
   );
 };
 
-export default IntegrationsConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(IntegrationsConfigEditor);

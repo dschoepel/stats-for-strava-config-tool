@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Box,
   Button,
@@ -30,7 +30,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, filename: null });
   const { showSuccess, showError } = useToast();
 
-  const loadImages = async () => {
+  const loadImages = useCallback(async () => {
     setLoading(true);
     try {
       const data = await listGearImages(customPath);
@@ -45,7 +45,7 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customPath, showError]);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,11 +54,11 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleDeleteClick = (filename) => {
+  const handleDeleteClick = useCallback((filename) => {
     setDeleteConfirm({ isOpen: true, filename });
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     const { filename } = deleteConfirm;
     setDeleteConfirm({ isOpen: false, filename: null });
 
@@ -74,17 +74,21 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
     } catch (error) {
       showError(`Delete failed: ${error.message}`);
     }
-  };
+  }, [deleteConfirm, customPath, showSuccess, showError, loadImages]);
 
-  const handleSelect = () => {
+  const handleSelect = useCallback(() => {
     if (selectedImage) {
       onSelect(selectedImage.name);
       onClose();
     }
-  };
+  }, [selectedImage, onSelect, onClose]);
 
-  const filteredImages = images.filter(img =>
-    img.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Memoize filtered images to avoid expensive filter operation on every render
+  const filteredImages = useMemo(() =>
+    images.filter(img =>
+      img.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    [images, searchQuery]
   );
 
   return (
@@ -268,4 +272,4 @@ const ImagePicker = ({ isOpen, onClose, onSelect, customPath = null }) => {
   );
 };
 
-export default ImagePicker;
+export default memo(ImagePicker);

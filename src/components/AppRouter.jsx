@@ -1,5 +1,5 @@
-import React, { forwardRef } from 'react';
-import { Box } from '@chakra-ui/react';
+import React, { forwardRef, Suspense } from 'react';
+import { Box, Spinner, VStack, Text } from '@chakra-ui/react';
 import { useSettings } from '../state/SettingsProvider';
 import { useNavigation } from '../state/NavigationProvider';
 import { useConfig } from '../state/ConfigProvider';
@@ -65,13 +65,49 @@ const AppRouter = forwardRef(({ onNavigate }, ref) => {
   // Extract key prop if present (React doesn't allow key in spread)
   const { key: componentKey, ...propsWithoutKey } = componentProps;
 
+  // Suspense fallback for lazy-loaded components
+  const suspenseFallback = (
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      minH="100vh"
+      bg="bg"
+      p={6}
+    >
+      <Box
+        bg="cardBg"
+        borderRadius="xl"
+        borderWidth="1px"
+        borderColor="border"
+        p={8}
+        boxShadow="lg"
+      >
+        <VStack gap={3}>
+          <Spinner size="xl" color="primary" />
+          <Text fontSize={{ base: "sm", sm: "md" }} color="textMuted">
+            Loading page...
+          </Text>
+        </VStack>
+      </Box>
+    </Box>
+  );
+
   // Handle special case - ConfigFileList needs ref
   if (routeConfig.requiresRef) {
     const { ref: componentRef, ...otherProps } = propsWithoutKey;
-    return <Component key={componentKey} ref={componentRef} {...otherProps} />;
+    return (
+      <Suspense fallback={suspenseFallback}>
+        <Component key={componentKey} ref={componentRef} {...otherProps} />
+      </Suspense>
+    );
   }
 
-  return <Component key={componentKey} {...propsWithoutKey} />;
+  return (
+    <Suspense fallback={suspenseFallback}>
+      <Component key={componentKey} {...propsWithoutKey} />
+    </Suspense>
+  );
 });
 
 AppRouter.displayName = 'AppRouter';

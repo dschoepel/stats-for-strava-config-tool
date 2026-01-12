@@ -3,18 +3,20 @@
  * Maps page IDs to their corresponding components
  */
 
+import { lazy } from 'react';
+
 import YamlUtility from '../components/YamlUtility';
-import GearMaintenanceEditor from '../components/GearMaintenanceEditor';
+const GearMaintenanceEditor = lazy(() => import('../components/GearMaintenanceEditor'));
 import ConfigFileList from '../components/ConfigFileList';
-import AthleteConfigEditor from '../components/config/AthleteConfigEditor';
-import GeneralConfigEditor from '../components/config/GeneralConfigEditor';
-import AppearanceConfigEditor from '../components/config/AppearanceConfigEditor';
-import ImportConfigEditor from '../components/config/ImportConfigEditor';
-import MetricsConfigEditor from '../components/config/MetricsConfigEditor';
-import GearConfigEditor from '../components/config/GearConfigEditor';
-import IntegrationsConfigEditor from '../components/config/IntegrationsConfigEditor';
-import DaemonConfigEditor from '../components/config/DaemonConfigEditor';
-import ZwiftConfigEditor from '../components/config/ZwiftConfigEditor';
+const AthleteConfigEditor = lazy(() => import('../components/config/AthleteConfigEditor'));
+const GeneralConfigEditor = lazy(() => import('../components/config/GeneralConfigEditor'));
+const AppearanceConfigEditor = lazy(() => import('../components/config/AppearanceConfigEditor'));
+const ImportConfigEditor = lazy(() => import('../components/config/ImportConfigEditor'));
+const MetricsConfigEditor = lazy(() => import('../components/config/MetricsConfigEditor'));
+const GearConfigEditor = lazy(() => import('../components/config/GearConfigEditor'));
+const IntegrationsConfigEditor = lazy(() => import('../components/config/IntegrationsConfigEditor'));
+const DaemonConfigEditor = lazy(() => import('../components/config/DaemonConfigEditor'));
+const ZwiftConfigEditor = lazy(() => import('../components/config/ZwiftConfigEditor'));
 import MarkdownHelp from '../components/MarkdownHelp';
 
 export const routes = {

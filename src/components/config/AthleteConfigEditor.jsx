@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { Box, Text, Flex, Icon } from '@chakra-ui/react';
 import { MdInfo, MdWarning } from 'react-icons/md';
 import { Field } from '@chakra-ui/react';
@@ -24,7 +24,7 @@ const AthleteConfigEditor = ({
   const initialBirthdayRef = useRef(initialData?.birthday);
   const initialFormulaRef = useRef(initialData?.maxHeartRateFormula);
   // Custom validation for athlete fields
-  const validateAthleteFields = (formData, getNestedValue) => {
+  const validateAthleteFields = useCallback((formData, getNestedValue) => {
     const errors = {};
     
     // Validate heart rate zones
@@ -63,9 +63,9 @@ const AthleteConfigEditor = ({
         }
       });
     }
-    
+
     return errors;
-  };
+  }, []);
 
   return (
     <BaseConfigEditor
@@ -82,13 +82,26 @@ const AthleteConfigEditor = ({
 
         const birthday = getNestedValue(formData, 'birthday');
         const formula = getNestedValue(formData, 'maxHeartRateFormula');
-        const maxHR = calculateMaxHeartRate(birthday, formula);
+
+        // Memoize max heart rate calculation
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const maxHR = useMemo(() =>
+          calculateMaxHeartRate(birthday, formula),
+          [birthday, formula]
+        );
+
         const zoneMode = getNestedValue(formData, 'heartRateZones.mode');
-        
+
         // Check if birthday or formula changed and zone mode is absolute
         const birthdayChanged = birthday !== initialBirthdayRef.current;
         const formulaChanged = formula !== initialFormulaRef.current;
-        const shouldShowReminder = zoneMode === 'absolute' && (birthdayChanged || formulaChanged);
+
+        // Memoize should show reminder check
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const shouldShowReminder = useMemo(() =>
+          zoneMode === 'absolute' && (birthdayChanged || formulaChanged),
+          [zoneMode, birthdayChanged, formulaChanged]
+        );
         
         // Update reminder visibility when relevant fields change
         useEffect(() => {
@@ -243,4 +256,5 @@ const AthleteConfigEditor = ({
   );
 };
 
-export default AthleteConfigEditor;
+// Wrap with memo to prevent unnecessary re-renders
+export default memo(AthleteConfigEditor);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -26,7 +26,7 @@ const ServerFolderBrowser = ({ isOpen, onClose, onFolderSelected, initialPath = 
   const [parentPath, setParentPath] = useState(null);
 
   // Load directory contents
-  const loadDirectory = async (dirPath = '') => {
+  const loadDirectory = useCallback(async (dirPath = '') => {
     setIsLoading(true);
     setError(null);
     
@@ -45,33 +45,33 @@ const ServerFolderBrowser = ({ isOpen, onClose, onFolderSelected, initialPath = 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Load initial directory on mount
   useEffect(() => {
     if (isOpen) {
       loadDirectory(initialPath);
     }
-  }, [isOpen, initialPath]);
+  }, [isOpen, initialPath, loadDirectory]);
 
-  const handleFolderClick = (folder) => {
+  const handleFolderClick = useCallback((folder) => {
     loadDirectory(folder.fullPath);
-  };
+  }, [loadDirectory]);
 
-  const handleGoUp = () => {
+  const handleGoUp = useCallback(() => {
     if (parentPath) {
       loadDirectory(parentPath);
     }
-  };
+  }, [parentPath, loadDirectory]);
 
-  const handleGoHome = () => {
+  const handleGoHome = useCallback(() => {
     loadDirectory('');
-  };
+  }, [loadDirectory]);
 
-  const handleSelectFolder = () => {
+  const handleSelectFolder = useCallback(() => {
     onFolderSelected(currentPath);
     onClose();
-  };
+  }, [currentPath, onFolderSelected, onClose]);
 
   if (!isOpen) return null;
 
@@ -220,4 +220,4 @@ ServerFolderBrowser.propTypes = {
   initialPath: PropTypes.string
 };
 
-export default ServerFolderBrowser;
+export default memo(ServerFolderBrowser);
