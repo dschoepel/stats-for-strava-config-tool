@@ -50,8 +50,12 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   useEffect(() => {
     const currentSnapshot = JSON.stringify(widgetDefinitions);
     const hasChanges = currentSnapshot !== initialSnapshot;
-    setIsDirty(hasChanges);
-    if (onDirtyChange) onDirtyChange(hasChanges);
+    
+    // Use a microtask to avoid synchronous setState during render
+    queueMicrotask(() => {
+      setIsDirty(hasChanges);
+      if (onDirtyChange) onDirtyChange(hasChanges);
+    });
   }, [widgetDefinitions, initialSnapshot, onDirtyChange]);
 
   const showMessage = (msg, type = 'success') => {
