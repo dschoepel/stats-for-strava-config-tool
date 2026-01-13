@@ -1,40 +1,32 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+'use client'
+
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
-import Navbar from './components/Navbar'
-import Sidebar from './components/Sidebar'
-import SettingsDialog from './components/SettingsDialog'
-import SportsListEditor from './components/SportsListEditor'
-import WidgetDefinitionsEditor from './components/WidgetDefinitionsEditor'
-import ConfigFileList from './components/ConfigFileList'
-import { Toaster } from './components/ui/toaster'
-import { ConfirmDialog } from './components/ConfirmDialog'
-import { useSettings } from './state/SettingsProvider'
-import { useDialog } from './state/DialogProvider'
-import { useDirtyState } from './state/DirtyStateProvider'
-import { useNavigation } from './state/NavigationProvider'
+import Navbar from '../../src/components/Navbar'
+import Sidebar from '../../src/components/Sidebar'
+import SettingsDialog from '../../src/components/SettingsDialog'
+import SportsListEditor from '../../src/components/SportsListEditor'
+import WidgetDefinitionsEditor from '../../src/components/WidgetDefinitionsEditor'
+import { Toaster } from '../../src/components/ui/toaster'
+import { ConfirmDialog } from '../../src/components/ConfirmDialog'
+import { useSettings } from '../../src/state/SettingsProvider'
+import { useDialog } from '../../src/state/DialogProvider'
+import { useDirtyState } from '../../src/state/DirtyStateProvider'
+import { useNavigation } from '../../src/state/NavigationProvider'
 
-function App() {
+export default function UtilitiesLayout({ children }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const { theme, toggleTheme, toggleSidebar, isSidebarCollapsed, settings } = useSettings();
+  const { theme, toggleTheme, toggleSidebar, isSidebarCollapsed } = useSettings();
   const { confirmDialog, closeDialog } = useDialog();
   const { setSportsListDirty, setWidgetDefinitionsDirty, checkAndConfirmModalClose, checkAndConfirmNavigation } = useDirtyState();
   const { currentPage, breadcrumbs, navigateTo, hasHydrated } = useNavigation();
 
-  // Sync navigation state to root page when on /
-  useEffect(() => {
-    // When on root page, ensure navigation state is 'Configuration'
-    if (typeof window !== 'undefined' && window.location.pathname === '/' && currentPage !== 'Configuration') {
-      navigateTo('Configuration', null, true);
-    }
-  }, [currentPage, navigateTo]);
-
   // Suppress known third-party library warnings (react-js-cron with deprecated antd props)
   useEffect(() => {
     const originalError = console.error;
-    
+
     console.error = (...args) => {
       const message = args[0]?.toString() || '';
       // Suppress known react-js-cron/antd warnings about deprecated props
@@ -56,7 +48,6 @@ function App() {
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
   const [isHelpExpanded, setIsHelpExpanded] = useState(false)
-  const configListRef = useRef(null)
 
   const handleCloseModal = (modalName) => {
     checkAndConfirmModalClose(modalName, () => {
@@ -99,7 +90,8 @@ function App() {
         });
       }
     } else {
-      // Fallback to state-based navigation for non-migrated pages
+      // Fallback for unknown pages (should not happen)
+      console.warn(`No route found for page: ${page}`);
       navigateTo(page, parentPage, skipUnsavedCheck);
     }
   }
@@ -112,14 +104,14 @@ function App() {
 
   return (
     <Flex direction="column" h="100vh" w="full" bg="bg" color="text">
-      <Navbar 
+      <Navbar
         isDarkMode={theme === 'dark'}
         toggleTheme={toggleTheme}
         toggleSidebar={toggleSidebar}
         handleNavClick={handleNavClick}
         onSelectSetting={setActiveSettingsModal}
       />
-      
+
       <Flex mt="64px" h="calc(100vh - 64px)">
         <Sidebar
           isCollapsed={isSidebarCollapsed}
@@ -130,12 +122,12 @@ function App() {
           setIsHelpExpanded={setIsHelpExpanded}
           handleNavClick={handleNavClick}
         />
-        
+
         <Box as="main" flex={1} bg="bg" overflowY="auto">
           <Breadcrumb.Root size="lg" p={6} borderBottom="1px solid" borderColor="border" color="text">
             <Breadcrumb.List>
               <Breadcrumb.Item>
-                <Breadcrumb.Link 
+                <Breadcrumb.Link
                   onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}
                   cursor="pointer"
                   title="Go to Configuration"
@@ -146,14 +138,14 @@ function App() {
                 </Breadcrumb.Link>
               </Breadcrumb.Item>
               <Breadcrumb.Separator color="text" />
-              
+
               {hasHydrated && breadcrumbs.map((crumb, index) => (
                 <React.Fragment key={index}>
                   <Breadcrumb.Item>
                     {index === breadcrumbs.length - 1 ? (
                       <Breadcrumb.CurrentLink color="primary" fontWeight="semibold">{crumb}</Breadcrumb.CurrentLink>
                     ) : (
-                      <Breadcrumb.Link 
+                      <Breadcrumb.Link
                         onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(index) }}
                         cursor="pointer"
                         color="text"
@@ -168,24 +160,17 @@ function App() {
               ))}
             </Breadcrumb.List>
           </Breadcrumb.Root>
-          <Box p={8} color="text">
-            <ConfigFileList
-              ref={configListRef}
-              onConfigSectionClick={(section, parentPage) => {
-                handleNavClick(section, parentPage)
-              }}
-            />
-          </Box>
+          {children}
         </Box>
       </Flex>
-      
+
       {/* Unified Settings Dialog */}
       <SettingsDialog
         isOpen={['ui', 'files', 'editor', 'validation', 'importExport'].includes(activeSettingsModal)}
         onClose={() => setActiveSettingsModal(null)}
         initialTab={activeSettingsModal || 'ui'}
       />
-      
+
       {/* Sports List and Widget Definitions as full-screen modals */}
       {activeSettingsModal === 'sportsList' && (
         <Flex
@@ -238,12 +223,12 @@ function App() {
               </IconButton>
             </Flex>
             <Box flex={1} p={8} overflowY="auto" bg="cardBg">
-              <SportsListEditor settings={settings} onDirtyChange={setSportsListDirty} />
+              <SportsListEditor onDirtyChange={setSportsListDirty} />
             </Box>
           </Flex>
         </Flex>
       )}
-      
+
       {activeSettingsModal === 'widgetDefinitions' && (
         <Flex
           position="fixed"
@@ -295,15 +280,15 @@ function App() {
               </IconButton>
             </Flex>
             <Box flex={1} p={8} overflowY="auto" bg="cardBg">
-              <WidgetDefinitionsEditor settings={settings} onDirtyChange={setWidgetDefinitionsDirty} />
+              <WidgetDefinitionsEditor onDirtyChange={setWidgetDefinitionsDirty} />
             </Box>
           </Flex>
         </Flex>
       )}
-      
+
       {/* Toast notifications */}
       <Toaster />
-      
+
       {/* Confirmation Dialog */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -317,5 +302,3 @@ function App() {
     </Flex>
   )
 }
-
-export default App

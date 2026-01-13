@@ -10,7 +10,8 @@
       "Bash(dir /s \"e:\\\\Strava-Project\\\\stats-for-strava-config-tool\\\\src\\\\components\")",
       "Bash(findstr:*)",
       "Bash(awk:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(ls:*)"
     ]
   }
 }

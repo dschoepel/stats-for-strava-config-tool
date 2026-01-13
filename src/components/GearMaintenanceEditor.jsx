@@ -47,7 +47,7 @@ const intervalUnitCollection = createListCollection({
   ]
 });
 
-const GearMaintenanceEditor = () => {
+const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,6 +59,13 @@ const GearMaintenanceEditor = () => {
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: null, data: null });
   const addTaskTimerRef = useRef(null);
   const { showSuccess, showError } = useToast();
+
+  // Notify parent of dirty state changes
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange]);
 
   // Get gear maintenance path from settings
   const gearMaintenancePath = getSetting('files.gearMaintenancePath', '/data/statistics-for-strava/storage/gear-maintenance');
