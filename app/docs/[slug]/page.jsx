@@ -1,8 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useParams, notFound } from 'next/navigation'
-import { useNavigation } from '../../../src/state/NavigationProvider'
 import MarkdownHelp from '../../../src/components/MarkdownHelp'
 
 // Map slugs to markdown files and page names
@@ -35,7 +33,6 @@ const docConfig = {
 
 export default function DocPage() {
   const params = useParams()
-  const { navigateTo } = useNavigation()
   const slug = params.slug
 
   const config = docConfig[slug]
@@ -44,11 +41,6 @@ export default function DocPage() {
   if (!config) {
     notFound()
   }
-
-  // Sync navigation state for breadcrumbs
-  useEffect(() => {
-    navigateTo(config.pageName, 'Documentation', true) // skipUnsavedCheck = true
-  }, [config.pageName, navigateTo])
 
   return <MarkdownHelp filePath={config.file} />
 }

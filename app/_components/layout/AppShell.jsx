@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
+import { getBreadcrumbsFromPath } from '../../_utils/breadcrumbs';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
 import Navbar from '../../../src/components/Navbar'
 import Sidebar from '../../../src/components/Sidebar'
@@ -20,11 +21,15 @@ import { scanConfigFiles, parseSections as parseSectionsService, validateSection
 
 export default function AppShell({ section = 'config', children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, toggleTheme, toggleSidebar, isSidebarCollapsed, settings } = useSettings();
   const { confirmDialog, closeDialog } = useDialog();
   const { setSportsListDirty, setWidgetDefinitionsDirty, checkAndConfirmModalClose, checkAndConfirmNavigation } = useDirtyState();
-  const { currentPage, breadcrumbs, navigateTo, hasHydrated } = useNavigation();
+  const { currentPage, navigateTo, hasHydrated } = useNavigation();
   const { hasConfigInitialized, updateHasConfigInitialized, updateFileCache, updateSectionToFileMap } = useConfig();
+
+  // Derive breadcrumbs from URL pathname
+  const breadcrumbs = getBreadcrumbsFromPath(pathname);
 
   // Suppress known third-party library warnings (react-js-cron with deprecated antd props)
   useEffect(() => {

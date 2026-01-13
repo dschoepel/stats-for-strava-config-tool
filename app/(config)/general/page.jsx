@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Box, VStack, Spinner, Text } from '@chakra-ui/react'
 import { useConfig } from '../../../src/state/ConfigProvider'
 import { useDirtyState } from '../../../src/state/DirtyStateProvider'
-import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const GeneralConfigEditor = lazy(() =>
@@ -16,12 +15,6 @@ export default function GeneralPage() {
   const router = useRouter()
   const { sectionData, saveSectionData, isLoadingSectionData, loadSectionData, sectionToFileMap } = useConfig()
   const { setHasUnsavedChanges, checkAndConfirmNavigation } = useDirtyState()
-  const { navigateTo } = useNavigation()
-
-  // Sync navigation state for breadcrumbs
-  useEffect(() => {
-    navigateTo('General', null, true) // skipUnsavedCheck = true
-  }, [navigateTo])
 
   // Load section data if not already loaded
   useEffect(() => {

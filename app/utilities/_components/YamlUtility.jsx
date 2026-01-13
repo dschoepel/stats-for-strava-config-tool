@@ -15,9 +15,8 @@ import { getSetting, loadSettings } from '../../../src/utils/settingsManager';
 import { backupConfig } from '../../../src/utils/apiClient';
 import { useToast } from '../../../src/hooks/useToast';
 
-const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
+const YamlUtility = () => {
   const [showServerBrowser, setShowServerBrowser] = useState(false);
-  const prevBreadcrumbsRef = React.useRef(breadcrumbs);
   const { showError } = useToast();
 
   // File management hook
@@ -60,30 +59,6 @@ const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
     closeNewFileEditor,
     resetAll
   } = useYamlUtilityDialogs();
-
-  // Update breadcrumbs based on viewer state
-  React.useEffect(() => {
-    if (setBreadcrumbs) {
-      if (showViewer) {
-        setBreadcrumbs(['YAML Utility', 'File Viewer']);
-      } else {
-        setBreadcrumbs(['YAML Utility']);
-      }
-    }
-  }, [showViewer, setBreadcrumbs]);
-
-  // Reset viewer when navigating back via breadcrumb
-  React.useEffect(() => {
-    if (breadcrumbs && prevBreadcrumbsRef.current) {
-      // Only reset if breadcrumbs were shortened from 2 to 1 (user clicked back)
-      if (prevBreadcrumbsRef.current.length === 2 && breadcrumbs.length === 1 && 
-          breadcrumbs[0] === 'YAML Utility' && showViewer) {
-        setShowViewer(false);
-      }
-    }
-    
-    prevBreadcrumbsRef.current = breadcrumbs;
-  }, [breadcrumbs, showViewer, setShowViewer]);
 
   const handleCreateNewFile = () => {
     resetAll();
