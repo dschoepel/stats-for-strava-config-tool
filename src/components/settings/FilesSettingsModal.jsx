@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import { MdFolder, MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
-import { ConfirmDialog } from '../ConfirmDialog';
+import { ConfirmDialog } from '../../../app/_components/ui/ConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import { expandPath as expandPathService, updateEnv } from '../../services';
 
