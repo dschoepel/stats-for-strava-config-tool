@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { pages, buildBreadcrumbs } from '../navigation/pages';
+import { pages, buildBreadcrumbs } from '../../app/_config/pages';
 
 /**
  * Safely get initial page from localStorage (client-side only)
