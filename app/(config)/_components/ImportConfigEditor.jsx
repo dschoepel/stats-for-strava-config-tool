@@ -19,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { MdAdd, MdClose, MdWarning, MdInfo, MdLightbulb } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import { Tooltip } from '../../../src/components/Tooltip';
+import { Tooltip } from '../../_components/ui/Tooltip';
 import { generateRandomString } from '../../../src/utils/stringUtils';
 import { useSportsList } from '../../../src/contexts/SportsListContext';
 import SportTypeMultiSelect from './appearance/SportTypeMultiSelect';

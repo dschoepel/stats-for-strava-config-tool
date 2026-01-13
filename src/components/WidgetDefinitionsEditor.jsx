@@ -3,7 +3,7 @@ import { Box, VStack, Flex, HStack, Heading, Text, Button, Icon } from '@chakra-
 import { MdAdd, MdSave, MdRefresh, MdDescription, MdLightbulb } from 'react-icons/md';
 import { readWidgetDefinitions, writeWidgetDefinitions, initialWidgetDefinitions } from '../utils/widgetDefinitionsManager';
 import { getSetting } from '../utils/settingsManager';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialog } from '../../app/_components/ui/ConfirmDialog';
 import WidgetListItem from './widgets/WidgetListItem';
 import WidgetFormModal from './widgets/WidgetFormModal';
 import { validateWidgetForm } from '../utils/widgetValidation';

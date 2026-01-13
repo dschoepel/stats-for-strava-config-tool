@@ -3,10 +3,10 @@ import { Box, Text, Flex, Icon } from '@chakra-ui/react';
 import { MdInfo, MdWarning } from 'react-icons/md';
 import { Field } from '@chakra-ui/react';
 import BaseConfigEditor from './BaseConfigEditor';
-import HeartRateZonesEditor from '../../../src/components/config-fields/HeartRateZonesEditor';
-import WeightHistoryEditor from '../../../src/components/config-fields/WeightHistoryEditor';
-import FtpHistoryEditor from '../../../src/components/config-fields/FtpHistoryEditor';
-import { DateInput } from '../../../src/components/DateInput';
+import HeartRateZonesEditor from '../../_components/fields/HeartRateZonesEditor';
+import WeightHistoryEditor from '../../_components/fields/WeightHistoryEditor';
+import FtpHistoryEditor from '../../_components/fields/FtpHistoryEditor';
+import { DateInput } from '../../_components/fields/DateInput';
 import { calculateMaxHeartRate } from '../../../src/utils/heartRateUtils';
 
 /**

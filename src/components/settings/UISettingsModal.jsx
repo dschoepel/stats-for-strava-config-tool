@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import { MdSave, MdPalette } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
-import { ConfirmDialog } from '../ConfirmDialog';
+import { ConfirmDialog } from '../../../app/_components/ui/ConfirmDialog';
 
 const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});

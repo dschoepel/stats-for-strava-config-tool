@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Flex, VStack, Heading, Text, Button, IconButton, Badge, Checkbox, Icon, RadioCard } from '@chakra-ui/react';
 import { MdClose, MdCheckCircle, MdDownload, MdFolder, MdComputer, MdStorage, MdEdit } from 'react-icons/md';
 import { PiCircleFill, PiFileFill } from 'react-icons/pi';
-import { Tooltip } from '../../../src/components/Tooltip';
+import { Tooltip } from '../../_components/ui/Tooltip';
 import { getSetting } from '../../../src/utils/settingsManager';
 import ServerFolderBrowser from './ServerFolderBrowser';
 import { saveFile } from '../../../src/services';

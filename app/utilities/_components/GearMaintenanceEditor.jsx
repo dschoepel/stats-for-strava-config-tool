@@ -27,8 +27,8 @@ import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../../../s
 import { loadGearMaintenance, saveGearMaintenance } from '../../../src/services';
 const ImagePicker = lazy(() => import('./gear-maintenance/ImagePicker'));
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
-import { Tooltip } from '../../../src/components/Tooltip';
-import { ConfirmDialog } from '../../../src/components/ConfirmDialog';
+import { Tooltip } from '../../_components/ui/Tooltip';
+import { ConfirmDialog } from '../../_components/ui/ConfirmDialog';
 
 // Create list collections for Select components
 const resetModeCollection = createListCollection({

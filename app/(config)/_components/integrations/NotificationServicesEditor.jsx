@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Box, VStack, HStack, Text, Button, Field, Input, IconButton, Flex } from '@chakra-ui/react';
 import { MdAdd, MdDelete, MdNotifications, MdInfo } from 'react-icons/md';
-import { Tooltip } from '../../../../src/components/Tooltip';
+import { Tooltip } from '../../../_components/ui/Tooltip';
 
 /**
  * NotificationServicesEditor - Manages notification service URLs

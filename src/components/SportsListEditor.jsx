@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, Input, Icon, IconButton } from '@chakra-ui/react';
 import { MdExpandMore, MdChevronRight, MdAdd, MdDelete, MdEdit, MdSave } from 'react-icons/md';
 import { readSportsList, writeSportsList, initialSportsList } from '../utils/sportsListManager';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialog } from '../../app/_components/ui/ConfirmDialog';
 import { useSportsList } from '../contexts/SportsListContext';
 
 export default function SportsListEditor({ settings, onDirtyChange }) {

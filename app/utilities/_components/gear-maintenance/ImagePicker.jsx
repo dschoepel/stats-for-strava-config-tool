@@ -15,7 +15,7 @@ import { MdClose, MdSearch, MdRefresh } from 'react-icons/md';
 import { DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogCloseTrigger, DialogBackdrop, DialogPositioner } from '@chakra-ui/react';
 import ImageThumbnail from './ImageThumbnail';
 import ImageUploader from './ImageUploader';
-import { ConfirmDialog } from '../../../../src/components/ConfirmDialog';
+import { ConfirmDialog } from '../../../_components/ui/ConfirmDialog';
 import { useToast } from '../../../../src/hooks/useToast';
 import { listGearImages, deleteGearImage } from '../../../../src/services';
 

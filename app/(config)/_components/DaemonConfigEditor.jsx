@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectValueText,
 } from '@chakra-ui/react';
-import { Tooltip } from '../../../src/components/Tooltip';
+import { Tooltip } from '../../_components/ui/Tooltip';
 import {
   MdAdd,
   MdDelete,
@@ -32,7 +32,7 @@ import {
   MdOpenInNew
 } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import CronExpressionDialog from '../../../src/components/CronExpressionDialog';
+import CronExpressionDialog from '../../_components/fields/CronExpressionDialog';
 
 const CRON_ACTIONS = [
   { value: 'importDataAndBuildApp', label: 'Import Data and Build App' },

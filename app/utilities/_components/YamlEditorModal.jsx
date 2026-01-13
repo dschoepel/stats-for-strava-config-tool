@@ -6,7 +6,7 @@ import { FaSave } from 'react-icons/fa';
 const Editor = lazy(() => import('@monaco-editor/react').then(module => ({ default: module.default })));
 import * as YAML from 'yaml';
 import { getSetting } from '../../../src/utils/settingsManager';
-import { ConfirmDialog } from '../../../src/components/ConfirmDialog';
+import { ConfirmDialog } from '../../_components/ui/ConfirmDialog';
 import { checkFileExists, saveFile } from '../../../src/services';
 
 // Pure validation function moved outside component
