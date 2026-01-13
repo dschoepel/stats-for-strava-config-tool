@@ -120,7 +120,7 @@ const MenuItemWithSubmenu = ({
         )}
       </Flex>
       {!isCollapsed && (
-        <Collapsible.Root open={isExpanded}>
+        <Collapsible.Root open={isExpanded} id={`submenu-${page.id}`}>
           <Collapsible.Content>
             <VStack gap={0} bg="cardBg" align="stretch">
               {children}
