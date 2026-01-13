@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const GeneralConfigEditor = lazy(() =>
-  import('../../../src/components/config/GeneralConfigEditor')
+  import('../_components/GeneralConfigEditor')
 )
 
 export default function GeneralPage() {

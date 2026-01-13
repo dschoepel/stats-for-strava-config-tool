@@ -2,8 +2,8 @@ import React, { useState, useRef, useCallback, useMemo, memo, lazy, Suspense } f
 import { Box, Button, Flex, Text, VStack, HStack, Icon, ColorPicker, Portal, parseColor, Input, Code, Badge, Spinner } from '@chakra-ui/react';
 import { MdInfo, MdWarning, MdDashboard, MdExpandMore, MdChevronRight, MdAdd, MdClose } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import CountrySelector from '../config-fields/CountrySelector';
-const DashboardEditor = lazy(() => import('../DashboardEditor'));
+import CountrySelector from '../../../src/components/config-fields/CountrySelector';
+const DashboardEditor = lazy(() => import('../../../src/components/DashboardEditor'));
 import SportTypeMultiSelect from './appearance/SportTypeMultiSelect';
 import SportTypeSortingOrder from './appearance/SportTypeSortingOrder';
 import CollapsibleSection from './appearance/CollapsibleSection';

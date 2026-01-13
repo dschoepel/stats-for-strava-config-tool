@@ -14,8 +14,8 @@ import {
   Flex,
   Checkbox,
 } from '@chakra-ui/react';
-import { getSchemaBySection } from '../../schemas/configSchemas';
-import { useToast } from '../../contexts/ToastContext';
+import { getSchemaBySection } from '../../../src/schemas/configSchemas';
+import { useToast } from '../../../src/contexts/ToastContext';
 
 // Pure utility functions (moved outside component for performance)
 const getNestedValue = (obj, path) => {

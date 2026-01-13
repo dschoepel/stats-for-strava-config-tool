@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSettings } from '../../../state/SettingsProvider';
-import { listConfigFiles, readFile } from '../../../services';
+import { useSettings } from '../../../../src/state/SettingsProvider';
+import { listConfigFiles, readFile } from '../../../../src/services';
 import * as YAML from 'yaml';
 
 // Locale to currency mapping

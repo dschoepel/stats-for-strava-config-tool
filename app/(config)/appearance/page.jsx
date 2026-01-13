@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const AppearanceConfigEditor = lazy(() =>
-  import('../../../src/components/config/AppearanceConfigEditor')
+  import('../_components/AppearanceConfigEditor')
 )
 
 export default function AppearancePage() {

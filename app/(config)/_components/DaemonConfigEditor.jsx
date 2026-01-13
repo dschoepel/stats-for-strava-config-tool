@@ -18,21 +18,21 @@ import {
   SelectItem,
   SelectValueText,
 } from '@chakra-ui/react';
-import { Tooltip } from '../Tooltip';
-import { 
-  MdAdd, 
-  MdDelete, 
-  MdArrowUpward, 
-  MdArrowDownward, 
-  MdExpandMore, 
-  MdChevronRight, 
-  MdInfo, 
+import { Tooltip } from '../../../src/components/Tooltip';
+import {
+  MdAdd,
+  MdDelete,
+  MdArrowUpward,
+  MdArrowDownward,
+  MdExpandMore,
+  MdChevronRight,
+  MdInfo,
   MdWarning,
   MdSchedule,
   MdOpenInNew
 } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import CronExpressionDialog from '../CronExpressionDialog';
+import CronExpressionDialog from '../../../src/components/CronExpressionDialog';
 
 const CRON_ACTIONS = [
   { value: 'importDataAndBuildApp', label: 'Import Data and Build App' },

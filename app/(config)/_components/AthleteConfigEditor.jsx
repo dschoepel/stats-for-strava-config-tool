@@ -3,11 +3,11 @@ import { Box, Text, Flex, Icon } from '@chakra-ui/react';
 import { MdInfo, MdWarning } from 'react-icons/md';
 import { Field } from '@chakra-ui/react';
 import BaseConfigEditor from './BaseConfigEditor';
-import HeartRateZonesEditor from '../config-fields/HeartRateZonesEditor';
-import WeightHistoryEditor from '../config-fields/WeightHistoryEditor';
-import FtpHistoryEditor from '../config-fields/FtpHistoryEditor';
-import { DateInput } from '../DateInput';
-import { calculateMaxHeartRate } from '../../utils/heartRateUtils';
+import HeartRateZonesEditor from '../../../src/components/config-fields/HeartRateZonesEditor';
+import WeightHistoryEditor from '../../../src/components/config-fields/WeightHistoryEditor';
+import FtpHistoryEditor from '../../../src/components/config-fields/FtpHistoryEditor';
+import { DateInput } from '../../../src/components/DateInput';
+import { calculateMaxHeartRate } from '../../../src/utils/heartRateUtils';
 
 /**
  * AthleteConfigEditor - Handles athlete-specific configuration fields

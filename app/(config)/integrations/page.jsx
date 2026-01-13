@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const IntegrationsConfigEditor = lazy(() =>
-  import('../../../src/components/config/IntegrationsConfigEditor')
+  import('../_components/IntegrationsConfigEditor')
 )
 
 export default function IntegrationsPage() {

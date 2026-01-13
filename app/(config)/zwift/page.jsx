@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const ZwiftConfigEditor = lazy(() =>
-  import('../../../src/components/config/ZwiftConfigEditor')
+  import('../_components/ZwiftConfigEditor')
 )
 
 export default function ZwiftPage() {

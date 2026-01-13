@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, memo } from 'react';
 import { Box, Text, Input, Flex, VStack, Heading, Icon } from '@chakra-ui/react';
 import { MdInfo } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import { loadSettings } from '../../utils/settingsManager';
+import { loadSettings } from '../../../src/utils/settingsManager';
 
 /**
  * ZwiftConfigEditor - Handles Zwift integration configuration fields

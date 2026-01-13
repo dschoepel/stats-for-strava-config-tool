@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const AthleteConfigEditor = lazy(() =>
-  import('../../../src/components/config/AthleteConfigEditor')
+  import('../_components/AthleteConfigEditor')
 )
 
 export default function AthletePage() {

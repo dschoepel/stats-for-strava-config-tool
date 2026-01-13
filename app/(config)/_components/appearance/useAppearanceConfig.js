@@ -1,4 +1,4 @@
-import { useSportsList } from '../../../contexts/SportsListContext';
+import { useSportsList } from '../../../../src/contexts/SportsListContext';
 
 /**
  * Custom hook for appearance configuration logic

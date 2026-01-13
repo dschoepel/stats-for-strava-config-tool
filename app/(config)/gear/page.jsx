@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const GearConfigEditor = lazy(() =>
-  import('../../../src/components/config/GearConfigEditor')
+  import('../_components/GearConfigEditor')
 )
 
 export default function GearPage() {

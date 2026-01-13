@@ -11,7 +11,10 @@
       "Bash(findstr:*)",
       "Bash(awk:*)",
       "Bash(python:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git push:*)",
+      "Bash(netstat:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

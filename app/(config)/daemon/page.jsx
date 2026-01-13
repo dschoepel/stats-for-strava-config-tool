@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const DaemonConfigEditor = lazy(() =>
-  import('../../../src/components/config/DaemonConfigEditor')
+  import('../_components/DaemonConfigEditor')
 )
 
 export default function DaemonPage() {

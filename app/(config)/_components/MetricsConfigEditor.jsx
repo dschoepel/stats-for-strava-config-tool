@@ -18,7 +18,7 @@ import {
 } from '@chakra-ui/react';
 import { MdAdd, MdDelete, MdArrowUpward, MdArrowDownward, MdExpandMore, MdChevronRight, MdInfo, MdWarning } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import { useSportsList } from '../../contexts/SportsListContext';
+import { useSportsList } from '../../../src/contexts/SportsListContext';
 
 /**
  * MetricsConfigEditor - Handles metrics configuration fields

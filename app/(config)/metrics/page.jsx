@@ -9,7 +9,7 @@ import { useNavigation } from '../../../src/state/NavigationProvider'
 
 // Lazy-load the editor
 const MetricsConfigEditor = lazy(() =>
-  import('../../../src/components/config/MetricsConfigEditor')
+  import('../_components/MetricsConfigEditor')
 )
 
 export default function MetricsPage() {
