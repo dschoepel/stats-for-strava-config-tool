@@ -21,14 +21,14 @@ import {
 } from '@chakra-ui/react';
 import { Field } from '@chakra-ui/react';
 import { MdAdd, MdDelete, MdImage, MdExpandMore, MdChevronRight, MdSave, MdClose } from 'react-icons/md';
-import { useToast } from '../hooks/useToast';
-import { getSetting } from '../utils/settingsManager';
-import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../schemas/gearMaintenanceSchema';
-import { loadGearMaintenance, saveGearMaintenance } from '../services';
+import { useToast } from '../../../src/hooks/useToast';
+import { getSetting } from '../../../src/utils/settingsManager';
+import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../../../src/schemas/gearMaintenanceSchema';
+import { loadGearMaintenance, saveGearMaintenance } from '../../../src/services';
 const ImagePicker = lazy(() => import('./gear-maintenance/ImagePicker'));
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
-import { Tooltip } from './Tooltip';
-import { ConfirmDialog } from './ConfirmDialog';
+import { Tooltip } from '../../../src/components/Tooltip';
+import { ConfirmDialog } from '../../../src/components/ConfirmDialog';
 
 // Create list collections for Select components
 const resetModeCollection = createListCollection({

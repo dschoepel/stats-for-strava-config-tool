@@ -7,7 +7,7 @@ import { useDirtyState } from '../../../src/state/DirtyStateProvider'
 
 // Lazy-load the editor
 const GearMaintenanceEditor = lazy(() =>
-  import('../../../src/components/GearMaintenanceEditor')
+  import('../_components/GearMaintenanceEditor')
 )
 
 export default function GearMaintenancePage() {

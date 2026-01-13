@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Box, Button, Flex, Heading, Text, VStack, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { MdClose, MdSave, MdBarChart, MdLightbulb } from 'react-icons/md';
-import { readWidgetDefinitions } from '../utils/widgetDefinitionsManager';
-import { ConfirmDialog } from './ConfirmDialog';
+import { readWidgetDefinitions } from '../../../src/utils/widgetDefinitionsManager';
+import { ConfirmDialog } from '../../../src/components/ConfirmDialog';
 import DashboardWidgetItem from './dashboard/DashboardWidgetItem';
 
 // Generate unique ID for widgets

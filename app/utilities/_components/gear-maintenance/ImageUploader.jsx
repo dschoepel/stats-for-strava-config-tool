@@ -10,8 +10,8 @@ import {
   IconButton
 } from '@chakra-ui/react';
 import { MdUpload, MdClose } from 'react-icons/md';
-import { useToast } from '../../hooks/useToast';
-import { uploadGearImage } from '../../services';
+import { useToast } from '../../../../src/hooks/useToast';
+import { uploadGearImage } from '../../../../src/services';
 
 /**
  * ImageUploader - Upload images to gear maintenance directory
