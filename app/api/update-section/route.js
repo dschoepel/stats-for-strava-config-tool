@@ -331,6 +331,82 @@ export async function POST(request) {
     
     // Helper function to add a YAML field with proper formatting
     function addYamlField(result, baseIndent, key, value) {
+      // Special handling for dashboard.layout - use JSON-like formatting or null
+      if (key === 'layout') {
+        // Handle null or empty layout
+        if (value === null || (Array.isArray(value) && value.length === 0)) {
+          result.push(`${baseIndent}${key}: null`);
+          return;
+        }
+        
+        // Handle array of widgets
+        if (Array.isArray(value)) {
+          result.push(`${baseIndent}${key}:`);
+          
+          value.forEach((widget, index) => {
+            // Validate widget object has required fields
+            if (!widget || typeof widget !== 'object') {
+              throw new Error(`Invalid widget at index ${index}: must be an object`);
+            }
+            if (!widget.widget) {
+              throw new Error(`Invalid widget at index ${index}: missing required field 'widget'`);
+            }
+            if (typeof widget.width !== 'number') {
+              throw new Error(`Invalid widget at index ${index}: missing or invalid field 'width'`);
+            }
+            if (typeof widget.enabled !== 'boolean') {
+              throw new Error(`Invalid widget at index ${index}: missing or invalid field 'enabled'`);
+            }
+            
+            // Format widget as JSON-like with double quotes and proper indentation
+            // Widget indent should be base + 2 for array items, then + 2 more for object content
+            const widgetIndent = baseIndent + '  ';  // Array item level
+            const objIndent = widgetIndent + '  ';   // Object content level
+            
+            // Opening brace on the same line as the dash
+            result.push(`${widgetIndent}- {`);
+            
+            // Add widget fields
+            result.push(`${objIndent}"widget": "${widget.widget}",`);
+            result.push(`${objIndent}"width": ${widget.width},`);
+            result.push(`${objIndent}"enabled": ${widget.enabled}${widget.config && Object.keys(widget.config).length > 0 ? ',' : ''}`);
+            
+            // Handle config if present
+            if (widget.config && Object.keys(widget.config).length > 0) {
+              result.push(`${objIndent}"config":`);
+              result.push(`${objIndent}  {`);
+              
+              const configKeys = Object.keys(widget.config);
+              configKeys.forEach((configKey, idx) => {
+                const configValue = widget.config[configKey];
+                const isLast = idx === configKeys.length - 1;
+                const comma = isLast ? ',' : ',';
+                
+                if (Array.isArray(configValue)) {
+                  // Format arrays inline
+                  const arrayStr = JSON.stringify(configValue);
+                  result.push(`${objIndent}    "${configKey}": ${arrayStr}${comma}`);
+                } else if (typeof configValue === 'object' && configValue !== null) {
+                  // Format nested objects
+                  result.push(`${objIndent}    "${configKey}": ${JSON.stringify(configValue)}${comma}`);
+                } else if (typeof configValue === 'string') {
+                  result.push(`${objIndent}    "${configKey}": "${configValue}"${comma}`);
+                } else {
+                  // Numbers, booleans, null
+                  result.push(`${objIndent}    "${configKey}": ${configValue}${comma}`);
+                }
+              });
+              
+              result.push(`${objIndent}  },`);
+            }
+            
+            // Closing brace
+            result.push(`${objIndent}}`);
+          });
+          return;
+        }
+      }
+      
       let valueStr;
       if (value === null) {
         valueStr = 'null';

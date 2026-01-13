@@ -11,6 +11,7 @@ const DashboardWidgetItem = ({
   index,
   isExpanded,
   isDragged,
+  isPendingDrag,
   isFirst,
   isLast,
   widgetDefinitions,
@@ -25,7 +26,10 @@ const DashboardWidgetItem = ({
   onToggleConfigEditor,
   onDragStart,
   onDragOver,
-  onDragEnd
+  onDragEnd,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd
 }) => {
   const widgetDef = widgetDefinitions[widget.widget];
   const displayName = widgetDef?.displayName || widget.widget;
@@ -33,23 +37,31 @@ const DashboardWidgetItem = ({
 
   return (
     <Box
+      data-drag-index={index}
       bg="cardBg"
       borderWidth="1px"
       borderColor={isDragged ? "blue.500" : "border"}
       borderRadius="md"
       p={{ base: 2, sm: isExpanded ? 4 : 2 }}
       opacity={isDragged ? 0.5 : 1}
+      transform={isPendingDrag && !isDragged ? "scale(1.02)" : "scale(1)"}
+      boxShadow={isPendingDrag && !isDragged ? "md" : "none"}
       transition="all 0.2s"
       cursor="grab"
       _hover={{
-        borderColor: "borderHover",
-        boxShadow: "md"
+        borderColor: "blue.400",
+        boxShadow: "md",
+        bg: "gray.50",
+        _dark: { bg: "gray.700", borderColor: "blue.400" }
       }}
       _active={{ cursor: "grabbing" }}
       draggable
       onDragStart={(e) => onDragStart(e, index)}
       onDragOver={(e) => onDragOver(e, index)}
       onDragEnd={onDragEnd}
+      onTouchStart={(e) => onTouchStart(e, index)}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       {/* Widget Header */}
       <Flex
@@ -329,6 +341,7 @@ DashboardWidgetItem.propTypes = {
   index: PropTypes.number.isRequired,
   isExpanded: PropTypes.bool.isRequired,
   isDragged: PropTypes.bool.isRequired,
+  isPendingDrag: PropTypes.bool,
   isFirst: PropTypes.bool.isRequired,
   isLast: PropTypes.bool.isRequired,
   widgetDefinitions: PropTypes.object.isRequired,
@@ -343,7 +356,10 @@ DashboardWidgetItem.propTypes = {
   onToggleConfigEditor: PropTypes.func.isRequired,
   onDragStart: PropTypes.func.isRequired,
   onDragOver: PropTypes.func.isRequired,
-  onDragEnd: PropTypes.func.isRequired
+  onDragEnd: PropTypes.func.isRequired,
+  onTouchStart: PropTypes.func.isRequired,
+  onTouchMove: PropTypes.func.isRequired,
+  onTouchEnd: PropTypes.func.isRequired
 };
 
 export default memo(DashboardWidgetItem);

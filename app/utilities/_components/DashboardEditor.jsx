@@ -4,6 +4,7 @@ import { MdClose, MdSave, MdBarChart, MdLightbulb } from 'react-icons/md';
 import { readWidgetDefinitions } from '../../../src/utils/widgetDefinitionsManager';
 import { ConfirmDialog } from '../../_components/ui/ConfirmDialog';
 import DashboardWidgetItem from './dashboard/DashboardWidgetItem';
+import { useDragAndDrop } from '../../../src/hooks/useDragAndDrop';
 
 // Generate unique ID for widgets
 let widgetIdCounter = 0;
@@ -14,10 +15,32 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   const [isLoading, setIsLoading] = useState(true);
   const [layout, setLayout] = useState([]);
   const [isDirty, setIsDirty] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState(null);
   const [expandedConfigs, setExpandedConfigs] = useState({});
   const [expandedWidgets, setExpandedWidgets] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: null, data: null });
+
+  // Drag and drop reorder callback
+  const handleReorder = useCallback((oldIndex, newIndex) => {
+    setLayout(prevLayout => {
+      const newLayout = [...prevLayout];
+      const [movedItem] = newLayout.splice(oldIndex, 1);
+      newLayout.splice(newIndex, 0, movedItem);
+      return newLayout;
+    });
+    setIsDirty(true);
+  }, []);
+
+  // Initialize drag and drop hook
+  const {
+    draggedIndex,
+    isPendingDrag,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDragAndDrop(handleReorder);
 
   useEffect(() => {
     async function loadDefinitions() {
@@ -62,30 +85,7 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     setIsDirty(true);
   }, []);
 
-  const handleDragStart = useCallback((e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.currentTarget);
-  }, []);
 
-  const handleDragOver = useCallback((e, index) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    setLayout(prevLayout => {
-      const newLayout = [...prevLayout];
-      const draggedItem = newLayout[draggedIndex];
-      newLayout.splice(draggedIndex, 1);
-      newLayout.splice(index, 0, draggedItem);
-      return newLayout;
-    });
-    setDraggedIndex(index);
-  }, [draggedIndex]);
-
-  const handleDragEnd = useCallback(() => {
-    setDraggedIndex(null);
-    setIsDirty(true);
-  }, []);
 
   const handleSave = useCallback(() => {
     // Remove _id before saving as it's only for internal tracking
@@ -301,6 +301,7 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                     index={index}
                     isExpanded={expandedWidgets[index]}
                     isDragged={draggedIndex === index}
+                    isPendingDrag={isPendingDrag}
                     isFirst={index === 0}
                     isLast={index === layout.length - 1}
                     widgetDefinitions={widgetDefinitions}
@@ -316,6 +317,9 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={(e) => handleTouchMove(e, layout)}
+                    onTouchEnd={handleTouchEnd}
                   />
                 ))
               )}
@@ -401,7 +405,9 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
           onClose={() => setConfirmDialog({ isOpen: false, type: null, data: null })}
           onConfirm={handleConfirmDeleteWidget}
           title="Remove Widget"
-          message="Remove this widget from the dashboard?"
+          message={confirmDialog.type === 'deleteWidget' && confirmDialog.data !== null
+            ? `Remove the ${widgetDefinitions[layout[confirmDialog.data]?.widget]?.displayName || layout[confirmDialog.data]?.widget || 'widget'} from the dashboard?`
+            : 'Remove this widget from the dashboard?'}
           confirmText="Remove"
           cancelText="Cancel"
           confirmColorPalette="red"
