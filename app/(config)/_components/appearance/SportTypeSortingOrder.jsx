@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Button, Flex, Text, Grid, VStack, HStack, Code, Input } from '@chakra-ui/react';
-import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward } from 'react-icons/md';
+import { MdExpandMore, MdChevronRight, MdAdd, MdClose, MdArrowUpward, MdArrowDownward, MdDragIndicator } from 'react-icons/md';
+import { useDragAndDrop } from '../../../../src/hooks/useDragAndDrop';
 
 /**
  * SportTypeSortingOrder - Component for managing sport type display order
@@ -20,6 +21,26 @@ const SportTypeSortingOrder = ({
   const [filterText, setFilterText] = useState('');
   
   const sortingOrder = Array.isArray(value) ? value : [];
+
+  // Drag and drop reorder callback
+  const handleReorder = (oldIndex, newIndex) => {
+    const newOrder = [...sortingOrder];
+    const [movedItem] = newOrder.splice(oldIndex, 1);
+    newOrder.splice(newIndex, 0, movedItem);
+    onChange(fieldPath, newOrder);
+  };
+
+  // Initialize drag and drop hook
+  const {
+    draggedIndex,
+    isPendingDrag,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  } = useDragAndDrop(handleReorder);
 
   const handleAddSport = (sport) => {
     if (!sortingOrder.includes(sport)) {
@@ -62,60 +83,97 @@ const SportTypeSortingOrder = ({
           <Box>
             <Text fontWeight="500" fontSize="sm" mb={2}>Current Order:</Text>
             <VStack align="stretch" gap={1}>
-              {sortingOrder.map((sport, index) => (
-                <Flex 
-                  key={sport} 
-                  align="center" 
-                  gap={{ base: 1, sm: 2 }}
-                  p={{ base: 1.5, sm: 2 }}
-                  bg="cardBg"
-                  borderRadius="md"
-                  fontSize={{ base: "xs", sm: "sm" }}
-                >
-                  <Text flex={1} noOfLines={1} overflow="hidden" textOverflow="ellipsis">{sport}</Text>
-                  <HStack gap={{ base: 0.5, sm: 1 }} flexShrink={0}>
-                    <Button
-                      onClick={() => handleMoveSportUp(index)}
-                      size="xs"
-                      variant="ghost"
-                      isDisabled={index === 0}
-                      aria-label="Move up"
-                      minW={{ base: "20px", sm: "auto" }}
-                      h={{ base: "20px", sm: "auto" }}
-                      px={{ base: 0, sm: 2 }}
-                      fontSize={{ base: "xs", sm: "sm" }}
+              {sortingOrder.map((sport, index) => {
+                const isDragged = draggedIndex === index;
+                const isPending = isPendingDrag;
+                
+                return (
+                  <Flex 
+                    key={sport} 
+                    data-drag-index={index}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    onTouchStart={(e) => handleTouchStart(e, index)}
+                    onTouchMove={(e) => handleTouchMove(e, sortingOrder)}
+                    onTouchEnd={handleTouchEnd}
+                    align="center" 
+                    gap={{ base: 1, sm: 2 }}
+                    p={{ base: 1.5, sm: 2 }}
+                    bg="cardBg"
+                    borderRadius="md"
+                    fontSize={{ base: "xs", sm: "sm" }}
+                    borderWidth="1px"
+                    borderColor={draggedIndex === index ? "blue.500" : "border"}
+                    opacity={draggedIndex === index ? 0.5 : 1}
+                    transform={isPendingDrag && draggedIndex === null ? "scale(1.02)" : "scale(1)"}
+                    boxShadow={isPendingDrag ? "md" : "none"}
+                    transition="all 0.2s"
+                    cursor={draggedIndex === index ? "grabbing" : "grab"}
+                    _hover={{
+                      borderColor: "blue.400",
+                      boxShadow: "md",
+                      bg: "gray.50",
+                      _dark: { bg: "gray.700", borderColor: "blue.400" }
+                    }}
+                  >
+                    <Box 
+                      fontSize={{ base: "md", sm: "lg" }} 
+                      color="textMuted" 
+                      cursor="grab" 
+                      userSelect="none" 
+                      title="Drag to reorder"
+                      flexShrink={0}
+                      _active={{ cursor: "grabbing" }}
                     >
-                      <Box as={MdArrowUpward} />
-                    </Button>
-                    <Button
-                      onClick={() => handleMoveSportDown(index)}
-                      size="xs"
-                      variant="ghost"
-                      isDisabled={index === sortingOrder.length - 1}
-                      aria-label="Move down"
-                      minW={{ base: "20px", sm: "auto" }}
-                      h={{ base: "20px", sm: "auto" }}
-                      px={{ base: 0, sm: 2 }}
-                      fontSize={{ base: "xs", sm: "sm" }}
-                    >
-                      <Box as={MdArrowDownward} />
-                    </Button>
-                    <Button
-                      onClick={() => handleRemoveSport(sport)}
-                      size="xs"
-                      variant="ghost"
-                      colorPalette="red"
-                      aria-label="Remove"
-                      minW={{ base: "20px", sm: "auto" }}
-                      h={{ base: "20px", sm: "auto" }}
-                      px={{ base: 0, sm: 2 }}
-                      fontSize={{ base: "xs", sm: "sm" }}
-                    >
-                      <Box as={MdClose} />
-                    </Button>
-                  </HStack>
-                </Flex>
-              ))}
+                      <MdDragIndicator />
+                    </Box>
+                    <Text flex={1} noOfLines={1} overflow="hidden" textOverflow="ellipsis">{sport}</Text>
+                    <HStack gap={{ base: 0.5, sm: 1 }} flexShrink={0}>
+                      <Button
+                        onClick={() => handleMoveSportUp(index)}
+                        size="xs"
+                        variant="ghost"
+                        isDisabled={index === 0}
+                        aria-label="Move up"
+                        minW={{ base: "20px", sm: "auto" }}
+                        h={{ base: "20px", sm: "auto" }}
+                        px={{ base: 0, sm: 2 }}
+                        fontSize={{ base: "xs", sm: "sm" }}
+                      >
+                        <Box as={MdArrowUpward} />
+                      </Button>
+                      <Button
+                        onClick={() => handleMoveSportDown(index)}
+                        size="xs"
+                        variant="ghost"
+                        isDisabled={index === sortingOrder.length - 1}
+                        aria-label="Move down"
+                        minW={{ base: "20px", sm: "auto" }}
+                        h={{ base: "20px", sm: "auto" }}
+                        px={{ base: 0, sm: 2 }}
+                        fontSize={{ base: "xs", sm: "sm" }}
+                      >
+                        <Box as={MdArrowDownward} />
+                      </Button>
+                      <Button
+                        onClick={() => handleRemoveSport(sport)}
+                        size="xs"
+                        variant="ghost"
+                        colorPalette="red"
+                        aria-label="Remove"
+                        minW={{ base: "20px", sm: "auto" }}
+                        h={{ base: "20px", sm: "auto" }}
+                        px={{ base: 0, sm: 2 }}
+                        fontSize={{ base: "xs", sm: "sm" }}
+                      >
+                        <Box as={MdClose} />
+                      </Button>
+                    </HStack>
+                  </Flex>
+                );
+              })}
             </VStack>
           </Box>
         )}
