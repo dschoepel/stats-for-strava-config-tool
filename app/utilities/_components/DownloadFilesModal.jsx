@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Flex, VStack, Heading, Text, Button, IconButton, Badge, Checkbox, Icon, RadioCard } from '@chakra-ui/react';
 import { MdClose, MdCheckCircle, MdDownload, MdFolder, MdComputer, MdStorage, MdEdit } from 'react-icons/md';
 import { PiCircleFill, PiFileFill } from 'react-icons/pi';
-import { Tooltip } from './Tooltip';
-import { getSetting } from '../utils/settingsManager';
+import { Tooltip } from '../../../src/components/Tooltip';
+import { getSetting } from '../../../src/utils/settingsManager';
 import ServerFolderBrowser from './ServerFolderBrowser';
-import { saveFile } from '../services';
+import { saveFile } from '../../../src/services';
 
 const DownloadFilesModal = ({ files, isOpen, onClose }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());

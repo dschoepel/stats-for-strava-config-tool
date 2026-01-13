@@ -13,7 +13,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { MdFolder, MdArrowUpward, MdHome, MdCheck, MdClose } from 'react-icons/md';
-import { browseFiles } from '../services';
+import { browseFiles } from '../../../src/services';
 
 /**
  * ServerFolderBrowser - Browse and select a folder on the server

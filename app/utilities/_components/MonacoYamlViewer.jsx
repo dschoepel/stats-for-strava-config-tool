@@ -2,8 +2,8 @@ import { useRef, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 const Editor = lazy(() => import('@monaco-editor/react').then(module => ({ default: module.default })));
 import { Box, Flex, Text, Button, Icon, Spinner, VStack } from '@chakra-ui/react';
 import { MdFolder, MdSearch, MdContentCopy, MdDownload, MdCheckCircle, MdWarning, MdEdit } from 'react-icons/md';
-import { formatFileSize, validateYamlContent } from '../utils/yamlFileHandler';
-import { getSetting } from '../utils/settingsManager';
+import { formatFileSize, validateYamlContent } from '../../../src/utils/yamlFileHandler';
+import { getSetting } from '../../../src/utils/settingsManager';
 
 const MonacoYamlViewer = ({ 
   fileName, 

@@ -15,7 +15,7 @@ import {
   Badge
 } from '@chakra-ui/react';
 import { MdFolder, MdFolderOpen, MdDescription, MdArrowUpward, MdHome, MdCheck, MdClose } from 'react-icons/md';
-import { browseFiles, readFile } from '../services';
+import { browseFiles, readFile } from '../../../src/services';
 
 const ServerFileBrowser = ({ isOpen, onClose, onFilesSelected }) => {
   const [currentPath, setCurrentPath] = useState('');

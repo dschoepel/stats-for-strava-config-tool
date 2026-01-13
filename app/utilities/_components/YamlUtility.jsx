@@ -1,7 +1,7 @@
 import React, { useState, lazy, Suspense } from 'react';
 import { Box, VStack, Heading, Text, Button, Flex, HStack, IconButton, Icon, Spinner } from '@chakra-ui/react';
 import { MdClose, MdSettings, MdWarning, MdSearch, MdAdd } from 'react-icons/md';
-import FileSelector from './FileSelector';
+import FileSelector from '../../../src/components/FileSelector';
 import ServerFileBrowser from './ServerFileBrowser';
 const YamlViewer = lazy(() => import('./YamlViewer'));
 const YamlEditorModal = lazy(() => import('./YamlEditorModal'));
@@ -9,11 +9,11 @@ import FileCreationDialog from './yaml-utility/FileCreationDialog';
 import FileExistsConflictDialog from './yaml-utility/FileExistsConflictDialog';
 import LoadedFilesList from './yaml-utility/LoadedFilesList';
 import GettingStartedGuide from './yaml-utility/GettingStartedGuide';
-import { useYamlUtilityFiles } from '../hooks/useYamlUtilityFiles';
-import { useYamlUtilityDialogs } from '../hooks/useYamlUtilityDialogs';
-import { getSetting, loadSettings } from '../utils/settingsManager';
-import { backupConfig } from '../utils/apiClient';
-import { useToast } from '../hooks/useToast';
+import { useYamlUtilityFiles } from './hooks/useYamlUtilityFiles';
+import { useYamlUtilityDialogs } from './hooks/useYamlUtilityDialogs';
+import { getSetting, loadSettings } from '../../../src/utils/settingsManager';
+import { backupConfig } from '../../../src/utils/apiClient';
+import { useToast } from '../../../src/hooks/useToast';
 
 const YamlUtility = ({ setBreadcrumbs, breadcrumbs }) => {
   const [showServerBrowser, setShowServerBrowser] = useState(false);

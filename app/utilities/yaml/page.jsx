@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useNavigation } from '../../../src/state/NavigationProvider'
-import YamlUtility from '../../../src/components/YamlUtility'
+import YamlUtility from '../_components/YamlUtility'
 
 export default function YamlUtilityPage() {
   const { navigateTo, setBreadcrumbs, breadcrumbs } = useNavigation()

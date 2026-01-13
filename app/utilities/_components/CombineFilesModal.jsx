@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { Box, Flex, VStack, Heading, Text, Button, Input, IconButton, Badge } from '@chakra-ui/react';
 import { MdClose, MdArrowUpward, MdArrowDownward, MdExpandMore, MdChevronRight, MdInfo } from 'react-icons/md';
 import { FcIdea } from 'react-icons/fc';
-import { Tooltip } from './Tooltip';
-import { checkForDuplicateKeys, removeDuplicateKeys } from '../utils/yamlMergeUtils';
+import { Tooltip } from '../../../src/components/Tooltip';
+import { checkForDuplicateKeys, removeDuplicateKeys } from '../../../src/utils/yamlMergeUtils';
 
 const CombineFilesModal = ({ files, isOpen, onClose, onCombine }) => {
   const [orderedFiles, setOrderedFiles] = useState(() => [...files]);

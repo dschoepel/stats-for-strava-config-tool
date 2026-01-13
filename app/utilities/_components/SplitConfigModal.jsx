@@ -17,8 +17,8 @@ import {
   PiListChecksFill,
   PiCircleFill
 } from 'react-icons/pi';
-import { Tooltip } from './Tooltip';
-import { splitConfigFile } from '../utils/configSplitter';
+import { Tooltip } from '../../../src/components/Tooltip';
+import { splitConfigFile } from '../../../src/utils/configSplitter';
 
 const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
   const [splitting, setSplitting] = useState(false);

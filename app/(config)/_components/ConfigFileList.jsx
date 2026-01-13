@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef, memo } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
 import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings } from 'react-icons/md';
-import { useToast } from '../hooks/useToast';
-import FileViewerModal from './FileViewerModal';
-import YamlEditorModal from './YamlEditorModal';
-import ConfigFileGrid from './config-files/ConfigFileGrid';
-import SectionMappingTable from './config-files/SectionMappingTable';
-import ServerFolderBrowser from './ServerFolderBrowser';
+import { useToast } from '../../../src/hooks/useToast';
+import FileViewerModal from '../../utilities/_components/FileViewerModal';
+import YamlEditorModal from '../../utilities/_components/YamlEditorModal';
+import ConfigFileGrid from '../../../src/components/config-files/ConfigFileGrid';
+import SectionMappingTable from '../../../src/components/config-files/SectionMappingTable';
+import ServerFolderBrowser from '../../utilities/_components/ServerFolderBrowser';
 import {
   listConfigFiles,
   scanConfigFiles,
@@ -14,9 +14,9 @@ import {
   validateSections as validateSectionsService,
   mergeConfig as mergeConfigService,
   readFile
-} from '../services';
-import { useSettings } from '../state/SettingsProvider';
-import { useConfig } from '../state/ConfigProvider';
+} from '../../../src/services';
+import { useSettings } from '../../../src/state/SettingsProvider';
+import { useConfig } from '../../../src/state/ConfigProvider';
 
 const ConfigFileList = forwardRef((props, ref) => {
   const { onConfigSectionClick } = props;

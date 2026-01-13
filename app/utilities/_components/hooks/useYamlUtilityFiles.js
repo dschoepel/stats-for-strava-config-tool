@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { processYamlFiles } from '../utils/yamlFileHandler';
-import { getSetting } from '../utils/settingsManager';
-import { checkFileExists as checkFileExistsService, readFile } from '../services';
+import { processYamlFiles } from '../../../../src/utils/yamlFileHandler';
+import { getSetting } from '../../../../src/utils/settingsManager';
+import { checkFileExists as checkFileExistsService, readFile } from '../../../../src/services';
 
 /**
  * Custom hook to manage YAML utility file operations

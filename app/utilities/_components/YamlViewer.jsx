@@ -2,7 +2,7 @@ import React, { useState, useCallback, memo, lazy, Suspense } from 'react';
 import { Box, VStack, HStack, Flex, Heading, Text, Button, IconButton, Icon, Spinner } from '@chakra-ui/react';
 import { MdClose, MdFolder, MdDescription, MdDownload } from 'react-icons/md';
 import { PiArrowsSplitFill, PiLinkSimpleHorizontalBold } from 'react-icons/pi';
-import { formatFileSize } from '../utils/yamlFileHandler';
+import { formatFileSize } from '../../../src/utils/yamlFileHandler';
 const CombineFilesModal = lazy(() => import('./CombineFilesModal'));
 const SplitConfigModal = lazy(() => import('./SplitConfigModal'));
 const DownloadFilesModal = lazy(() => import('./DownloadFilesModal'));
