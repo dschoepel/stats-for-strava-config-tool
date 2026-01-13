@@ -9,7 +9,7 @@ export function getBreadcrumbsFromPath(pathname) {
 
   // Root path
   if (segments.length === 0) {
-    return ['Configuration'];
+    return ['Dashboard'];
   }
 
   // Map of path segments to breadcrumb labels

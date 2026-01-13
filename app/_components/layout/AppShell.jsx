@@ -186,36 +186,40 @@ export default function AppShell({ section = 'config', children }) {
             <Breadcrumb.List>
               <Breadcrumb.Item>
                 <Breadcrumb.Link
-                  onClick={(e) => { e.preventDefault(); handleNavClick('Configuration') }}
+                  onClick={(e) => { e.preventDefault(); router.push('/') }}
                   cursor="pointer"
-                  title="Go to Configuration"
+                  title="Go to Dashboard"
                   color="text"
                   _hover={{ color: "primary" }}
                 >
                   <Icon fontSize="1.5em"><MdHome /></Icon>
                 </Breadcrumb.Link>
               </Breadcrumb.Item>
-              <Breadcrumb.Separator color="text" />
 
-              {hasHydrated && breadcrumbs.map((crumb, index) => (
-                <React.Fragment key={index}>
-                  <Breadcrumb.Item>
-                    {index === breadcrumbs.length - 1 ? (
-                      <Breadcrumb.CurrentLink color="primary" fontWeight="semibold">{crumb}</Breadcrumb.CurrentLink>
-                    ) : (
-                      <Breadcrumb.Link
-                        onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(index) }}
-                        cursor="pointer"
-                        color="text"
-                        _hover={{ color: "primary" }}
-                      >
-                        {crumb}
-                      </Breadcrumb.Link>
-                    )}
-                  </Breadcrumb.Item>
-                  {index < breadcrumbs.length - 1 && <Breadcrumb.Separator color="text" />}
-                </React.Fragment>
-              ))}
+              {hasHydrated && breadcrumbs.length > 0 && breadcrumbs[0] !== 'Dashboard' && (
+                <>
+                  <Breadcrumb.Separator color="text" />
+                  {breadcrumbs.map((crumb, index) => (
+                    <React.Fragment key={index}>
+                      <Breadcrumb.Item>
+                        {index === breadcrumbs.length - 1 ? (
+                          <Breadcrumb.CurrentLink color="primary" fontWeight="semibold">{crumb}</Breadcrumb.CurrentLink>
+                        ) : (
+                          <Breadcrumb.Link
+                            onClick={(e) => { e.preventDefault(); handleBreadcrumbClick(index) }}
+                            cursor="pointer"
+                            color="text"
+                            _hover={{ color: "primary" }}
+                          >
+                            {crumb}
+                          </Breadcrumb.Link>
+                        )}
+                      </Breadcrumb.Item>
+                      {index < breadcrumbs.length - 1 && <Breadcrumb.Separator color="text" />}
+                    </React.Fragment>
+                  ))}
+                </>
+              )}
             </Breadcrumb.List>
           </Breadcrumb.Root>
           {/* Config section has padding, utilities/docs don't */}

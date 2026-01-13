@@ -224,7 +224,7 @@ export default function Sidebar({
             onToggleSidebar={onToggle}
             onClick={(e) => {
               e.preventDefault();
-              handleNavClick('Configuration');
+              // Only toggle submenu, don't navigate
               if (isCollapsed) {
                 onToggle();
                 setIsMainConfigExpanded(true);

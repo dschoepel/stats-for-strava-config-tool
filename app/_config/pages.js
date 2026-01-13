@@ -11,7 +11,8 @@ export const pages = {
     parent: null,
     icon: 'FcDataConfiguration',
     group: 'main',
-    hasSubmenu: true
+    hasSubmenu: true,
+    path: null // No direct navigation - only toggles submenu
   },
 
   // Configuration submenu pages

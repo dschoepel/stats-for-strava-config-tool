@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef, memo } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
-import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings } from 'react-icons/md';
+import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings, MdHome } from 'react-icons/md';
 import { useToast } from '../../../src/hooks/useToast';
 import FileViewerModal from '../../utilities/_components/FileViewerModal';
 import YamlEditorModal from '../../utilities/_components/YamlEditorModal';
@@ -19,8 +19,6 @@ import { useSettings } from '../../../src/state/SettingsProvider';
 import { useConfig } from '../../../src/state/ConfigProvider';
 
 const ConfigFileList = forwardRef((props, ref) => {
-  const { onConfigSectionClick } = props;
-
   // Use contexts
   const { settings, hasHydrated: settingsHydrated } = useSettings();
   const { fileCache, updateFileCache, hasConfigInitialized, updateHasConfigInitialized, sectionToFileMap, updateSectionToFileMap } = useConfig();
@@ -42,7 +40,7 @@ const ConfigFileList = forwardRef((props, ref) => {
   const [validationStatus, setValidationStatus] = useState(null);
   const [isMerging, setIsMerging] = useState(false);
 
-  const { toasts, removeToast, showInfo, showWarning, showError, showSuccess } = useToast();
+  const { showInfo, showWarning, showError, showSuccess } = useToast();
 
   // Memoize configuration mode calculation
   const configMode = useMemo(() => {
@@ -488,7 +486,7 @@ const ConfigFileList = forwardRef((props, ref) => {
         <VStack align="stretch" gap={6}>
           <Box>
             <Heading as="h3" size="lg" color="text" mb={2}>
-              <Icon color="primary" mr={2}><MdFolder /></Icon> Configuration Files
+              <Icon color="primary" mr={2}><MdHome /></Icon> Dashboard
             </Heading>
             <Flex align="center" gap={3} mt={4}>
               <Spinner size="sm" color="primary" />
@@ -505,7 +503,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       <VStack align="stretch" gap={6}>
         <Box>
           <Heading as="h3" size="lg" color="text" mb={2}>
-            <Icon color="primary" mr={2}><MdFolder /></Icon> Configuration Files
+            <Icon color="primary" mr={2}><MdHome /></Icon> Dashboard
           </Heading>
           <Text color="textMuted">
             Server-side file system access to Stats for Strava configuration files from:{' '}
