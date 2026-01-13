@@ -5,8 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { getBreadcrumbsFromPath } from '../../_utils/breadcrumbs';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
-import Navbar from '../../../src/components/Navbar'
-import Sidebar from '../../../src/components/Sidebar'
+import Navbar from './Navbar'
+import Sidebar from './Sidebar'
 import SettingsDialog from '../../../src/components/SettingsDialog'
 import SportsListEditor from '../../../src/components/SportsListEditor'
 import WidgetDefinitionsEditor from '../../../src/components/WidgetDefinitionsEditor'

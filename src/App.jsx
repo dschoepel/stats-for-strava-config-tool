@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
-import Navbar from './components/Navbar'
-import Sidebar from './components/Sidebar'
+import Navbar from '../app/_components/layout/Navbar'
+import Sidebar from '../app/_components/layout/Sidebar'
 import SettingsDialog from './components/SettingsDialog'
 import SportsListEditor from './components/SportsListEditor'
 import WidgetDefinitionsEditor from './components/WidgetDefinitionsEditor'
