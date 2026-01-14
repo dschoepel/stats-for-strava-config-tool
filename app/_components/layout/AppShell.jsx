@@ -135,7 +135,8 @@ export default function AppShell({ section = 'config', children }) {
       'Sports List Editor Help': '/docs/sports-list-editor',
       'Widget Definitions Help': '/docs/widget-definitions',
       'Settings Management Help': '/docs/settings-management',
-      'Configuration Examples Help': '/docs/configuration-examples'
+      'Configuration Examples Help': '/docs/configuration-examples',
+      'Authentication Help': '/docs/authentication'
     };
 
     const route = pageToRoute[page];
@@ -182,7 +183,17 @@ export default function AppShell({ section = 'config', children }) {
         />
 
         <Box as="main" flex={1} bg="bg" overflowY="auto">
-          <Breadcrumb.Root size="lg" p={6} borderBottom="1px solid" borderColor="border" color="text">
+          <Breadcrumb.Root 
+            size="lg" 
+            p={6} 
+            borderBottom="1px solid" 
+            borderColor="border" 
+            color="text"
+            position="sticky"
+            top={0}
+            bg="bg"
+            zIndex={10}
+          >
             <Breadcrumb.List>
               <Breadcrumb.Item>
                 <Breadcrumb.Link

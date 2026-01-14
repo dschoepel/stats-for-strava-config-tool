@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { HiMenuAlt2 } from 'react-icons/hi';
 import { MdLightMode, MdDarkMode } from 'react-icons/md';
 import SettingsDropdown from './SettingsDropdown';
+import UserMenu from './UserMenu';
 
 export default function Navbar({
   isDarkMode,
@@ -87,6 +88,7 @@ export default function Navbar({
         >
           About
         </Link>
+        <UserMenu />
         <IconButton
           onClick={toggleTheme}
           aria-label="Toggle theme"
@@ -105,6 +107,7 @@ export default function Navbar({
 
       {/* Mobile menu - show only theme toggle and settings */}
       <HStack gap={2} display={{ base: "flex", md: "none" }}>
+        <UserMenu />
         <SettingsDropdown onSelectSetting={onSelectSetting} />
         <IconButton
           onClick={toggleTheme}

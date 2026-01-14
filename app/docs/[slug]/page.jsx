@@ -28,6 +28,10 @@ const docConfig = {
   'configuration-examples': {
     file: 'configuration-examples.md',
     pageName: 'Configuration Examples Help'
+  },
+  'authentication': {
+    file: 'authentication.md',
+    pageName: 'Authentication Help'
   }
 }
 

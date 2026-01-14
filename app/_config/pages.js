@@ -121,6 +121,13 @@ export const pages = {
     group: 'help',
     helpFile: 'overview.md'
   },
+'Authentication Help': {
+    id: 'Authentication Help',
+    label: 'Authentication',
+    parent: 'Documentation',
+    group: 'help',
+    helpFile: 'authentication.md'
+  },
   'Dashboard Editor Help': {
     id: 'Dashboard Editor Help',
     label: 'Dashboard Editor',
