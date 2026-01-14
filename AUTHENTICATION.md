@@ -9,11 +9,17 @@ This application implements a **simple, secure, single-user authentication syste
 ## Features
 
 ✅ **First-time registration** - Set up your admin password on first launch  
+
 ✅ **Secure login** - Username + password authentication  
+
 ✅ **Password reset** - Generate reset tokens when needed  
+
 ✅ **Session persistence** - Configurable session duration (default: 7 days)  
+
 ✅ **HTTP & HTTPS support** - Works on both protocols  
+
 ✅ **Route protection** - Middleware blocks unauthorized access  
+
 ✅ **Lightweight** - No external dependencies beyond bcrypt and JWT  
 
 ---
@@ -24,7 +30,7 @@ Add these variables to your `.env` file:
 
 ```env
 # Authentication Configuration
-ADMIN_USERNAME=dave
+ADMIN_USERNAME=admin
 ADMIN_PASSWORD_HASH=
 PASSWORD_RESET_TOKEN=
 SESSION_SECRET=change-this-to-a-long-random-secret-string
@@ -33,25 +39,27 @@ SESSION_MAX_AGE=604800
 
 ### Variable Descriptions
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ADMIN_USERNAME` | The username for login | `admin` |
-| `ADMIN_PASSWORD_HASH` | Bcrypt hash of the password (leave empty for first-time setup) | (empty) |
-| `PASSWORD_RESET_TOKEN` | Token for password reset (auto-generated when needed) | (empty) |
-| `SESSION_SECRET` | Secret key for signing JWT tokens (⚠️ **CHANGE THIS!**) | `default-secret-change-me` |
-| `SESSION_MAX_AGE` | Session duration in seconds | `604800` (7 days) |
+| Variable               | Description                                                    | Default                    |
+| ---------------------- | -------------------------------------------------------------- | -------------------------- |
+| `ADMIN_USERNAME`       | The username for login                                         | `admin`                    |
+| `ADMIN_PASSWORD_HASH`  | Bcrypt hash of the password (leave empty for first-time setup) | (empty)                    |
+| `PASSWORD_RESET_TOKEN` | Token for password reset (auto-generated when needed)          | (empty)                    |
+| `SESSION_SECRET`       | Secret key for signing JWT tokens (⚠️ **CHANGE THIS!**)       | `default-secret-change-me` |
+| `SESSION_MAX_AGE`      | Session duration in seconds                                    | `604800` (7 days)          |
 
 ⚠️ **IMPORTANT**: Generate a strong, random `SESSION_SECRET` before deploying to production!
 
 ### How to Generate a Secure Session Secret
 
 **PowerShell (Windows) - Recommended:**
+
 ```powershell
 # Generate a random 64-character hex string
 -join ((1..64) | ForEach-Object { '{0:X}' -f (Get-Random -Maximum 16) })
 ```
 
 **Alternative PowerShell methods:**
+
 ```powershell
 # Base64 encoded (44 characters)
 [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
@@ -64,11 +72,13 @@ SESSION_MAX_AGE=604800
 ```
 
 **Node.js (Cross-platform):**
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 **Linux/Mac:**
+
 ```bash
 # Using openssl
 openssl rand -hex 32
@@ -98,6 +108,7 @@ npm install
 ```
 
 This installs:
+
 - `bcryptjs` - Password hashing
 - `jsonwebtoken` - Session token signing/verification
 - `cookie` - Cookie serialization
@@ -139,6 +150,7 @@ Sessions are stored in HTTP-only cookies. To log out:
 3. Wait for the session to expire
 
 **Example logout (JavaScript):**
+
 ```javascript
 await fetch('/api/auth/logout', { method: 'POST' });
 window.location.href = '/login';
@@ -173,6 +185,7 @@ Once logged in, you can change your password at any time without needing a reset
 6. Click **Change Password**
 
 **Important Notes:**
+
 - Your current password is required (for security verification)
 - The new password must be different from your current password
 - A password strength indicator helps you choose a strong password
@@ -180,6 +193,7 @@ Once logged in, you can change your password at any time without needing a reset
 - You must login again with your new password
 
 **Use Cases:**
+
 - Regular security maintenance (change password periodically)
 - Suspected password compromise
 - Updating from a temporary password
@@ -191,15 +205,18 @@ Once logged in, you can change your password at any time without needing a reset
 The **User Menu** is located in the top-right corner of the navbar (next to the theme toggle button).
 
 ### Features:
+
 - **Avatar Display:** Shows your username initials in a circular avatar
 - **Username Label:** Displays your full username (hidden on small screens)
 - **Dropdown Menu:** Click to access account options
 
 ### Menu Options:
+
 1. **Change Password** - Navigate to the password change page
 2. **Logout** - End your session and return to login (requires confirmation)
 
 ### Accessing the User Menu:
+
 - **Desktop:** Click on your username/avatar in the navbar
 - **Mobile:** Click on your avatar icon (username hidden, avatar visible)
 
@@ -208,11 +225,13 @@ The **User Menu** is located in the top-right corner of the navbar (next to the 
 ## API Endpoints
 
 ### `GET /api/auth/user`
+
 Get current authenticated user information.
 
 **Authentication:** Required (protected by session cookie)
 
 **Response (success):**
+
 ```json
 {
   "success": true,
@@ -221,6 +240,7 @@ Get current authenticated user information.
 ```
 
 **Response (error):**
+
 ```json
 {
   "success": false,
@@ -231,11 +251,13 @@ Get current authenticated user information.
 ---
 
 ### `POST /api/auth/change-password`
+
 Change the user's password (requires current password verification).
 
 **Authentication:** Required (protected by session cookie)
 
 **Request:**
+
 ```json
 {
   "currentPassword": "oldpassword",
@@ -244,6 +266,7 @@ Change the user's password (requires current password verification).
 ```
 
 **Response (success):**
+
 ```json
 {
   "success": true,
@@ -252,6 +275,7 @@ Change the user's password (requires current password verification).
 ```
 
 **Response (error - incorrect current password):**
+
 ```json
 {
   "success": false,
@@ -260,6 +284,7 @@ Change the user's password (requires current password verification).
 ```
 
 **Response (error - password too short):**
+
 ```json
 {
   "success": false,
@@ -268,6 +293,7 @@ Change the user's password (requires current password verification).
 ```
 
 **Response (error - same password):**
+
 ```json
 {
   "success": false,
@@ -276,6 +302,7 @@ Change the user's password (requires current password verification).
 ```
 
 **Behavior:**
+
 - Validates current password using bcrypt
 - Hashes new password with bcrypt (salt rounds: 10)
 - Updates `ADMIN_PASSWORD_HASH` in `.env` file
@@ -284,9 +311,11 @@ Change the user's password (requires current password verification).
 ---
 
 ### `POST /api/auth/login`
+
 Authenticate with username and password.
 
 **Request:**
+
 ```json
 {
   "username": "dave",
@@ -295,6 +324,7 @@ Authenticate with username and password.
 ```
 
 **Response (success):**
+
 ```json
 {
   "success": true,
@@ -307,9 +337,11 @@ Sets `sfs_session` cookie.
 ---
 
 ### `POST /api/auth/register`
+
 Register the admin password (only allowed if `ADMIN_PASSWORD_HASH` is empty).
 
 **Request:**
+
 ```json
 {
   "password": "mypassword",
@@ -318,6 +350,7 @@ Register the admin password (only allowed if `ADMIN_PASSWORD_HASH` is empty).
 ```
 
 **Response (success):**
+
 ```json
 {
   "success": true,
@@ -330,9 +363,11 @@ Sets `sfs_session` cookie and writes `ADMIN_PASSWORD_HASH` to `.env`.
 ---
 
 ### `GET /api/auth/register`
+
 Check if registration is allowed.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -343,9 +378,11 @@ Check if registration is allowed.
 ---
 
 ### `POST /api/auth/request-reset`
+
 Generate a password reset token.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -359,9 +396,11 @@ Writes `PASSWORD_RESET_TOKEN` to `.env`.
 ---
 
 ### `POST /api/auth/reset-password`
+
 Reset password using the reset token.
 
 **Request:**
+
 ```json
 {
   "token": "a1b2c3d4...",
@@ -371,6 +410,7 @@ Reset password using the reset token.
 ```
 
 **Response (success):**
+
 ```json
 {
   "success": true,
@@ -383,9 +423,11 @@ Sets `sfs_session` cookie, writes new `ADMIN_PASSWORD_HASH`, and clears `PASSWOR
 ---
 
 ### `GET /api/auth/reset-password`
+
 Check if password reset is allowed.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -396,9 +438,11 @@ Check if password reset is allowed.
 ---
 
 ### `POST /api/auth/logout`
+
 Clear the session cookie.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -417,12 +461,14 @@ The application uses `proxy.js` (Next.js 16 middleware) to protect routes from u
 All routes are protected by default and require authentication **except**:
 
 **Public Pages:**
+
 - `/login` - Login page
 - `/register` - First-time registration page
 - `/reset-password` - Password reset page
 - `/change-password` - **PROTECTED** (requires login)
 
 **Public API Routes:**
+
 - `/api/auth/login` - Authentication endpoint
 - `/api/auth/register` - Registration endpoint
 - `/api/auth/request-reset` - Reset token generation
@@ -430,11 +476,13 @@ All routes are protected by default and require authentication **except**:
 - `/api/auth/logout` - Logout endpoint
 
 **Protected API Routes:**
+
 - `/api/auth/user` - Get current user info (requires session)
 - `/api/auth/change-password` - Change password (requires session)
 - All other `/api/*` routes (requires session)
 
 **System Routes:**
+
 - `/_next/*` - Next.js internals (static files, chunks)
 - `/favicon.ico` - Favicon
 
@@ -443,6 +491,7 @@ All routes are protected by default and require authentication **except**:
 1. **Every Request:** The proxy checks for a valid `sfs_session` cookie
 2. **Public Paths:** If the path is in the public list, allow access
 3. **Authentication Check:** 
+
    - If no cookie → redirect to `/login`
    - If invalid cookie → clear cookie + redirect to `/login`
    - If valid cookie → allow access
@@ -472,23 +521,24 @@ All routes are protected by default and require authentication **except**:
 ### ⚠️ **Recommendations for Production**
 
 1. **Use HTTPS**  
+
    Set `FORCE_HTTPS=true` in `.env` to enable secure cookies.
+1. **Generate a Strong `SESSION_SECRET`**  
 
-2. **Generate a Strong `SESSION_SECRET`**  
    Use a cryptographically secure random string (64+ characters).
+1. **Protect Your `.env` File**  
 
-3. **Protect Your `.env` File**  
    - Set file permissions: `chmod 600 .env` (Linux/Mac)
    - Exclude from version control (already in `.gitignore`)
    - Back up securely (encrypted)
+1. **Limit Session Duration**  
 
-4. **Limit Session Duration**  
    For high-security environments, reduce `SESSION_MAX_AGE` to 1 hour or less.
+1. **Monitor for Brute-Force Attacks**  
 
-5. **Monitor for Brute-Force Attacks**  
    Consider adding rate limiting to `/api/auth/login` if exposed to the internet.
+1. **Docker Considerations**  
 
-6. **Docker Considerations**  
    - Ensure `.env` is mounted as a volume so changes persist
    - Use Docker secrets for `SESSION_SECRET` in production
 
@@ -497,14 +547,19 @@ All routes are protected by default and require authentication **except**:
 ## Troubleshooting
 
 ### "Registration not allowed"
+
 **Cause:** `ADMIN_PASSWORD_HASH` is already set.  
+
 **Solution:** Use the password reset flow or manually clear `ADMIN_PASSWORD_HASH` in `.env`.
 
 ---
 
 ### "Invalid username or password"
+
 **Cause:** Credentials don't match or password not set.  
+
 **Solution:** 
+
 - Verify `ADMIN_USERNAME` in `.env`
 - If first-time setup, use `/register` first
 - If forgotten password, use `/reset-password`
@@ -512,8 +567,11 @@ All routes are protected by default and require authentication **except**:
 ---
 
 ### "Current password is incorrect" (Change Password)
+
 **Cause:** The current password entered doesn't match your existing password.  
+
 **Solution:**
+
 - Double-check your current password for typos
 - If you've forgotten it, logout and use `/reset-password` instead
 - Change Password requires knowing your current password (security feature)
@@ -521,20 +579,27 @@ All routes are protected by default and require authentication **except**:
 ---
 
 ### "Invalid reset token"
+
 **Cause:** Token doesn't match `PASSWORD_RESET_TOKEN` in `.env`.  
+
 **Solution:** Generate a new token via `/reset-password`.
 
 ---
 
 ### "Session expired" on every login
+
 **Cause:** `SESSION_SECRET` changed after login.  
+
 **Solution:** Keep `SESSION_SECRET` consistent. If you must change it, all users will need to log in again.
 
 ---
 
 ### Can't logout / session persists
+
 **Cause:** Cookie not being cleared properly.  
+
 **Solution:**
+
 - Clear browser cookies for the domain manually
 - Check browser console for errors
 - Verify `/api/auth/logout` returns success response
@@ -542,7 +607,9 @@ All routes are protected by default and require authentication **except**:
 ---
 
 ### Changes to `.env` not reflected
+
 **Cause:** Next.js caches environment variables at build time.  
+
 **Solution:** Restart the dev server (`npm run dev`) or rebuild (`npm run build`).
 
 ---
@@ -586,23 +653,27 @@ proxy.js                            # Route protection (Next.js 16)
 ## Design Decisions
 
 ### Why bcrypt?
+
 - Industry standard for password hashing
 - Built-in salt generation
 - Configurable work factor (future-proof)
 - `bcryptjs` is pure JavaScript (no native compilation issues on Windows)
 
 ### Why JWT?
+
 - Stateless (no database required)
 - Self-contained (username embedded in token)
 - Signed (tamper-proof)
 - Expiration built-in
 
 ### Why HTTP-only cookies?
+
 - Protected from JavaScript access (XSS prevention)
 - Automatically sent with requests (no manual token management)
 - Works across all pages/API routes
 
 ### Why write to `.env`?
+
 - Simple (no database setup)
 - Self-hosted single-user context (low complexity)
 - File-based persistence (survives restarts)
@@ -613,6 +684,7 @@ proxy.js                            # Route protection (Next.js 16)
 ## Credits
 
 Built with:
+
 - [Next.js](https://nextjs.org/) - React framework with App Router
 - [Chakra UI v3](https://www.chakra-ui.com/) - Component library
 - [bcryptjs](https://github.com/dcodeIO/bcrypt.js) - Password hashing
