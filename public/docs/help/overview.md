@@ -58,6 +58,33 @@ The configuration is organized into the following sections:
 
 ---
 
+## Authentication & Security
+
+The Config Tool uses a secure single-user authentication system to protect your configuration from unauthorized access.
+
+**Key Features:**
+
+- **First-time registration** - Set up your admin password on first launch
+- **Session persistence** - Stay logged in for 7 days (default)
+- **Password management** - Change or reset your password anytime
+- **User menu** - Access account options from the navbar (top-right avatar/username)
+
+**Before First Use:**
+
+⚠️ **Important:** Generate a strong session secret before registering. This secret is used to sign your login tokens and should be changed from the default value.
+
+Run this command in PowerShell to generate a secure secret:
+
+```powershell
+-join ((1..64) | ForEach-Object { '{0:X}' -f (Get-Random -Maximum 16) })
+```
+
+Add the generated string to your `.env` file as `SESSION_SECRET`.
+
+**Learn More:** See **Documentation → Authentication** for detailed setup instructions, password management, and security best practices.
+
+---
+
 ## YAML Utility
 
 The YAML Utility provides advanced configuration file management:
