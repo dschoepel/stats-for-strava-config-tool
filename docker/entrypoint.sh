@@ -34,6 +34,8 @@ chown -R node:node /data
 chown node:node /app
 # Only specific subdirectories need write access
 [ -d /app/.next ] && chown -R node:node /app/.next
+# Ensure .env file is writable by node user (for password hash updates)
+[ -f /app/.env ] && chown node:node /app/.env
 
 echo "Logs will be written to /data/logs/"
 

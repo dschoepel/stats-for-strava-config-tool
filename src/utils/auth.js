@@ -3,26 +3,62 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { serialize } from 'cookie';
+import fs from 'fs';
+import path from 'path';
+
+// Helper to read .env file directly (bypasses Next.js env caching)
+function readEnvFile() {
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    const envVars = {};
+    
+    envContent.split('\n').forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine && !trimmedLine.startsWith('#')) {
+        const match = trimmedLine.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          const key = match[1].trim();
+          let value = match[2].trim();
+          // Remove quotes if present
+          value = value.replace(/^["']|["']$/g, '');
+          envVars[key] = value;
+        }
+      }
+    });
+    
+    return envVars;
+  } catch (error) {
+    console.error('Error reading .env file:', error);
+    return {};
+  }
+}
 
 // Environment variable getters
 export function getAdminUsername() {
-  return process.env.ADMIN_USERNAME || 'admin';
+  const envVars = readEnvFile();
+  return envVars.ADMIN_USERNAME || process.env.ADMIN_USERNAME || 'admin';
 }
 
 export function getAdminPasswordHash() {
-  return process.env.ADMIN_PASSWORD_HASH || '';
+  const envVars = readEnvFile();
+  return envVars.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD_HASH || '';
 }
 
 export function getPasswordResetToken() {
-  return process.env.PASSWORD_RESET_TOKEN || '';
+  const envVars = readEnvFile();
+  return envVars.PASSWORD_RESET_TOKEN || process.env.PASSWORD_RESET_TOKEN || '';
 }
 
 export function getSessionSecret() {
-  return process.env.SESSION_SECRET || 'default-secret-change-me';
+  const envVars = readEnvFile();
+  return envVars.SESSION_SECRET || process.env.SESSION_SECRET || 'default-secret-change-me';
 }
 
 export function getSessionMaxAge() {
-  return parseInt(process.env.SESSION_MAX_AGE || '604800', 10); // 7 days default
+  const envVars = readEnvFile();
+  const value = envVars.SESSION_MAX_AGE || process.env.SESSION_MAX_AGE || '604800';
+  return parseInt(value, 10); // 7 days default
 }
 
 // Bcrypt helpers
