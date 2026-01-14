@@ -7,6 +7,7 @@ services:
       - .env  # Load environment variables from .env file
 
     volumes: 
+      - ./.env:/app/.env  # Mount .env file for persistence (must be writable)
       - ./statistics-for-strava/config:/data/statistics-for-strava/config  #Match this to your stats for strava config directory
       - ./statistics-for-strava/storage:/data/statistics-for-strava/storage  # Gear maintenance images and other storage
       - ./statistics-for-strava/logs:/data/logs  # Application and service logs

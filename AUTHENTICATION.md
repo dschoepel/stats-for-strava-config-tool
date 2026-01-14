@@ -536,15 +536,42 @@ All routes are protected by default and require authentication **except**:
    For high-security environments, reduce `SESSION_MAX_AGE` to 1 hour or less.
 1. **Monitor for Brute-Force Attacks**  
 
+1. **Monitor for Brute-Force Attacks**  
+
    Consider adding rate limiting to `/api/auth/login` if exposed to the internet.
 1. **Docker Considerations**  
 
-   - Ensure `.env` is mounted as a volume so changes persist
+   - **Mount `.env` as a volume** - Password hashes must persist outside the container
+   - **Ensure write permissions** - The container user must be able to write to `.env`
    - Use Docker secrets for `SESSION_SECRET` in production
+   - **Required docker-compose.yml volume:**
+     ```yaml
+     volumes:
+       - ./.env:/app/.env  # Must be writable for password persistence
+     ```
 
 ---
 
 ## Troubleshooting
+
+### Password not persisting in Docker
+
+**Cause:** `.env` file not mounted as a writable volume in Docker.
+
+**Solution:**
+
+1. Add `.env` volume mount to `docker-compose.yml`:
+   ```yaml
+   volumes:
+     - ./.env:/app/.env
+   ```
+2. Ensure the file has correct permissions (readable/writable by container user)
+3. Restart the container: `docker-compose down && docker-compose up -d`
+4. Check container logs: `docker logs stats-for-strava-config-tool`
+
+**Why this happens:** Docker's `env_file:` directive loads environment variables at startup but doesn't mount the file for writing. Password registration and changes require writing the hash back to `.env`.
+
+---
 
 ### "Registration not allowed"
 
