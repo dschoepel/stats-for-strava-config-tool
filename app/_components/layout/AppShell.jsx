@@ -40,7 +40,10 @@ export default function AppShell({ section = 'config', children }) {
       // Suppress known react-js-cron/antd warnings about deprecated props
       if (
         message.includes('dropdownAlign') ||
-        message.includes('popupClassName')
+        message.includes('popupClassName') ||
+        // Suppress React 19 DevTools hydration instrumentation errors
+        message.includes('React instrumentation encountered an error') ||
+        message.includes('Offscreen Fiber child in a hydrated Suspense boundary')
       ) {
         return;
       }
@@ -104,8 +107,30 @@ export default function AppShell({ section = 'config', children }) {
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)
   // isMainConfigExpanded: true for config section, false for utilities/docs
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(section === 'config')
+  // isUtilitiesExpanded: collapsed by default, persisted in localStorage
+  const [isUtilitiesExpanded, setIsUtilitiesExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sidebar-utilities-expanded');
+      if (stored !== null) return stored === 'true';
+    }
+    return false; // Default collapsed
+  })
   // isHelpExpanded: true for docs section, false for config/utilities
   const [isHelpExpanded, setIsHelpExpanded] = useState(section === 'docs')
+
+  // Auto-expand Utilities section when navigating to utilities pages
+  useEffect(() => {
+    if (pathname.includes('/utilities/')) {
+      setIsUtilitiesExpanded(true);
+    }
+  }, [pathname]);
+
+  // Persist Utilities section state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-utilities-expanded', isUtilitiesExpanded.toString());
+    }
+  }, [isUtilitiesExpanded]);
 
   const handleCloseModal = (modalName) => {
     checkAndConfirmModalClose(modalName, () => {
@@ -177,6 +202,8 @@ export default function AppShell({ section = 'config', children }) {
           onToggle={toggleSidebar}
           isMainConfigExpanded={isMainConfigExpanded}
           setIsMainConfigExpanded={setIsMainConfigExpanded}
+          isUtilitiesExpanded={isUtilitiesExpanded}
+          setIsUtilitiesExpanded={setIsUtilitiesExpanded}
           isHelpExpanded={isHelpExpanded}
           setIsHelpExpanded={setIsHelpExpanded}
           handleNavClick={handleNavClick}

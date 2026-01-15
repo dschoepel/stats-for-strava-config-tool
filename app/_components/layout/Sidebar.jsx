@@ -137,6 +137,8 @@ export default function Sidebar({
   onToggle,
   isMainConfigExpanded,
   setIsMainConfigExpanded,
+  isUtilitiesExpanded,
+  setIsUtilitiesExpanded,
   isHelpExpanded,
   setIsHelpExpanded,
   handleNavClick
@@ -148,6 +150,14 @@ export default function Sidebar({
   const yamlUtilityPage = pages['YAML Utility'];
   const documentationPage = pages['Documentation'];
   const documentationChildren = getChildren('Documentation');
+
+  // Create Utilities section page object
+  const utilitiesPage = {
+    id: 'utilities',
+    label: 'Utilities',
+    icon: 'MdConstruction',
+    path: null
+  };
 
   return (
     <>
@@ -248,21 +258,39 @@ export default function Sidebar({
             ))}
           </MenuItemWithSubmenu>
 
-          {/* Gear Maintenance */}
-          <MenuItem
-            page={gearMaintenancePage}
-            onClick={(e) => { e.preventDefault(); handleNavClick('Gear Maintenance'); }}
+          {/* Utilities with submenu */}
+          <MenuItemWithSubmenu
+            page={utilitiesPage}
+            isExpanded={isUtilitiesExpanded}
             isCollapsed={isCollapsed}
             onToggleSidebar={onToggle}
-          />
+            onClick={(e) => {
+              e.preventDefault();
+              if (isCollapsed) {
+                onToggle();
+                setIsUtilitiesExpanded(true);
+              } else {
+                setIsUtilitiesExpanded(!isUtilitiesExpanded);
+              }
+            }}
+            onToggle={() => setIsUtilitiesExpanded(!isUtilitiesExpanded)}
+          >
+            {/* Gear Maintenance */}
+            <MenuItem
+              page={gearMaintenancePage}
+              onClick={(e) => { e.preventDefault(); handleNavClick('Gear Maintenance'); }}
+              isSubmenu
+              onToggleSidebar={onToggle}
+            />
 
-          {/* YAML Utility */}
-          <MenuItem
-            page={yamlUtilityPage}
-            onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility'); }}
-            isCollapsed={isCollapsed}
-            onToggleSidebar={onToggle}
-          />
+            {/* YAML Utility */}
+            <MenuItem
+              page={yamlUtilityPage}
+              onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility'); }}
+              isSubmenu
+              onToggleSidebar={onToggle}
+            />
+          </MenuItemWithSubmenu>
 
           {/* Documentation with submenu */}
           <MenuItemWithSubmenu
