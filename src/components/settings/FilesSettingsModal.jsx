@@ -45,19 +45,23 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
   // Open backup manager when triggered from notification
   useEffect(() => {
     if (shouldOpenBackupManager && !showManageBackups) {
-      setShowManageBackups(true);
-      if (onBackupManagerOpened) {
-        onBackupManagerOpened();
-      }
+      // Use setTimeout to defer state update to next tick
+      const timer = setTimeout(() => {
+        setShowManageBackups(true);
+        if (onBackupManagerOpened) {
+          onBackupManagerOpened();
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [shouldOpenBackupManager, showManageBackups, onBackupManagerOpened]);
 
   useEffect(() => {
     if (isOpen) {
-      // Reset dirty flag immediately when modal opens
-      setIsDirty(false);
-      
       const loadAndExpandSettings = async () => {
+        // Reset dirty flag before loading settings
+        setIsDirty(false);
+        
         const loaded = await loadSettings();
         
         // Expand the default path if it contains tilde
@@ -84,8 +88,12 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
       loadAndExpandSettings();
     } else {
       // Reset state when modal closes to prevent stale state on next open
-      setIsDirty(false);
-      setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      // Use setTimeout to defer state update to next tick
+      const timer = setTimeout(() => {
+        setIsDirty(false);
+        setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
