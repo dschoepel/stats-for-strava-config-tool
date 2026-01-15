@@ -81,8 +81,9 @@ export default function AppShell({ section = 'config', children }) {
             directory: result.directory
           });
 
-          // Parse sections to build mapping
-          const parseResult = await parseSectionsService(result.files);
+          // Parse sections to build mapping (exclude gear-maintenance files)
+          const filesToParse = result.files.filter(file => !file.isGearMaintenance);
+          const parseResult = await parseSectionsService(filesToParse);
           if (parseResult.success) {
             const mappingToUse = parseResult.detailedMapping || parseResult.sectionMapping;
             const newMapping = new Map(Object.entries(mappingToUse));
