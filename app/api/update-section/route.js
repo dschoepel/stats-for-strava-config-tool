@@ -505,10 +505,10 @@ export async function POST(request) {
         await fs.copyFile(filePath, backupPath);
         console.log('[UPDATE-SECTION] Backup created:', backupPath);
         
-        // Count total backups
+        // Count total backups (all YAML files in backup folder)
         const files = await fs.readdir(backupDir);
         backupCount = files.filter(f => 
-          (f.endsWith('.yaml') || f.endsWith('.yml')) && f.includes('_backup_')
+          f.endsWith('.yaml') || f.endsWith('.yml')
         ).length;
         console.log('[UPDATE-SECTION] Total backups:', backupCount);
       } else {

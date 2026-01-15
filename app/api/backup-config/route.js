@@ -56,12 +56,12 @@ export async function POST(request) {
     // Get file stats
     const stats = await fs.stat(backupPath);
     
-    // Count total backups in directory
+    // Count total backups in directory (all YAML files)
     let backupCount = 0;
     try {
       const files = await fs.readdir(backupDir);
       backupCount = files.filter(f => 
-        (f.endsWith('.yaml') || f.endsWith('.yml')) && f.includes('_backup_')
+        f.endsWith('.yaml') || f.endsWith('.yml')
       ).length;
     } catch {
       backupCount = 1; // At least the file we just created
