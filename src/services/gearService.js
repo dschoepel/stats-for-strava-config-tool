@@ -3,6 +3,8 @@
  * Provides a centralized API layer for gear-related operations
  */
 
+import { emitConfigSaveEvent } from '../utils/configEvents';
+
 /**
  * Base fetch wrapper with error handling
  */
@@ -53,10 +55,17 @@ export async function loadGearMaintenance(defaultPath) {
  * @returns {Promise<{success: boolean, path: string, message?: string}>}
  */
 export async function saveGearMaintenance({ defaultPath, config }) {
-  return fetchAPI('/api/gear-maintenance', {
+  const result = await fetchAPI('/api/gear-maintenance', {
     method: 'POST',
     body: JSON.stringify({ defaultPath, config })
   });
+  
+  // Emit config save event on success
+  if (result.success) {
+    emitConfigSaveEvent();
+  }
+  
+  return result;
 }
 
 /**

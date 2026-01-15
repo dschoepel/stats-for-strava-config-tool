@@ -3,6 +3,8 @@
  * Provides a centralized API layer for config-related operations
  */
 
+import { emitConfigSaveEvent } from '../utils/configEvents';
+
 /**
  * Base fetch wrapper with error handling
  */
@@ -92,10 +94,17 @@ export async function validateSections(sectionMapping) {
  * @returns {Promise<{success: boolean, message?: string}>}
  */
 export async function updateSection({ filePath, sectionName, sectionData, isAthlete, preserveNestedKeys }) {
-  return fetchAPI('/api/update-section', {
+  const result = await fetchAPI('/api/update-section', {
     method: 'POST',
     body: JSON.stringify({ filePath, sectionName, sectionData, isAthlete, preserveNestedKeys })
   });
+  
+  // Emit config save event on success
+  if (result.success) {
+    emitConfigSaveEvent();
+  }
+  
+  return result;
 }
 
 /**

@@ -3,6 +3,8 @@
  * Provides a centralized API layer for file-related operations
  */
 
+import { emitConfigSaveEvent } from '../utils/configEvents';
+
 /**
  * Base fetch wrapper with error handling
  */
@@ -52,10 +54,17 @@ export async function readFile(path) {
  * @returns {Promise<{success: boolean, path: string, message?: string}>}
  */
 export async function saveFile(filePath, content) {
-  return fetchAPI('/api/save-file', {
+  const result = await fetchAPI('/api/save-file', {
     method: 'POST',
     body: JSON.stringify({ path: filePath, content })
   });
+  
+  // Emit config save event on success for YAML files
+  if (result.success && (filePath.endsWith('.yaml') || filePath.endsWith('.yml'))) {
+    emitConfigSaveEvent();
+  }
+  
+  return result;
 }
 
 /**
