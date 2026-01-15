@@ -3,11 +3,16 @@ services:
     image: ghcr.io/dschoepel/stats-for-strava-config-tool:latest
     container_name: stats-for-strava-config-tool
     restart: unless-stopped
-    env_file:
-      - .env  # Load environment variables from .env file
+    
+    # Note: Use a separate .env file for config-tool to avoid Docker Compose variable expansion warnings
+    # The password hash contains $ characters which conflict with Docker Compose's ${VAR} syntax
+    environment:
+      - TZ=${TZ}
+      - USERMAP_UID=${USERMAP_UID}
+      - USERMAP_GID=${USERMAP_GID}
 
     volumes: 
-      - ./.env:/app/.env  # Mount .env file for persistence (must be writable)
+      - ./.env.config-tool:/app/.env  # Separate .env file with auth variables (must be writable)
       - ./statistics-for-strava/config:/data/statistics-for-strava/config  #Match this to your stats for strava config directory
       - ./statistics-for-strava/storage:/data/statistics-for-strava/storage  # Gear maintenance images and other storage
       - ./statistics-for-strava/logs:/data/logs  # Application and service logs
