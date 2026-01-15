@@ -543,12 +543,19 @@ All routes are protected by default and require authentication **except**:
 
    - **Mount `.env` as a volume** - Password hashes must persist outside the container
    - **Ensure write permissions** - The container user must be able to write to `.env`
+   - **Use a separate .env file** - Avoid Docker Compose variable expansion warnings
    - Use Docker secrets for `SESSION_SECRET` in production
-   - **Required docker-compose.yml volume:**
+   - **Recommended docker-compose.yml setup:**
      ```yaml
-     volumes:
-       - ./.env:/app/.env  # Must be writable for password persistence
+     config-tool:
+       environment:
+         - TZ=${TZ}
+         - USERMAP_UID=${USERMAP_UID}
+         - USERMAP_GID=${USERMAP_GID}
+       volumes:
+         - ./.env.config-tool:/app/.env  # Separate file avoids ${VAR} conflicts
      ```
+   - **Why separate file?** Bcrypt hashes contain `$` characters (e.g., `$2a$10$...`) which Docker Compose interprets as variable expansion syntax `${VAR}`. Using a dedicated `.env.config-tool` file prevents warning messages when running `docker-compose up`.
 
 ---
 
