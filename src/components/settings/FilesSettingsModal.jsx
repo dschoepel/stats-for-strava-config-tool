@@ -183,7 +183,6 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
         const result = await updateEnv('DEFAULT_STATS_CONFIG_PATH', newDefaultPath);
         
         if (result.success) {
-          console.log('✅ DEFAULT_STATS_CONFIG_PATH updated successfully');
           envUpdates.push('DEFAULT_STATS_CONFIG_PATH');
         } else {
           console.error('Failed to update DEFAULT_STATS_CONFIG_PATH:', result.error);
@@ -194,14 +193,13 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
         anyFailed = true;
       }
     }
-    
+
     // If gear maintenance path changed, update .env file
     if (newGearMaintenancePath) {
       try {
         const result = await updateEnv('DEFAULT_GEAR_MAINTENANCE_PATH', newGearMaintenancePath);
         
         if (result.success) {
-          console.log('✅ DEFAULT_GEAR_MAINTENANCE_PATH updated successfully');
           envUpdates.push('DEFAULT_GEAR_MAINTENANCE_PATH');
         } else {
           console.error('Failed to update DEFAULT_GEAR_MAINTENANCE_PATH:', result.error);

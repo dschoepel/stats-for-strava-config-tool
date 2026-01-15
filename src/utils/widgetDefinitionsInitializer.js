@@ -42,9 +42,7 @@ async function widgetDefinitionsFileExists() {
  */
 async function createDefaultWidgetDefinitions() {
   try {
-    console.log('Creating default widget definitions file...');
     await writeWidgetDefinitions(initialWidgetDefinitions);
-    console.log('✅ Default widget definitions created');
     return true;
   } catch (error) {
     console.error('Error creating default widget definitions:', error);
@@ -213,10 +211,8 @@ async function syncWidgetDefinitionsWithConfig(configWidgets) {
     // Save updated definitions if there were changes
     if (hasChanges) {
       await writeWidgetDefinitions(definitions);
-      console.log('✅ Widget definitions synced with config file');
       return true;
     } else {
-      console.log('No changes needed to widget definitions');
       return false;
     }
     

@@ -103,11 +103,8 @@ export const NotificationProvider = ({ children }) => {
     const buildFilesNotificationExists = initialNotifications.some(n => n.id === BUILD_FILES_NOTIFICATION_ID);
     const flagValue = loadBuildFilesFlag();
     
-    console.log('[NotificationProvider] Initial validation - Flag:', flagValue, 'Notification exists:', buildFilesNotificationExists);
-    
     // If flag is true but notification doesn't exist, reset the flag
     if (flagValue && !buildFilesNotificationExists) {
-      console.log('[NotificationProvider] Flag out of sync, resetting to false');
       saveBuildFilesFlag(false);
       return false;
     }
@@ -121,11 +118,8 @@ export const NotificationProvider = ({ children }) => {
     const backupThresholdNotificationExists = initialNotifications.some(n => n.id === BACKUP_THRESHOLD_NOTIFICATION_ID);
     const flagValue = loadBackupThresholdFlag();
     
-    console.log('[NotificationProvider] Backup threshold validation - Flag:', flagValue, 'Notification exists:', backupThresholdNotificationExists);
-    
     // If flag is true but notification doesn't exist, reset the flag
     if (flagValue && !backupThresholdNotificationExists) {
-      console.log('[NotificationProvider] Backup threshold flag out of sync, resetting to false');
       saveBackupThresholdFlag(false);
       return false;
     }
@@ -176,11 +170,8 @@ export const NotificationProvider = ({ children }) => {
 
   // Add config save notification (only once until cleared)
   const addConfigSaveNotification = useCallback(() => {
-    console.log('[NotificationProvider] addConfigSaveNotification called, flag:', hasSavedConfigNotification);
-    
     // Check if notification already shown
     if (hasSavedConfigNotification) {
-      console.log('[NotificationProvider] Notification already shown, skipping');
       return;
     }
 
@@ -189,11 +180,8 @@ export const NotificationProvider = ({ children }) => {
       // Check if this notification already exists
       const exists = prev.some(n => n.id === BUILD_FILES_NOTIFICATION_ID);
       if (exists) {
-        console.log('[NotificationProvider] Notification already exists in list, skipping');
         return prev;
       }
-
-      console.log('[NotificationProvider] Creating new build-files notification');
       const newNotification = {
         id: BUILD_FILES_NOTIFICATION_ID,
         type: 'info',
@@ -213,18 +201,14 @@ export const NotificationProvider = ({ children }) => {
     });
 
     // Set flag to prevent duplicate notifications
-    console.log('[NotificationProvider] Setting flag to true');
     setHasSavedConfigNotification(true);
     saveBuildFilesFlag(true);
   }, [hasSavedConfigNotification]);
 
   // Add backup threshold notification (only once until cleared)
   const addBackupThresholdNotification = useCallback((backupCount, threshold) => {
-    console.log('[NotificationProvider] addBackupThresholdNotification called, flag:', hasShownBackupThreshold, 'count:', backupCount, 'threshold:', threshold);
-    
     // Check if notification already shown
     if (hasShownBackupThreshold) {
-      console.log('[NotificationProvider] Backup threshold notification already shown, skipping');
       return;
     }
 
@@ -233,11 +217,8 @@ export const NotificationProvider = ({ children }) => {
       // Check if this notification already exists
       const exists = prev.some(n => n.id === BACKUP_THRESHOLD_NOTIFICATION_ID);
       if (exists) {
-        console.log('[NotificationProvider] Backup threshold notification already exists in list, skipping');
         return prev;
       }
-
-      console.log('[NotificationProvider] Creating new backup threshold notification');
       const newNotification = {
         id: BACKUP_THRESHOLD_NOTIFICATION_ID,
         type: 'warning',
@@ -261,7 +242,6 @@ export const NotificationProvider = ({ children }) => {
     });
 
     // Set flag to prevent duplicate notifications
-    console.log('[NotificationProvider] Setting backup threshold flag to true');
     setHasShownBackupThreshold(true);
     saveBackupThresholdFlag(true);
   }, [hasShownBackupThreshold]);
@@ -311,25 +291,18 @@ export const NotificationProvider = ({ children }) => {
 
   // Clear all notifications
   const clearAll = useCallback(() => {
-    console.log('[NotificationProvider] clearAll called');
-    
     // Check if build-files notification exists before clearing
     const hasBuildFilesNotification = notifications.some(n => n.id === BUILD_FILES_NOTIFICATION_ID);
     const hasBackupThresholdNotification = notifications.some(n => n.id === BACKUP_THRESHOLD_NOTIFICATION_ID);
     
-    console.log('[NotificationProvider] Has build-files notification:', hasBuildFilesNotification);
-    console.log('[NotificationProvider] Has backup threshold notification:', hasBackupThresholdNotification);
-    
     // Reset flag if build-files notification is being cleared
     if (hasBuildFilesNotification) {
-      console.log('[NotificationProvider] Resetting build-files flag to false');
       setHasSavedConfigNotification(false);
       saveBuildFilesFlag(false);
     }
     
     // Reset flag if backup threshold notification is being cleared
     if (hasBackupThresholdNotification) {
-      console.log('[NotificationProvider] Resetting backup threshold flag to false');
       setHasShownBackupThreshold(false);
       saveBackupThresholdFlag(false);
     }

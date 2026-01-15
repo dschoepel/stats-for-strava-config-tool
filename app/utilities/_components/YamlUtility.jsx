@@ -65,7 +65,7 @@ const YamlUtility = () => {
     
     const defaultPath = getSetting('files.defaultPath', '');
     if (!defaultPath) {
-      alert('Please set a default file path in Settings before creating new files.');
+      showError('Please set a default file path in Settings before creating new files.');
       return;
     }
     
@@ -100,8 +100,6 @@ const YamlUtility = () => {
 
   const handleSaveNewFile = async (apiResult) => {
     try {
-      console.log('handleSaveNewFile called with:', apiResult);
-      
       // Create backup before saving if autoBackup is enabled and file already exists
       if (apiResult && apiResult.path) {
         const settings = loadSettings();
@@ -152,14 +150,7 @@ const YamlUtility = () => {
   };
 
   const handleOpenExistingFile = async () => {
-    console.log('[YamlUtility] handleOpenExistingFile called');
-    console.log('[YamlUtility] existingFilePathRef.current:', existingFilePathRef.current);
-    
-    closeFileExistsDialog();
-    closeFileNameDialog();
-    
     const filePathToLoad = existingFilePathRef.current;
-    console.log('[YamlUtility] Loading existing file:', filePathToLoad);
     
     if (!filePathToLoad) {
       console.error('[YamlUtility] No file path to load');

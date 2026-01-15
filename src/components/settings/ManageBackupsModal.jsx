@@ -55,18 +55,14 @@ export default function ManageBackupsModal({ isOpen, onClose, backupDir }) {
   // Fetch backups from API
   const fetchBackups = useCallback(async () => {
     if (!backupDir) {
-      console.log('[ManageBackupsModal] No backupDir provided');
       return;
     }
-    
-    console.log('[ManageBackupsModal] Fetching backups from directory:', backupDir);
     
     setLoading(true);
     setError('');
     
     try {
       const queryUrl = `/api/backup-config?directory=${encodeURIComponent(backupDir)}`;
-      console.log('[ManageBackupsModal] Query URL:', queryUrl);
       const response = await fetch(queryUrl);
       
       if (!response.ok) {

@@ -65,9 +65,7 @@ export const ConfigProvider = ({ children }) => {
       // Initialize widget definitions
       initializeWidgetDefinitions(sectionToFileMap)
         .then(result => {
-          if (result.success) {
-            console.log('✅ Widget definitions initialization complete:', result.message);
-          } else {
+          if (!result.success) {
             console.error('❌ Widget definitions initialization failed:', result.message);
           }
         })
@@ -78,9 +76,7 @@ export const ConfigProvider = ({ children }) => {
       // Initialize sports list
       initializeSportsList()
         .then(result => {
-          if (result.success) {
-            console.log('✅ Sports list initialization complete:', result.message);
-          } else {
+          if (!result.success) {
             console.error('❌ Sports list initialization failed:', result.message);
           }
         })

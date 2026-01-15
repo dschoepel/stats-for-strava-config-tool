@@ -122,15 +122,17 @@ export default function AppShell({ section = 'config', children }) {
   // isMainConfigExpanded: true for config section, false for utilities/docs
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(section === 'config')
   // isUtilitiesExpanded: collapsed by default, persisted in localStorage
-  const [isUtilitiesExpanded, setIsUtilitiesExpanded] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('sidebar-utilities-expanded');
-      if (stored !== null) return stored === 'true';
-    }
-    return false; // Default collapsed
-  })
+  const [isUtilitiesExpanded, setIsUtilitiesExpanded] = useState(false)
   // isHelpExpanded: true for docs section, false for config/utilities
   const [isHelpExpanded, setIsHelpExpanded] = useState(section === 'docs')
+
+  // Hydrate from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    const stored = localStorage.getItem('sidebar-utilities-expanded');
+    if (stored !== null) {
+      setIsUtilitiesExpanded(stored === 'true');
+    }
+  }, []);
 
   // Auto-expand Utilities section when navigating to utilities pages
   useEffect(() => {
@@ -141,9 +143,7 @@ export default function AppShell({ section = 'config', children }) {
 
   // Persist Utilities section state to localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebar-utilities-expanded', isUtilitiesExpanded.toString());
-    }
+    localStorage.setItem('sidebar-utilities-expanded', isUtilitiesExpanded.toString());
   }, [isUtilitiesExpanded]);
 
   const handleCloseModal = (modalName) => {

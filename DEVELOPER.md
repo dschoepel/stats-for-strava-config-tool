@@ -14,6 +14,7 @@ This guide provides technical documentation for developers working on the Stats 
 - [State Management](#state-management)
 - [Styling Guidelines](#styling-guidelines)
 - [Development Workflow](#development-workflow)
+- [Debug Logging](#debug-logging)
 
 ## Architecture Overview
 
@@ -78,6 +79,93 @@ A comprehensive refactoring effort was completed in January 2026, focusing on co
 - Reduced cognitive load when making changes
 
 **Reusability:**
+
+## Debug Logging
+
+The application includes a configurable debug logging system that allows you to enable verbose console logging during development or troubleshooting.
+
+### Environment Variable
+
+Set the `NEXT_PUBLIC_ENABLE_DEBUG_LOGS` environment variable to control debug output:
+
+```bash
+# In your .env.local file for local development
+NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true
+
+# In your .env.config-tool file for Docker
+NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true
+```
+
+**Default:** `false` (debug logs disabled)
+
+### Using Debug Functions
+
+Import and use the debug utility functions in your code:
+
+```javascript
+import { debugLog, debugWarn, isDebugEnabled } from '../utils/debug';
+
+// Use debugLog for verbose logging that should be gated
+debugLog('Processing section:', sectionName);
+debugLog('Data preview:', JSON.stringify(data).substring(0, 200));
+
+// Use debugWarn for debug warnings
+debugWarn('Potential issue detected:', issue);
+
+// Check if debug is enabled
+if (isDebugEnabled()) {
+  // Expensive debug operation
+}
+```
+
+### Guidelines
+
+**When to use debug logging:**
+- Verbose flow tracking (section loading, file parsing)
+- Data structure previews and transformations
+- Path resolution and file system operations
+- Non-critical informational messages
+- Temporary debugging during development
+
+**When NOT to use debug logging:**
+- Error conditions (use `console.error` directly)
+- Critical warnings (use `console.warn` directly)
+- User-facing messages (use toast notifications)
+- Security-sensitive information (never log credentials)
+
+**Benefits:**
+- Clean production logs by default
+- Granular control for troubleshooting
+- No need to remove/comment debug statements
+- Easy to enable in production when needed
+
+### Debug Log Categories
+
+The following areas have debug logging implemented:
+
+1. **Configuration Section Loading** (`src/hooks/useConfigData.js`)
+   - Section file mapping and resolution
+   - YAML parsing and data extraction
+
+2. **File Updates** (`app/api/update-section/route.js`)
+   - Backup creation and management
+   - YAML content transformation
+   - Comment preservation tracking
+
+3. **Section Parsing** (`app/api/parse-sections/route.js`)
+   - Split file detection
+   - Section mapping creation
+
+### Local Development
+
+For local development, create a `.env.local` file:
+
+```bash
+# .env.local
+NEXT_PUBLIC_ENABLE_DEBUG_LOGS=true
+```
+
+This enables verbose logging during development without affecting production builds.
 - Form field components used across multiple sections
 - Shared validation and error handling logic
 - Consistent UI/UX through component reuse
