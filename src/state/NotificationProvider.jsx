@@ -72,22 +72,23 @@ const saveBuildFilesFlag = (value) => {
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState(() => loadNotifications());
-  const [hasSavedConfigNotification, setHasSavedConfigNotification] = useState(() => loadBuildFilesFlag());
-
-  // Validate flag against actual notifications on mount (self-healing)
-  useEffect(() => {
-    const buildFilesNotificationExists = notifications.some(n => n.id === BUILD_FILES_NOTIFICATION_ID);
+  const [hasSavedConfigNotification, setHasSavedConfigNotification] = useState(() => {
+    // Validate flag against actual notifications during initialization (self-healing)
+    const initialNotifications = loadNotifications();
+    const buildFilesNotificationExists = initialNotifications.some(n => n.id === BUILD_FILES_NOTIFICATION_ID);
     const flagValue = loadBuildFilesFlag();
     
-    console.log('[NotificationProvider] Mount validation - Flag:', flagValue, 'Notification exists:', buildFilesNotificationExists);
+    console.log('[NotificationProvider] Initial validation - Flag:', flagValue, 'Notification exists:', buildFilesNotificationExists);
     
     // If flag is true but notification doesn't exist, reset the flag
     if (flagValue && !buildFilesNotificationExists) {
       console.log('[NotificationProvider] Flag out of sync, resetting to false');
-      setHasSavedConfigNotification(false);
       saveBuildFilesFlag(false);
+      return false;
     }
-  }, []); // Only run on mount
+    
+    return flagValue;
+  });
 
   // Save to localStorage whenever notifications change (after hydration)
   useEffect(() => {
