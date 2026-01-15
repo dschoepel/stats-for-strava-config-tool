@@ -285,10 +285,9 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
         {error && (
           <Flex
             bg="red.50"
-            _dark={{ bg: "red.900/30" }}
+            _dark={{ bg: "red.900/30", borderColor: "red.700" }}
             borderBottomWidth="1px"
             borderColor="red.300"
-            _dark={{ borderColor: "red.700" }}
             p={{ base: 2, sm: 3 }}
             align="center"
             gap={2}
@@ -303,10 +302,9 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
         {validationError && (
           <Flex
             bg="orange.50"
-            _dark={{ bg: "orange.900/30" }}
+            _dark={{ bg: "orange.900/30", borderColor: "orange.700" }}
             borderBottomWidth="1px"
             borderColor="orange.300"
-            _dark={{ borderColor: "orange.700" }}
             p={{ base: 2, sm: 3 }}
             align="flex-start"
             gap={2}
