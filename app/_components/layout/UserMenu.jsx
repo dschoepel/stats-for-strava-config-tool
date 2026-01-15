@@ -244,6 +244,25 @@ export default function UserMenu() {
                             <Text fontSize="sm" color="text">
                               {notification.message}
                             </Text>
+                            {notification.action && (
+                              <Button
+                                size="xs"
+                                colorPalette="blue"
+                                variant="outline"
+                                onClick={() => {
+                                  // Mark as read when action is clicked
+                                  markAsRead(notification.id);
+                                  // Handle action
+                                  if (notification.action.type === 'open-backup-manager') {
+                                    // Emit custom event to open backup manager
+                                    window.dispatchEvent(new CustomEvent('open-backup-manager'));
+                                  }
+                                }}
+                                mt={1}
+                              >
+                                {notification.action.label}
+                              </Button>
+                            )}
                             <Text fontSize="xs" color="text" opacity={0.7}>
                               {formatTime(notification.createdAt)}
                             </Text>

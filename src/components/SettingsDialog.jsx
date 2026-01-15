@@ -18,7 +18,7 @@ import ImportExportModal from './settings/ImportExportModal';
  * Unified settings dialog with tabs for different setting categories
  * Consolidates 5 separate modals into one tabbed interface
  */
-const SettingsDialog = ({ isOpen, onClose, initialTab = 'ui' }) => {
+const SettingsDialog = ({ isOpen, onClose, initialTab = 'ui', shouldOpenBackupManager = false, onBackupManagerOpened }) => {
   if (!isOpen) return null;
 
   const tabs = [
@@ -116,7 +116,13 @@ const SettingsDialog = ({ isOpen, onClose, initialTab = 'ui' }) => {
               <UISettingsModal isOpen onClose={onClose} embedded />
             </Tabs.Content>
             <Tabs.Content value="files" p={0}>
-              <FilesSettingsModal isOpen onClose={onClose} embedded />
+              <FilesSettingsModal 
+                isOpen 
+                onClose={onClose} 
+                embedded 
+                shouldOpenBackupManager={shouldOpenBackupManager}
+                onBackupManagerOpened={onBackupManagerOpened}
+              />
             </Tabs.Content>
             <Tabs.Content value="editor" p={0}>
               <EditorSettingsModal isOpen onClose={onClose} embedded />

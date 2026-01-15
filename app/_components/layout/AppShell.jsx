@@ -103,8 +103,22 @@ export default function AppShell({ section = 'config', children }) {
     initializeConfig();
   }, [section, hasConfigInitialized, settings.files?.defaultPath, updateFileCache, updateSectionToFileMap, updateHasConfigInitialized]);
 
+  // Listen for open-backup-manager event from notifications
+  useEffect(() => {
+    const handleOpenBackupManager = () => {
+      // Open Settings dialog with Files tab
+      setActiveSettingsModal('files');
+      // Signal that backup manager should open
+      setShouldOpenBackupManager(true);
+    };
+
+    window.addEventListener('open-backup-manager', handleOpenBackupManager);
+    return () => window.removeEventListener('open-backup-manager', handleOpenBackupManager);
+  }, []);
+
   // Keep local UI state only
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)
+  const [shouldOpenBackupManager, setShouldOpenBackupManager] = useState(false)
   // isMainConfigExpanded: true for config section, false for utilities/docs
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(section === 'config')
   // isUtilitiesExpanded: collapsed by default, persisted in localStorage
@@ -274,8 +288,13 @@ export default function AppShell({ section = 'config', children }) {
       {/* Unified Settings Dialog */}
       <SettingsDialog
         isOpen={['ui', 'files', 'editor', 'validation', 'importExport'].includes(activeSettingsModal)}
-        onClose={() => setActiveSettingsModal(null)}
+        onClose={() => {
+          setActiveSettingsModal(null);
+          setShouldOpenBackupManager(false);
+        }}
         initialTab={activeSettingsModal || 'ui'}
+        shouldOpenBackupManager={shouldOpenBackupManager}
+        onBackupManagerOpened={() => setShouldOpenBackupManager(false)}
       />
 
       {/* Sports List and Widget Definitions as full-screen modals */}

@@ -32,6 +32,12 @@ export async function POST(request) {
     const fileName = path.basename(filePath);
     const backupDir = backupDirectory || path.join(fileDir, 'config-backups');
     
+    console.log('[BACKUP-CONFIG POST] Saving backup:');
+    console.log('  - Original file:', filePath);
+    console.log('  - File directory:', fileDir);
+    console.log('  - Backup directory:', backupDir);
+    console.log('  - backupDirectory param:', backupDirectory);
+    
     // Create backup directory if it doesn't exist
     await fs.mkdir(backupDir, { recursive: true });
     
@@ -50,6 +56,17 @@ export async function POST(request) {
     // Get file stats
     const stats = await fs.stat(backupPath);
     
+    // Count total backups in directory
+    let backupCount = 0;
+    try {
+      const files = await fs.readdir(backupDir);
+      backupCount = files.filter(f => 
+        (f.endsWith('.yaml') || f.endsWith('.yml')) && f.includes('_backup_')
+      ).length;
+    } catch {
+      backupCount = 1; // At least the file we just created
+    }
+    
     return NextResponse.json({
       success: true,
       backupPath,
@@ -57,7 +74,8 @@ export async function POST(request) {
       backupDirectory: backupDir,
       originalPath: filePath,
       size: stats.size,
-      timestamp: stats.mtime
+      timestamp: stats.mtime,
+      backupCount
     });
     
   } catch (error) {
@@ -75,6 +93,9 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const directory = searchParams.get('directory');
     
+    console.log('[BACKUP-CONFIG GET] Listing backups:');
+    console.log('  - Directory param:', directory);
+    
     if (!directory) {
       return NextResponse.json({
         success: false,
@@ -83,6 +104,7 @@ export async function GET(request) {
     }
     
     const backupDir = path.join(directory, 'config-backups');
+    console.log('  - Looking in:', backupDir);
     
     try {
       await fs.access(backupDir);
@@ -104,17 +126,17 @@ export async function GET(request) {
         const stats = await fs.stat(filePath);
         
         backups.push({
-          fileName: file,
+          name: file,
           path: filePath,
           size: stats.size,
-          created: stats.mtime,
+          modifiedTime: stats.mtime,
           isBackup: file.includes('_backup_')
         });
       }
     }
     
     // Sort by creation date, newest first
-    backups.sort((a, b) => b.created - a.created);
+    backups.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
     
     return NextResponse.json({
       success: true,
@@ -125,6 +147,73 @@ export async function GET(request) {
     
   } catch (error) {
     console.error('List backups API error:', error);
+    return NextResponse.json({
+      success: false,
+      error: error.message
+    }, { status: 500 });
+  }
+}
+
+// DELETE endpoint to remove backup files
+export async function DELETE(request) {
+  try {
+    const { filePaths } = await request.json();
+    
+    if (!filePaths || !Array.isArray(filePaths) || filePaths.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'filePaths array is required'
+      }, { status: 400 });
+    }
+    
+    // Enforce maximum 50 files
+    if (filePaths.length > 50) {
+      return NextResponse.json({
+        success: false,
+        error: 'Cannot delete more than 50 files at once'
+      }, { status: 400 });
+    }
+    
+    // Verify all paths contain 'backup' for safety
+    const invalidPaths = filePaths.filter(p => !p.includes('backup'));
+    if (invalidPaths.length > 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'All file paths must contain "backup" for safety'
+      }, { status: 400 });
+    }
+    
+    // Delete files in parallel
+    const deleteResults = await Promise.allSettled(
+      filePaths.map(async (filePath) => {
+        try {
+          await fs.unlink(filePath);
+          return { success: true, path: filePath };
+        } catch (error) {
+          return { success: false, path: filePath, error: error.message };
+        }
+      })
+    );
+    
+    // Count successful deletions
+    const deletedPaths = deleteResults
+      .filter(r => r.status === 'fulfilled' && r.value.success)
+      .map(r => r.value.path);
+    
+    const failedPaths = deleteResults
+      .filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success))
+      .map(r => r.status === 'fulfilled' ? r.value.path : r.reason);
+    
+    return NextResponse.json({
+      success: true,
+      deletedCount: deletedPaths.length,
+      deletedPaths,
+      failedCount: failedPaths.length,
+      failedPaths
+    });
+    
+  } catch (error) {
+    console.error('Delete backups API error:', error);
     return NextResponse.json({
       success: false,
       error: error.message

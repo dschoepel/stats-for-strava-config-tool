@@ -65,6 +65,7 @@ const getDefaultSettings = () => ({
     defaultPath: DEFAULT_SETTINGS_PATH,
     autoBackup: true,
     backupsDir: DEFAULT_SETTINGS_PATH, // Directory where backups folder will be created
+    backupThreshold: 10, // Number of backup files threshold for notification
     validateOnLoad: true,
     gearMaintenancePath: '/data/statistics-for-strava/storage/gear-maintenance', // Path for gear maintenance images
   },

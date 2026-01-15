@@ -146,18 +146,10 @@ export default function Sidebar({
   // Get pages from config
   const configPage = pages['Configuration'];
   const configChildren = getChildren('Configuration');
-  const gearMaintenancePage = pages['Gear Maintenance'];
-  const yamlUtilityPage = pages['YAML Utility'];
+  const utilitiesPage = pages['Utilities'];
+  const utilitiesChildren = getChildren('Utilities');
   const documentationPage = pages['Documentation'];
   const documentationChildren = getChildren('Documentation');
-
-  // Create Utilities section page object
-  const utilitiesPage = {
-    id: 'utilities',
-    label: 'Utilities',
-    icon: 'MdConstruction',
-    path: null
-  };
 
   return (
     <>
@@ -275,21 +267,18 @@ export default function Sidebar({
             }}
             onToggle={() => setIsUtilitiesExpanded(!isUtilitiesExpanded)}
           >
-            {/* Gear Maintenance */}
-            <MenuItem
-              page={gearMaintenancePage}
-              onClick={(e) => { e.preventDefault(); handleNavClick('Gear Maintenance'); }}
-              isSubmenu
-              onToggleSidebar={onToggle}
-            />
-
-            {/* YAML Utility */}
-            <MenuItem
-              page={yamlUtilityPage}
-              onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility'); }}
-              isSubmenu
-              onToggleSidebar={onToggle}
-            />
+            {utilitiesChildren.map(child => (
+              <MenuItem
+                key={child.id}
+                page={child}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavClick(child.id);
+                }}
+                isSubmenu
+                onToggleSidebar={onToggle}
+              />
+            ))}
           </MenuItemWithSubmenu>
 
           {/* Documentation with submenu */}
