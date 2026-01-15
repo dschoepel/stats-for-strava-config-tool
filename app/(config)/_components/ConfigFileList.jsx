@@ -163,8 +163,9 @@ const ConfigFileList = forwardRef((props, ref) => {
           directory: result.directory
         });
         
-        // Parse sections to build mapping
-        await parseSections(result.files);
+        // Parse sections to build mapping (exclude gear-maintenance files)
+        const filesToParse = result.files.filter(file => !file.isGearMaintenance);
+        await parseSections(filesToParse);
         
         if (result.files.length === 0) {
           showWarning('No configuration files found. Looking for config.yaml and config-*.yaml files.');
