@@ -524,7 +524,8 @@ export async function POST(request) {
     await fs.writeFile(filePath, updatedYaml, 'utf8');
 
     // Debug: Check if comments were preserved
-    debugLog('Comments preserved:', updatedYaml.includes('#'));
+    const hasComments = updatedYaml.includes('#');
+    debugLog('Comments preserved:', hasComments);
     debugLog('Updated YAML preview:', updatedYaml.substring(0, 200) + '...');
 
     return NextResponse.json({
