@@ -40,7 +40,10 @@ export default function AppShell({ section = 'config', children }) {
       // Suppress known react-js-cron/antd warnings about deprecated props
       if (
         message.includes('dropdownAlign') ||
-        message.includes('popupClassName')
+        message.includes('popupClassName') ||
+        // Suppress React 19 DevTools hydration instrumentation errors
+        message.includes('React instrumentation encountered an error') ||
+        message.includes('Offscreen Fiber child in a hydrated Suspense boundary')
       ) {
         return;
       }
@@ -100,12 +103,48 @@ export default function AppShell({ section = 'config', children }) {
     initializeConfig();
   }, [section, hasConfigInitialized, settings.files?.defaultPath, updateFileCache, updateSectionToFileMap, updateHasConfigInitialized]);
 
+  // Listen for open-backup-manager event from notifications
+  useEffect(() => {
+    const handleOpenBackupManager = () => {
+      // Open Settings dialog with Files tab
+      setActiveSettingsModal('files');
+      // Signal that backup manager should open
+      setShouldOpenBackupManager(true);
+    };
+
+    window.addEventListener('open-backup-manager', handleOpenBackupManager);
+    return () => window.removeEventListener('open-backup-manager', handleOpenBackupManager);
+  }, []);
+
   // Keep local UI state only
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)
+  const [shouldOpenBackupManager, setShouldOpenBackupManager] = useState(false)
   // isMainConfigExpanded: true for config section, false for utilities/docs
   const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(section === 'config')
+  // isUtilitiesExpanded: collapsed by default, persisted in localStorage
+  const [isUtilitiesExpanded, setIsUtilitiesExpanded] = useState(false)
   // isHelpExpanded: true for docs section, false for config/utilities
   const [isHelpExpanded, setIsHelpExpanded] = useState(section === 'docs')
+
+  // Hydrate from localStorage after mount to avoid SSR mismatch
+  useEffect(() => {
+    const stored = localStorage.getItem('sidebar-utilities-expanded');
+    if (stored !== null) {
+      setIsUtilitiesExpanded(stored === 'true');
+    }
+  }, []);
+
+  // Auto-expand Utilities section when navigating to utilities pages
+  useEffect(() => {
+    if (pathname.includes('/utilities/')) {
+      setIsUtilitiesExpanded(true);
+    }
+  }, [pathname]);
+
+  // Persist Utilities section state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebar-utilities-expanded', isUtilitiesExpanded.toString());
+  }, [isUtilitiesExpanded]);
 
   const handleCloseModal = (modalName) => {
     checkAndConfirmModalClose(modalName, () => {
@@ -177,6 +216,8 @@ export default function AppShell({ section = 'config', children }) {
           onToggle={toggleSidebar}
           isMainConfigExpanded={isMainConfigExpanded}
           setIsMainConfigExpanded={setIsMainConfigExpanded}
+          isUtilitiesExpanded={isUtilitiesExpanded}
+          setIsUtilitiesExpanded={setIsUtilitiesExpanded}
           isHelpExpanded={isHelpExpanded}
           setIsHelpExpanded={setIsHelpExpanded}
           handleNavClick={handleNavClick}
@@ -247,8 +288,13 @@ export default function AppShell({ section = 'config', children }) {
       {/* Unified Settings Dialog */}
       <SettingsDialog
         isOpen={['ui', 'files', 'editor', 'validation', 'importExport'].includes(activeSettingsModal)}
-        onClose={() => setActiveSettingsModal(null)}
+        onClose={() => {
+          setActiveSettingsModal(null);
+          setShouldOpenBackupManager(false);
+        }}
         initialTab={activeSettingsModal || 'ui'}
+        shouldOpenBackupManager={shouldOpenBackupManager}
+        onBackupManagerOpened={() => setShouldOpenBackupManager(false)}
       />
 
       {/* Sports List and Widget Definitions as full-screen modals */}

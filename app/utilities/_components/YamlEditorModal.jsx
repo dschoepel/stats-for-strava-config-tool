@@ -93,13 +93,11 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
   }, [originalContent]);
 
   const performSave = useCallback(async () => {
-    console.log('[YamlEditorModal] performSave called, saving to:', filePath);
     setIsSaving(true);
     setError(null);
 
     try {
       const result = await saveFile(filePath, content);
-      console.log('[YamlEditorModal] Save result:', result);
 
       if (result.success) {
         setOriginalContent(content);
@@ -154,11 +152,8 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     try {
       const checkResult = await checkFileExists(filePath);
       
-      console.log('[YamlEditorModal] File check result:', checkResult, 'isDirty:', isDirty, 'isNewFile:', isNewFile);
-      
       // If editing an existing file (not creating new), just save it
       if (!isNewFile) {
-        console.log('[YamlEditorModal] Editing existing file, saving directly');
         await performSave();
         return;
       }
@@ -166,20 +161,17 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
       // For new files only:
       // If file exists but no changes were made, just close
       if (checkResult.exists && !isDirty) {
-        console.log('[YamlEditorModal] File exists with no changes, closing');
         onClose();
         return;
       }
       
       // If file exists and there are changes, show overwrite dialog
       if (checkResult.exists && isDirty) {
-        console.log('[YamlEditorModal] File exists with changes, showing overwrite dialog');
         setShowOverwriteDialog(true);
         return;
       }
 
       // File doesn't exist, or exists but we need to save changes
-      console.log('[YamlEditorModal] Proceeding with save...');
       await performSave();
     } catch (error) {
       // If check fails, proceed with save anyway

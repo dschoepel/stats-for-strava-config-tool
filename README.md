@@ -142,6 +142,7 @@ config-tool:
 | `DEFAULT_STATS_CONFIG_PATH` | Recommended | `/app/config/` | Path where Stats for Strava stores config.yaml   |
 | `USERMAP_UID`               | No          | `1000`         | User ID for file permissions (Linux/Mac)         |
 | `USERMAP_GID`               | No          | `1000`         | Group ID for file permissions (Linux/Mac)        |
+| `NEXT_PUBLIC_ENABLE_DEBUG_LOGS` | No      | `false`        | Enable verbose debug logging (true/false)        |
 
 **Notes:**
 

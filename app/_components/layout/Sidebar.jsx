@@ -137,6 +137,8 @@ export default function Sidebar({
   onToggle,
   isMainConfigExpanded,
   setIsMainConfigExpanded,
+  isUtilitiesExpanded,
+  setIsUtilitiesExpanded,
   isHelpExpanded,
   setIsHelpExpanded,
   handleNavClick
@@ -144,8 +146,8 @@ export default function Sidebar({
   // Get pages from config
   const configPage = pages['Configuration'];
   const configChildren = getChildren('Configuration');
-  const gearMaintenancePage = pages['Gear Maintenance'];
-  const yamlUtilityPage = pages['YAML Utility'];
+  const utilitiesPage = pages['Utilities'];
+  const utilitiesChildren = getChildren('Utilities');
   const documentationPage = pages['Documentation'];
   const documentationChildren = getChildren('Documentation');
 
@@ -248,21 +250,36 @@ export default function Sidebar({
             ))}
           </MenuItemWithSubmenu>
 
-          {/* Gear Maintenance */}
-          <MenuItem
-            page={gearMaintenancePage}
-            onClick={(e) => { e.preventDefault(); handleNavClick('Gear Maintenance'); }}
+          {/* Utilities with submenu */}
+          <MenuItemWithSubmenu
+            page={utilitiesPage}
+            isExpanded={isUtilitiesExpanded}
             isCollapsed={isCollapsed}
             onToggleSidebar={onToggle}
-          />
-
-          {/* YAML Utility */}
-          <MenuItem
-            page={yamlUtilityPage}
-            onClick={(e) => { e.preventDefault(); handleNavClick('YAML Utility'); }}
-            isCollapsed={isCollapsed}
-            onToggleSidebar={onToggle}
-          />
+            onClick={(e) => {
+              e.preventDefault();
+              if (isCollapsed) {
+                onToggle();
+                setIsUtilitiesExpanded(true);
+              } else {
+                setIsUtilitiesExpanded(!isUtilitiesExpanded);
+              }
+            }}
+            onToggle={() => setIsUtilitiesExpanded(!isUtilitiesExpanded)}
+          >
+            {utilitiesChildren.map(child => (
+              <MenuItem
+                key={child.id}
+                page={child}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavClick(child.id);
+                }}
+                isSubmenu
+                onToggleSidebar={onToggle}
+              />
+            ))}
+          </MenuItemWithSubmenu>
 
           {/* Documentation with submenu */}
           <MenuItemWithSubmenu

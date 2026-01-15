@@ -6,6 +6,7 @@ import { system } from '../theme';
 import { ToastProvider } from '../contexts/ToastContext';
 import { SettingsProvider } from '../state/SettingsProvider';
 import { DialogProvider } from '../state/DialogProvider';
+import { NotificationProvider } from '../state/NotificationProvider';
 import { DirtyStateProvider } from '../state/DirtyStateProvider';
 import { NavigationProvider } from '../state/NavigationProvider';
 import { ConfigProvider } from '../state/ConfigProvider';
@@ -24,15 +25,17 @@ export function Providers({ children }) {
         <ToastProvider>
           <SettingsProvider>
             <DialogProvider>
-              <DirtyStateProvider>
-                <NavigationProvider>
-                  <ConfigProvider>
-                    <SportsListProvider>
-                      {children}
-                    </SportsListProvider>
-                  </ConfigProvider>
-                </NavigationProvider>
-              </DirtyStateProvider>
+              <NotificationProvider>
+                <DirtyStateProvider>
+                  <NavigationProvider>
+                    <ConfigProvider>
+                      <SportsListProvider>
+                        {children}
+                      </SportsListProvider>
+                    </ConfigProvider>
+                  </NavigationProvider>
+                </DirtyStateProvider>
+              </NotificationProvider>
             </DialogProvider>
           </SettingsProvider>
         </ToastProvider>

@@ -43,13 +43,10 @@ async function sportsListFileExists() {
  */
 async function createDefaultSportsList(defaultPath) {
   try {
-    console.log('Creating default sports list file...');
-
     const filePath = getSportsListPath();
     const result = await saveSportsList(filePath, initialSportsList);
 
     if (result.success) {
-      console.log('✅ Default sports list created');
       return true;
     } else {
       console.error('Failed to create sports list:', result.error);

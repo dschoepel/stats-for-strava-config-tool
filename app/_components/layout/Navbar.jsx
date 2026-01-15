@@ -78,16 +78,6 @@ export default function Navbar({
           Home
         </Link>
         <SettingsDropdown onSelectSetting={onSelectSetting} />
-        <Link
-          onClick={(e) => { e.preventDefault(); router.push('/docs/overview'); }}
-          color="white"
-          fontWeight="medium"
-          _hover={{ opacity: 0.8 }}
-          textDecoration="none"
-          cursor="pointer"
-        >
-          About
-        </Link>
         <UserMenu />
         <IconButton
           onClick={toggleTheme}

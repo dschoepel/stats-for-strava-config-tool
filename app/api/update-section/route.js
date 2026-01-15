@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import * as YAML from 'yaml';
+import path from 'path';
+import { debugLog } from '../../../src/utils/debug';
 
 // Configure runtime to use Node.js
 export const runtime = 'nodejs';
@@ -17,9 +19,9 @@ export async function POST(request) {
       }, { status: 400 });
     }
     
-    console.log('Updating section:', sectionName);
+    debugLog('Updating section:', sectionName);
     if (preserveNestedKeys.length > 0) {
-      console.log('Will preserve nested keys:', preserveNestedKeys);
+      debugLog('Will preserve nested keys:', preserveNestedKeys);
     }
 
     // Check if this is a nested section (e.g., "appearance.dashboard")
@@ -41,8 +43,8 @@ export async function POST(request) {
       }, { status: 400 });
     }
     
-    console.log('Original file has comments:', content.includes('#'));
-    console.log('Original content preview:', content.substring(0, 200) + '...');
+    debugLog('Original file has comments:', content.includes('#'));
+    debugLog('Original content preview:', content.substring(0, 200) + '...');
     
     // Try to parse YAML for validation, but don't fail if it's invalid
     // (we'll fix it during text replacement)
@@ -57,7 +59,7 @@ export async function POST(request) {
     }
 
     // Use custom text replacement approach to preserve comments and fix quoting
-    console.log('Using custom text replacement with proper quoting...');
+    debugLog('Using custom text replacement with proper quoting...');
     let updatedYaml;
     
     // Custom text replacement that handles proper quoting
@@ -457,18 +459,79 @@ export async function POST(request) {
       }, { status: 500 });
     }
 
+    // Create backup before writing (if auto-backup is enabled in settings)
+    let backupCount = undefined;
+    try {
+      // Settings are stored in {configFileDir}/settings/config-tool-settings.yaml
+      const fileDir = path.dirname(filePath);
+      const settingsPath = path.join(fileDir, 'settings', 'config-tool-settings.yaml');
+      let autoBackupEnabled = true; // Default to true
+      
+      debugLog('[UPDATE-SECTION] Checking backup settings...');
+      debugLog('[UPDATE-SECTION] Config file dir:', fileDir);
+      debugLog('[UPDATE-SECTION] Settings path:', settingsPath);
+      
+      try {
+        const settingsContent = await fs.readFile(settingsPath, 'utf8');
+        const settings = YAML.parse(settingsContent);
+        autoBackupEnabled = settings?.files?.autoBackup !== false;
+        debugLog('[UPDATE-SECTION] Settings loaded - autoBackup:', settings?.files?.autoBackup);
+        debugLog('[UPDATE-SECTION] Auto-backup enabled:', autoBackupEnabled);
+      } catch (settingsError) {
+        debugLog('[UPDATE-SECTION] Failed to load settings, using default (enabled):', settingsError.message);
+        // Settings file doesn't exist or can't be parsed - use default
+      }
+      
+      if (autoBackupEnabled) {
+        debugLog('[UPDATE-SECTION] Auto-backup enabled, creating backup...');
+        
+        const fileDir = path.dirname(filePath);
+        const fileName = path.basename(filePath);
+        const backupDir = path.join(fileDir, 'config-backups');
+        
+        debugLog('[UPDATE-SECTION] Backup directory:', backupDir);
+        
+        // Create backup directory if it doesn't exist
+        await fs.mkdir(backupDir, { recursive: true });
+        
+        // Generate backup filename with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const nameParts = fileName.split('.');
+        const extension = nameParts.pop();
+        const name = nameParts.join('.');
+        const backupFileName = `${name}_backup_${timestamp}.${extension}`;
+        const backupPath = path.join(backupDir, backupFileName);
+        
+        // Copy original file to backup
+        await fs.copyFile(filePath, backupPath);
+        debugLog('[UPDATE-SECTION] Backup created:', backupPath);
+        
+        // Count total backups (all YAML files in backup folder)
+        const files = await fs.readdir(backupDir);
+        backupCount = files.filter(f => 
+          f.endsWith('.yaml') || f.endsWith('.yml')
+        ).length;
+        debugLog('[UPDATE-SECTION] Total backups:', backupCount);
+      } else {
+        debugLog('[UPDATE-SECTION] Auto-backup disabled in settings');
+      }
+    } catch (backupError) {
+      console.error('[UPDATE-SECTION] Backup failed:', backupError);
+      // Don't fail the update if backup fails
+    }
+
     // Write the updated YAML back to the file
     await fs.writeFile(filePath, updatedYaml, 'utf8');
 
     // Debug: Check if comments were preserved
-    const hasComments = updatedYaml.includes('#');
-    console.log(`Comments preserved: ${hasComments}`);
-    console.log('Updated YAML preview:', updatedYaml.substring(0, 200) + '...');
+    debugLog('Comments preserved:', updatedYaml.includes('#'));
+    debugLog('Updated YAML preview:', updatedYaml.substring(0, 200) + '...');
 
     return NextResponse.json({
       success: true,
       message: `Section '${sectionName}' updated successfully`,
       filePath: filePath,
+      backupCount,
       debug: {
         commentsPreserved: hasComments,
         yamlPreview: updatedYaml.substring(0, 200)

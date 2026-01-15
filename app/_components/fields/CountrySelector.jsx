@@ -22,18 +22,12 @@ const CountrySelector = ({ value, onChange, onClose }) => {
         }
         const result = await response.json();
         
-        console.log('API Response:', result);
-        console.log('Total countries available:', result.total);
-        console.log('Data keys count:', Object.keys(result.data || {}).length);
-        
         // Convert the object to an array
         const countriesArray = Object.entries(result.data || {}).map(([code, info]) => ({
           code: code,
           name: info.country,
           region: info.region || 'Other'
         }));
-        
-        console.log('Countries array length:', countriesArray.length);
         
         // Sort by country name
         const sorted = countriesArray.sort((a, b) => 
@@ -50,7 +44,6 @@ const CountrySelector = ({ value, onChange, onClose }) => {
             regions[country.region] = true;
           }
         });
-        console.log('Regions found:', Object.keys(regions));
         setExpandedRegions(regions);
       } catch (error) {
         console.error('Error fetching countries:', error);

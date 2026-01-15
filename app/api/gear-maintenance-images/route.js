@@ -94,13 +94,6 @@ export async function POST(request) {
     const file = formData.get('file');
     const customPath = formData.get('path');
 
-    console.log('Upload request received:', { 
-      fileName: file?.name, 
-      fileSize: file?.size, 
-      fileType: file?.type,
-      customPath 
-    });
-
     if (!file) {
       return NextResponse.json({
         success: false,
@@ -127,12 +120,10 @@ export async function POST(request) {
     }
 
     const gearMaintenancePath = resolveGearMaintenancePath(customPath);
-    console.log('Resolved gear maintenance path:', gearMaintenancePath);
 
     // Ensure directory exists
     try {
       await fs.mkdir(gearMaintenancePath, { recursive: true });
-      console.log('Directory ensured:', gearMaintenancePath);
     } catch (mkdirError) {
       console.error('Failed to create directory:', mkdirError);
       return NextResponse.json({
@@ -144,7 +135,6 @@ export async function POST(request) {
     // Sanitize filename
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filePath = path.join(gearMaintenancePath, sanitizedName);
-    console.log('Target file path:', filePath);
 
     // Check if file already exists
     try {
@@ -162,8 +152,6 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await fs.writeFile(filePath, buffer);
-
-    console.log('✅ Image uploaded successfully:', filePath);
 
     return NextResponse.json({
       success: true,

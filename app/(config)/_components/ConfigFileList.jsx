@@ -82,7 +82,6 @@ const ConfigFileList = forwardRef((props, ref) => {
         const newMapping = new Map(Object.entries(mappingToUse));
         updateSectionToFileMap(newMapping);
         
-        console.log('Section mapping (using detailed):', mappingToUse);
         if (result.conflicts.length > 0) {
           console.warn('Section conflicts detected:', result.conflicts);
           const conflictDetails = result.conflicts.map(c => 
@@ -163,8 +162,9 @@ const ConfigFileList = forwardRef((props, ref) => {
           directory: result.directory
         });
         
-        // Parse sections to build mapping
-        await parseSections(result.files);
+        // Parse sections to build mapping (exclude gear-maintenance files)
+        const filesToParse = result.files.filter(file => !file.isGearMaintenance);
+        await parseSections(filesToParse);
         
         if (result.files.length === 0) {
           showWarning('No configuration files found. Looking for config.yaml and config-*.yaml files.');
@@ -268,8 +268,9 @@ const ConfigFileList = forwardRef((props, ref) => {
           });
           updateHasConfigInitialized(true);
           
-          // Parse sections to build mapping
-          await parseSections(result.files);
+          // Parse sections to build mapping (exclude gear-maintenance files)
+          const filesToParse = result.files.filter(file => !file.isGearMaintenance);
+          await parseSections(filesToParse);
           
           if (result.files.length === 0) {
             showWarning(`Default directory found but no config files present: ${result.directory}`);
@@ -295,7 +296,6 @@ const ConfigFileList = forwardRef((props, ref) => {
       initializeApp();
     } else if (hasConfigInitialized && fileCache.files.length > 0) {
       // Use cached data
-      console.log('Using cached configuration data');
       setConfigFiles(fileCache.files);
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
@@ -335,7 +335,9 @@ const ConfigFileList = forwardRef((props, ref) => {
             });
             updateHasConfigInitialized(true);
             
-            await parseSections(result.files);
+            // Parse sections to build mapping (exclude gear-maintenance files)
+            const filesToParse = result.files.filter(file => !file.isGearMaintenance);
+            await parseSections(filesToParse);
             
             if (result.files.length === 0) {
               showWarning(`No config files found in new directory: ${result.directory}`);

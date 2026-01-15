@@ -73,8 +73,11 @@ export async function GET(request) {
     for (const entry of entries) {
       if (entry.isFile()) {
         const fileName = entry.name;
-        // Check if file matches our criteria: config.yaml or config-*.yaml
-        if (fileName === 'config.yaml' || (fileName.startsWith('config-') && fileName.endsWith('.yaml'))) {
+        // Check if file matches our criteria: config.yaml, config-*.yaml, or gear-maintenance.yaml
+        const isConfigFile = fileName === 'config.yaml' || (fileName.startsWith('config-') && fileName.endsWith('.yaml'));
+        const isGearMaintenance = fileName === 'gear-maintenance.yaml' || fileName === 'gear-maintenance.yml';
+        
+        if (isConfigFile || isGearMaintenance) {
           const filePath = path.join(configPath, fileName);
           const stats = await fs.stat(filePath);
           const fileHash = await calculateFileHash(filePath);
@@ -85,7 +88,8 @@ export async function GET(request) {
             size: stats.size,
             lastModified: stats.mtime,
             hash: fileHash,
-            isMainConfig: fileName === 'config.yaml'
+            isMainConfig: fileName === 'config.yaml',
+            isGearMaintenance: isGearMaintenance // Flag to exclude from section mapping
           });
         }
       }
@@ -150,7 +154,11 @@ export async function POST(request) {
     for (const entry of entries) {
       if (entry.isFile()) {
         const fileName = entry.name;
-        if (fileName === 'config.yaml' || (fileName.startsWith('config-') && fileName.endsWith('.yaml'))) {
+        // Check if file matches our criteria: config.yaml, config-*.yaml, or gear-maintenance.yaml
+        const isConfigFile = fileName === 'config.yaml' || (fileName.startsWith('config-') && fileName.endsWith('.yaml'));
+        const isGearMaintenance = fileName === 'gear-maintenance.yaml' || fileName === 'gear-maintenance.yml';
+        
+        if (isConfigFile || isGearMaintenance) {
           const filePath = path.join(directory, fileName);
           const stats = await fs.stat(filePath);
           const fileHash = await calculateFileHash(filePath);
@@ -161,7 +169,8 @@ export async function POST(request) {
             size: stats.size,
             lastModified: stats.mtime,
             hash: fileHash,
-            isMainConfig: fileName === 'config.yaml'
+            isMainConfig: fileName === 'config.yaml',
+            isGearMaintenance: isGearMaintenance // Flag to exclude from section mapping
           });
         }
       }

@@ -89,18 +89,29 @@ export const pages = {
     sectionKey: 'daemon'
   },
 
-  // Standalone pages
+  // Utilities parent menu
+  'Utilities': {
+    id: 'Utilities',
+    label: 'Utilities',
+    parent: null,
+    icon: 'MdConstruction',
+    group: 'tools',
+    hasSubmenu: true,
+    path: null // No direct navigation - only toggles submenu
+  },
+
+  // Standalone pages (Utilities submenu)
   'Gear Maintenance': {
     id: 'Gear Maintenance',
     label: 'Gear Maintenance',
-    parent: null,
+    parent: 'Utilities',
     icon: 'MdConstruction',
     group: 'tools'
   },
   'YAML Utility': {
     id: 'YAML Utility',
     label: 'YAML Utility',
-    parent: null,
+    parent: 'Utilities',
     icon: 'SiYaml',
     group: 'tools'
   },

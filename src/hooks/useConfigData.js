@@ -134,13 +134,11 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       
       if (!sectionInfo && sectionKey === 'athlete') {
         // Fallback: if athlete section not found, try to use general section
-        console.log('Athlete section not found, trying to use general section as fallback');
         sectionInfo = sectionToFileMap.get('general');
-        console.log('Using general section for athlete data:', sectionInfo);
       }
       
       if (!sectionInfo) {
-        console.log(`No section info found for '${sectionKey}', available keys:`, Array.from(sectionToFileMap.keys()));
+        // Section info not found in mapping
       }
       
       // Handle both string filename and full object formats
@@ -151,20 +149,17 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       if (typeof sectionInfo === 'string') {
         // API returned simple mapping with just filename
         filePath = `${fileCache.directory}/${sectionInfo}`;
-        console.log(`Constructed file path from string: ${filePath}`);
       } else if (sectionInfo && sectionInfo.filePath) {
         // API returned detailed mapping with full object
         filePath = sectionInfo.filePath;
         topLevelKey = sectionInfo.topLevelKey;
         secondLevelKey = sectionInfo.secondLevelKey;
-        console.log(`Using file path from object: ${filePath}`);
         if (sectionInfo.isSplitFile) {
-          console.log(`This is a split file for ${topLevelKey}.${secondLevelKey}`);
+          // This is a split file
         }
       }
       
       if (filePath) {
-        console.log('Found section info, using file path:', filePath);
         const result = await readFile(filePath);
         
         if (result.success) {
@@ -187,11 +182,9 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
             // General section excludes athlete data
             const { athlete: _athlete, ...generalData } = parsedData.general || {};
             sectionContent = generalData;
-            console.log('Extracted general data:', sectionContent);
           } else {
             // Other sections are top-level - use sectionKey not sectionName
             sectionContent = parsedData[sectionKey] || {};
-            console.log('Extracted section data:', sectionContent);
           }
           
           setSectionData(prev => ({
@@ -250,10 +243,8 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       return { success: false, error: 'No file path found' };
     }
     
-    console.log('Saving section:', sectionKey, 'to file:', filePath);
-    console.log('Data preview:', JSON.stringify(data).substring(0, 200));
     if (preserveNestedKeys.length > 0) {
-      console.log('Preserving nested keys:', preserveNestedKeys);
+      // Preserving nested keys during save
     }
     
     // Create backup before saving if autoBackup is enabled

@@ -11,16 +11,19 @@ import {
   Flex,
   Switch,
   Icon,
+  NumberInput,
 } from '@chakra-ui/react';
 import { MdFolder, MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../../../app/_components/ui/ConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import { expandPath as expandPathService, updateEnv } from '../../services';
+import ManageBackupsModal from './ManageBackupsModal';
 
-const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
+const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBackupManager = false, onBackupManagerOpened }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
+  const [showManageBackups, setShowManageBackups] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
   const [originalDefaultPath, setOriginalDefaultPath] = useState('');
   const [originalGearMaintenancePath, setOriginalGearMaintenancePath] = useState('');
@@ -39,12 +42,26 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
     }
   };
 
+  // Open backup manager when triggered from notification
+  useEffect(() => {
+    if (shouldOpenBackupManager && !showManageBackups) {
+      // Use setTimeout to defer state update to next tick
+      const timer = setTimeout(() => {
+        setShowManageBackups(true);
+        if (onBackupManagerOpened) {
+          onBackupManagerOpened();
+        }
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldOpenBackupManager, showManageBackups, onBackupManagerOpened]);
+
   useEffect(() => {
     if (isOpen) {
-      // Reset dirty flag immediately when modal opens
-      setIsDirty(false);
-      
       const loadAndExpandSettings = async () => {
+        // Reset dirty flag before loading settings
+        setIsDirty(false);
+        
         const loaded = await loadSettings();
         
         // Expand the default path if it contains tilde
@@ -71,8 +88,12 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
       loadAndExpandSettings();
     } else {
       // Reset state when modal closes to prevent stale state on next open
-      setIsDirty(false);
-      setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      // Use setTimeout to defer state update to next tick
+      const timer = setTimeout(() => {
+        setIsDirty(false);
+        setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -162,7 +183,6 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
         const result = await updateEnv('DEFAULT_STATS_CONFIG_PATH', newDefaultPath);
         
         if (result.success) {
-          console.log('✅ DEFAULT_STATS_CONFIG_PATH updated successfully');
           envUpdates.push('DEFAULT_STATS_CONFIG_PATH');
         } else {
           console.error('Failed to update DEFAULT_STATS_CONFIG_PATH:', result.error);
@@ -173,14 +193,13 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
         anyFailed = true;
       }
     }
-    
+
     // If gear maintenance path changed, update .env file
     if (newGearMaintenancePath) {
       try {
         const result = await updateEnv('DEFAULT_GEAR_MAINTENANCE_PATH', newGearMaintenancePath);
         
         if (result.success) {
-          console.log('✅ DEFAULT_GEAR_MAINTENANCE_PATH updated successfully');
           envUpdates.push('DEFAULT_GEAR_MAINTENANCE_PATH');
         } else {
           console.error('Failed to update DEFAULT_GEAR_MAINTENANCE_PATH:', result.error);
@@ -286,6 +305,79 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
             </Switch.Root>
           </Field.Root>
 
+          {/* Backup Threshold Setting - Only shown when auto backup is enabled */}
+          {settings.files?.autoBackup !== false && (
+            <Field.Root>
+              <Flex 
+                direction={{ base: "column", sm: "row" }} 
+                align={{ base: "stretch", sm: "center" }} 
+                gap={{ base: 2, sm: 3 }}
+                mb={1}
+              >
+                <Field.Label fontWeight="500" mb={0} minW="fit-content">
+                  Backup file threshold
+                </Field.Label>
+                <NumberInput.Root
+                  value={String(settings.files?.backupThreshold || 10)}
+                  onValueChange={(e) => handleChange('files.backupThreshold', parseInt(e.value) || 10)}
+                  min={1}
+                  max={100}
+                  step={1}
+                  width={{ base: "100%", sm: "150px" }}
+                  size="sm"
+                >
+                  <NumberInput.Input bg="inputBg" />
+                  <NumberInput.Control css={{
+                    '& button': {
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--chakra-colors-text)',
+                      fontSize: '12px',
+                      minHeight: '14px',
+                      height: '14px',
+                      width: '20px',
+                      padding: '0',
+                      borderRadius: '0'
+                    },
+                    '& button:hover': {
+                      backgroundColor: 'transparent',
+                      opacity: '0.7'
+                    },
+                    '& svg': {
+                      width: '12px',
+                      height: '12px',
+                      stroke: 'var(--chakra-colors-text)',
+                      strokeWidth: '2px'
+                    }
+                  }} />
+                </NumberInput.Root>
+              </Flex>
+              <Text fontSize="sm" color="gray.500" mt={1}>
+                Show a notification when backup count exceeds this number
+              </Text>
+            </Field.Root>
+          )}
+
+          {/* Manage Backups Button - Only shown when auto backup is enabled */}
+          {settings.files?.autoBackup !== false && (
+            <Field.Root>
+              <Button
+                onClick={() => setShowManageBackups(true)}
+                variant="outline"
+                colorPalette="blue"
+                size={{ base: "sm", sm: "md" }}
+                width="100%"
+              >
+                <Flex align="center" gap={2}>
+                  <Icon><MdFolder /></Icon> Manage Backups
+                </Flex>
+              </Button>
+              <Text fontSize="sm" color="gray.500" mt={1}>
+                View and delete old backup files
+              </Text>
+            </Field.Root>
+          )}
+
           {/* Validate On Load Setting */}
           <Field.Root>
             <Switch.Root
@@ -340,6 +432,15 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
           onConfirm={confirmDialog.onConfirm || (() => {})}
           onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
         />
+
+        {/* Manage Backups Modal */}
+        {showManageBackups && (
+          <ManageBackupsModal
+            isOpen={showManageBackups}
+            onClose={() => setShowManageBackups(false)}
+            backupDir={settings.files?.backupsDir || settings.files?.defaultPath || ''}
+          />
+        )}
       </>
     );
   }
@@ -457,6 +558,79 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false }) => {
               <Switch.Label>Create automatic backups</Switch.Label>
             </Switch.Root>
           </Field.Root>
+
+          {/* Backup Threshold Setting - Only shown when auto backup is enabled */}
+          {settings.files?.autoBackup !== false && (
+            <Field.Root>
+              <Flex 
+                direction={{ base: "column", sm: "row" }} 
+                align={{ base: "stretch", sm: "center" }} 
+                gap={{ base: 2, sm: 3 }}
+                mb={1}
+              >
+                <Field.Label fontWeight="500" mb={0} minW="fit-content">
+                  Backup file threshold
+                </Field.Label>
+                <NumberInput.Root
+                  value={String(settings.files?.backupThreshold || 10)}
+                  onValueChange={(e) => handleChange('files.backupThreshold', parseInt(e.value) || 10)}
+                  min={1}
+                  max={100}
+                  step={1}
+                  width={{ base: "100%", sm: "150px" }}
+                  size="sm"
+                >
+                  <NumberInput.Input bg="inputBg" />
+                  <NumberInput.Control css={{
+                    '& button': {
+                      border: 'none',
+                      backgroundColor: 'transparent',
+                      color: 'var(--chakra-colors-text)',
+                      fontSize: '12px',
+                      minHeight: '14px',
+                      height: '14px',
+                      width: '20px',
+                      padding: '0',
+                      borderRadius: '0'
+                    },
+                    '& button:hover': {
+                      backgroundColor: 'transparent',
+                      opacity: '0.7'
+                    },
+                    '& svg': {
+                      width: '12px',
+                      height: '12px',
+                      stroke: 'var(--chakra-colors-text)',
+                      strokeWidth: '2px'
+                    }
+                  }} />
+                </NumberInput.Root>
+              </Flex>
+              <Text fontSize="sm" color="gray.500" mt={1}>
+                Show a notification when backup count exceeds this number
+              </Text>
+            </Field.Root>
+          )}
+
+          {/* Manage Backups Button - Only shown when auto backup is enabled */}
+          {settings.files?.autoBackup !== false && (
+            <Field.Root>
+              <Button
+                onClick={() => setShowManageBackups(true)}
+                variant="outline"
+                colorPalette="blue"
+                size={{ base: "sm", sm: "md" }}
+                width="100%"
+              >
+                <Flex align="center" gap={2}>
+                  <Icon><MdFolder /></Icon> Manage Backups
+                </Flex>
+              </Button>
+              <Text fontSize="sm" color="gray.500" mt={1}>
+                View and delete old backup files
+              </Text>
+            </Field.Root>
+          )}
 
           {/* Validate On Load Setting */}
           <Field.Root>

@@ -115,11 +115,9 @@ export async function POST(request) {
             if (key === 'general') {
               // Handle general section with special athlete processing
               const generalData = yamlData.general;
-              console.log('Found general section in', file.name, 'with keys:', Object.keys(generalData || {}));
               
               // If general contains athlete, map athlete section separately (even if it's empty/placeholder)
               if (generalData && typeof generalData === 'object' && 'athlete' in generalData) {
-                console.log('Creating athlete mapping for', file.name);
                 const athleteInfo = {
                   fileName: file.name,
                   filePath: file.path,
@@ -131,9 +129,8 @@ export async function POST(request) {
                   sectionMapping.set('athlete', []);
                 }
                 sectionMapping.get('athlete').push(athleteInfo);
-                console.log('Athlete mapping created successfully');
               } else {
-                console.log('No athlete data found in general section of', file.name);
+                // No athlete data in general section
               }
               
               // Check if general has other keys besides athlete

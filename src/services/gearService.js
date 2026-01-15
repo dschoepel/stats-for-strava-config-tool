@@ -3,6 +3,9 @@
  * Provides a centralized API layer for gear-related operations
  */
 
+import { emitConfigSaveEvent, emitBackupThresholdEvent } from '../utils/configEvents';
+import { loadSettings } from '../utils/settingsManager';
+
 /**
  * Base fetch wrapper with error handling
  */
@@ -53,10 +56,30 @@ export async function loadGearMaintenance(defaultPath) {
  * @returns {Promise<{success: boolean, path: string, message?: string}>}
  */
 export async function saveGearMaintenance({ defaultPath, config }) {
-  return fetchAPI('/api/gear-maintenance', {
+  const result = await fetchAPI('/api/gear-maintenance', {
     method: 'POST',
     body: JSON.stringify({ defaultPath, config })
   });
+  
+  // Emit config save event on success
+  if (result.success) {
+    emitConfigSaveEvent();
+    
+    // Check backup threshold if backup was created
+    if (result.backupCount !== undefined) {
+      try {
+        const settings = await loadSettings();
+        const threshold = settings.files?.backupThreshold || 10;
+        if (result.backupCount >= threshold) {
+          emitBackupThresholdEvent(result.backupCount, threshold);
+        }
+      } catch (error) {
+        console.warn('Failed to check backup threshold:', error);
+      }
+    }
+  }
+  
+  return result;
 }
 
 /**
