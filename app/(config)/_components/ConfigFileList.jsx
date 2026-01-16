@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef, memo } from 'react';
-import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon } from '@chakra-ui/react';
+import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon, Badge } from '@chakra-ui/react';
 import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings, MdHome } from 'react-icons/md';
 import { useToast } from '../../../src/hooks/useToast';
 import FileViewerModal from '../../utilities/_components/FileViewerModal';
@@ -7,6 +7,7 @@ import YamlEditorModal from '../../utilities/_components/YamlEditorModal';
 import ConfigFileGrid from '../../../src/components/config-files/ConfigFileGrid';
 import SectionMappingTable from '../../../src/components/config-files/SectionMappingTable';
 import ServerFolderBrowser from '../../utilities/_components/ServerFolderBrowser';
+import EmptyStateWithDefaults from './EmptyStateWithDefaults';
 import {
   listConfigFiles,
   scanConfigFiles,
@@ -290,9 +291,8 @@ const ConfigFileList = forwardRef((props, ref) => {
       }
     };
 
-    // Only initialize if we don't have cached data and haven't initialized yet
-    // AND settings are fully hydrated
-    if (settingsHydrated && settings && (!hasConfigInitialized || fileCache.files.length === 0)) {
+    // Only initialize if we haven't initialized yet AND settings are fully hydrated
+    if (settingsHydrated && settings && !hasConfigInitialized) {
       initializeApp();
     } else if (hasConfigInitialized && fileCache.files.length > 0) {
       // Use cached data
@@ -300,7 +300,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [showInfo, showWarning, showError, showSuccess, hasConfigInitialized, fileCache, parseSections, updateFileCache, updateHasConfigInitialized, settings, settingsHydrated]);
+  }, [settingsHydrated, hasConfigInitialized]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
@@ -762,44 +762,89 @@ const ConfigFileList = forwardRef((props, ref) => {
       )}
 
       {configFiles.length > 0 && (
-        <ConfigFileGrid
-          files={configFiles}
-          selectedDirectory={selectedDirectory}
-          onView={handleViewFile}
-          onEdit={handleEditFile}
-        />
+        <>
+          <ConfigFileGrid
+            files={configFiles}
+            selectedDirectory={selectedDirectory}
+            onView={handleViewFile}
+            onEdit={handleEditFile}
+          />
+          
+          {/* Show gear-maintenance card if it's not already present */}
+          {!configFiles.some(f => f.isGearMaintenance) && (
+            <Box
+              mt={6}
+              p={6}
+              bg="cardBg"
+              borderRadius="md"
+              border="2px dashed"
+              borderColor="border"
+            >
+              <VStack align="start" gap={4}>
+                <HStack justify="space-between" w="full">
+                  <HStack>
+                    <Icon as={MdLightbulb} color="blue.400" boxSize={6} />
+                    <VStack align="start" gap={1}>
+                      <HStack>
+                        <Text fontWeight="bold" fontSize="lg" color="text">
+                          Optional: Gear Maintenance
+                        </Text>
+                        <Badge colorScheme="gray" fontSize="xs">
+                          Optional
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="sm" color="textMuted">
+                        Track bike and gear maintenance schedules
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </HStack>
+                
+                <Button
+                  colorScheme="blue"
+                  leftIcon={<Icon as={MdWarning} />}
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const { defaultConfigService } = await import('../../../src/services/defaultConfigService');
+                      const result = await defaultConfigService.pullDefaultConfig('gear-maintenance', selectedDirectory);
+                      
+                      if (result.success) {
+                        showSuccess('✅ gear-maintenance.yaml created successfully');
+                        await handleRefreshFiles();
+                      } else {
+                        showError(`Failed to create gear-maintenance.yaml: ${result.error}`);
+                      }
+                    } catch (error) {
+                      showError(`Failed to create gear-maintenance.yaml: ${error.message}`);
+                    }
+                  }}
+                >
+                  Add gear-maintenance.yaml
+                </Button>
+                
+                <Text
+                  as="a"
+                  href="https://statistics-for-strava-docs.robiningelbrecht.be/#/configuration/gear-maintenance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  fontSize="sm"
+                  color="blue.400"
+                  _hover={{ textDecoration: 'underline' }}
+                >
+                  View documentation →
+                </Text>
+              </VStack>
+            </Box>
+          )}
+        </>
       )}
 
       {!isLoading && !error && configFiles.length === 0 && selectedDirectory && (
-        <Box
-          p={8}
-          bg="cardBg"
-          borderRadius="md"
-          border="1px solid"
-          borderColor="border"
-          textAlign="center"
-        >
-          <VStack gap={4}>
-            <Text fontSize="4xl">📭</Text>
-            <Box>
-              <Heading as="h4" size="md" color="text" mb={2}>
-                No Configuration Files Found
-              </Heading>
-              <Text color="textMuted" mb={3}>
-                No files matching the pattern were found in the selected directory.
-              </Text>
-              <Text color="textMuted" fontWeight="semibold" mb={2}>
-                Looking for:
-              </Text>
-              <VStack align="center" gap={1}>
-                <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text">config.yaml</Code>
-                <Text color="textMuted" fontSize="sm">(main configuration)</Text>
-                <Code bg="panelBg" px={2} py={1} borderRadius="md" color="text">config-*.yaml</Code>
-                <Text color="textMuted" fontSize="sm">(additional configurations)</Text>
-              </VStack>
-            </Box>
-          </VStack>
-        </Box>
+        <EmptyStateWithDefaults
+          targetDirectory={selectedDirectory}
+          onFileCreated={handleRefreshFiles}
+        />
       )}
       
       <FileViewerModal 
