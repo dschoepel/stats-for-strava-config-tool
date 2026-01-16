@@ -238,6 +238,20 @@ docker-compose up -d config-tool
 - The backups folder is auto-created if it doesn't exist
 - Backups are created before saving changes to protect against errors
 
+**Settings Folder**
+
+A `settings` folder is auto-created in your config path: `<config-path>/settings/`
+
+Contains three YAML files that store tool-specific configuration:
+
+| File Name                           | Description                                                  |
+| ----------------------------------- | ------------------------------------------------------------ |
+| `config-tool-settings.yaml`         | General application settings (file paths, preferences)       |
+| `strava-sports-by-category.yaml`    | Sports list configuration and sport type classifications     |
+| `widget-definitions.yaml`           | Widget template definitions and metadata                     |
+
+These files are managed through the tool's UI (Settings dialog and Sports List Editor). Do not manually edit these files unless you know what you're doing.
+
 **Port Configuration**
 
 - The container runs nginx on port 80 internally
