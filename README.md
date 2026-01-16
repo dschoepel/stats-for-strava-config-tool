@@ -11,6 +11,13 @@ This is a **web-based configuration editor** for the [Stats for Strava](https://
 - ✅ **Visual editors** for complex settings (heart rate zones, FTP history, cron schedules)
 - ✅ **No YAML knowledge required** - just fill in the forms
 
+## 🖼️ Screenshot 
+
+![Stats for Strava Config Tool — Dashboard Screenshot](https://raw.githubusercontent.com/dschoepel/stats-for-strava-config-tool/main/public/Dashboard Screenshot v1.0.0 - medium.jpg)
+
+
+**Screenshot:** The dashboard view showing multi-file configuration mode, section mapping, and YAML utilities.
+
 ## Do I Need This?
 
 **No, it's completely optional!** Stats for Strava works fine with manual YAML editing. Use this tool if you:
