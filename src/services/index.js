@@ -17,3 +17,6 @@ export * from './gearService.js';
 
 // Settings services
 export * from './settingsService.js';
+
+// Default config services
+export * from './defaultConfigService.js';

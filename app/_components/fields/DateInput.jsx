@@ -51,7 +51,19 @@ export const DateInput = ({
   ...props 
 }) => {
   // Convert string (YYYY-MM-DD) to Date object for DatePicker
-  const dateValue = value ? new Date(value + 'T00:00:00') : null;
+  // Handle invalid dates (like placeholder "YYYY-MM-DD") gracefully
+  let dateValue = null;
+  if (value && typeof value === 'string') {
+    // Check if it's a valid date format (not a placeholder like "YYYY-MM-DD")
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (datePattern.test(value)) {
+      const testDate = new Date(value + 'T00:00:00');
+      // Check if the date is valid (not NaN)
+      if (!isNaN(testDate.getTime())) {
+        dateValue = testDate;
+      }
+    }
+  }
   
   // Convert Date object back to string (YYYY-MM-DD) on change
   const handleChange = (date) => {
