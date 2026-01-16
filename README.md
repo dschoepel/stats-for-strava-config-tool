@@ -13,8 +13,7 @@ This is a **web-based configuration editor** for the [Stats for Strava](https://
 
 ## 🖼️ Screenshot 
 
-![Stats for Strava Config Tool — Dashboard Screenshot](https://raw.githubusercontent.com/dschoepel/stats-for-strava-config-tool/main/public/Dashboard Screenshot v1.0.0 - medium.jpg)
-
+<img src="./public/Dashboard Screenshot v1.0.0 - medium.jpg" alt="Dashboard screenshot">
 
 **Screenshot:** The dashboard view showing multi-file configuration mode, section mapping, and YAML utilities.
 
@@ -154,23 +153,23 @@ Docker Compose expands `${VARIABLE}` syntax in .env files, which breaks bcrypt p
 
 #### Environment Variables (.env file) (.env file)
 
-| Variable                         | Required    | Default                                      | Description                                    |
-| -------------------------------- | ----------- | -------------------------------------------- | ---------------------------------------------- |
-| `DEFAULT_STATS_CONFIG_PATH`      | Recommended | `/data/statistics-for-strava/config`         | Path where Stats for Strava stores config.yaml |
-| `DEFAULT_GEAR_MAINTENANCE_PATH`  | Recommended | `/data/statistics-for-strava/storage/gear_maintenance` | Path for gear maintenance files        |
-| `USERMAP_UID`                    | No          | `1000`                                       | User ID for file permissions (Linux/Mac)       |
-| `USERMAP_GID`                    | No          | `1000`                                       | Group ID for file permissions (Linux/Mac)      |
+| Variable                        | Required    | Default                                                | Description                                    |
+| ------------------------------- | ----------- | ------------------------------------------------------ | ---------------------------------------------- |
+| `DEFAULT_STATS_CONFIG_PATH`     | Recommended | `/data/statistics-for-strava/config`                   | Path where Stats for Strava stores config.yaml |
+| `DEFAULT_GEAR_MAINTENANCE_PATH` | Recommended | `/data/statistics-for-strava/storage/gear_maintenance` | Path for gear maintenance files                |
+| `USERMAP_UID`                   | No          | `1000`                                                 | User ID for file permissions (Linux/Mac)       |
+| `USERMAP_GID`                   | No          | `1000`                                                 | Group ID for file permissions (Linux/Mac)      |
 
 #### Environment Variables (.env.config-tool file)
 
-| Variable                        | Required | Default                                   | Description                                          |
-| ------------------------------- | -------- | ----------------------------------------- | ---------------------------------------------------- |
-| `ADMIN_USERNAME`                | Yes      | `admin`                                   | Username for authentication                          |
-| `ADMIN_PASSWORD_HASH`           | No       | (empty)                                   | Bcrypt hash of password (auto-generated on first run) |
-| `PASSWORD_RESET_TOKEN`          | No       | (empty)                                   | Token for password reset (auto-generated when needed) |
-| `SESSION_SECRET`                | **Yes**  | `change-this-to-a-long-random-secret-string` | Secret key for JWT tokens (**MUST CHANGE!**)     |
-| `SESSION_MAX_AGE`               | No       | `604800`                                  | Session duration in seconds (default: 7 days)        |
-| `NEXT_PUBLIC_ENABLE_DEBUG_LOGS` | No       | `false`                                   | Enable verbose debug logging (true/false)            |
+| Variable                        | Required | Default                                      | Description                                           |
+| ------------------------------- | -------- | -------------------------------------------- | ----------------------------------------------------- |
+| `ADMIN_USERNAME`                | Yes      | `admin`                                      | Username for authentication                           |
+| `ADMIN_PASSWORD_HASH`           | No       | (empty)                                      | Bcrypt hash of password (auto-generated on first run) |
+| `PASSWORD_RESET_TOKEN`          | No       | (empty)                                      | Token for password reset (auto-generated when needed) |
+| `SESSION_SECRET`                | **Yes**  | `change-this-to-a-long-random-secret-string` | Secret key for JWT tokens (**MUST CHANGE!**)          |
+| `SESSION_MAX_AGE`               | No       | `604800`                                     | Session duration in seconds (default: 7 days)         |
+| `NEXT_PUBLIC_ENABLE_DEBUG_LOGS` | No       | `false`                                      | Enable verbose debug logging (true/false)             |
 
 ⚠️ **CRITICAL**: Generate a strong random `SESSION_SECRET` before first use! See instructions below.
 
@@ -251,11 +250,11 @@ A `settings` folder is auto-created in your config path: `<config-path>/settings
 
 Contains three YAML files that store tool-specific configuration:
 
-| File Name                           | Description                                                  |
-| ----------------------------------- | ------------------------------------------------------------ |
-| `config-tool-settings.yaml`         | General application settings (file paths, preferences)       |
-| `strava-sports-by-category.yaml`    | Sports list configuration and sport type classifications     |
-| `widget-definitions.yaml`           | Widget template definitions and metadata                     |
+| File Name                        | Description                                              |
+| -------------------------------- | -------------------------------------------------------- |
+| `config-tool-settings.yaml`      | General application settings (file paths, preferences)   |
+| `strava-sports-by-category.yaml` | Sports list configuration and sport type classifications |
+| `widget-definitions.yaml`        | Widget template definitions and metadata                 |
 
 These files are managed through the tool's UI (Settings dialog and Sports List Editor). Do not manually edit these files unless you know what you're doing.
 
