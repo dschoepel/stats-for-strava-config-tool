@@ -62,7 +62,13 @@ const ConfigFileList = forwardRef((props, ref) => {
         setMissingSections(result.missingSections || []);
 
         if (!result.isComplete) {
-          showWarning(`Configuration incomplete: ${result.missingSections.length} section(s) missing`);
+          const missingCount = (result.missingSections?.length || 0) + (result.missingSubsections?.length || 0);
+          const missingItems = [
+            ...(result.missingSections || []),
+            ...(result.missingSubsections?.map(s => `${s} (subsection)`) || [])
+          ].join(', ');
+          
+          showWarning(`Configuration incomplete: ${missingCount} section(s) missing - ${missingItems}`);
         }
       }
     } catch (error) {

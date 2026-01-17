@@ -383,12 +383,22 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
         filePath = sectionInfo.filePath;
       }
       
+      // Define nested keys that should be preserved during save (even if not split files)
+      // This handles cases where a section has nested subsections that are edited separately
+      const NESTED_KEYS_TO_PRESERVE = {
+        general: ['athlete'], // athlete is edited on separate page but stored under general
+        // Add other sections here if they have similar patterns in the future
+      };
+      
+      const preserveNestedKeys = NESTED_KEYS_TO_PRESERVE[sectionKey] || [];
+      
       if (filePath) {
         const result = await updateSection({
           filePath,
           sectionName: sectionName.toLowerCase(),
           sectionData: data,
-          isAthlete: sectionName.toLowerCase() === 'athlete'
+          isAthlete: sectionName.toLowerCase() === 'athlete',
+          preserveNestedKeys
         });
         
         if (result.success) {
