@@ -95,6 +95,11 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       // First try direct match
       sectionInfo = sectionToFileMap.get(sectionKey);
       
+      // Special case: athlete section can be stored as "general.athlete" in split files
+      if (!sectionInfo && sectionKey === 'athlete') {
+        sectionInfo = sectionToFileMap.get('general.athlete');
+      }
+      
       // Check for nested mappings (e.g., "appearance" might have "appearance.dashboard")
       // This should be checked regardless of whether we found a direct match
       if (!sectionKey.includes('.')) {
@@ -130,11 +135,6 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
           setIsLoadingSectionData(false);
           return;
         }
-      }
-      
-      if (!sectionInfo && sectionKey === 'athlete') {
-        // Fallback: if athlete section not found, try to use general section
-        sectionInfo = sectionToFileMap.get('general');
       }
       
       if (!sectionInfo) {
@@ -199,13 +199,14 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
           }));
         }
       } else {
-        console.error('Section info not found for:', sectionKey);
-        console.log('Available sections:', Array.from(sectionToFileMap.keys()));
+        // Log as warning instead of error to avoid triggering AppShell error handler
+        console.warn('Section info not found for:', sectionKey);
+        console.warn('Available sections:', Array.from(sectionToFileMap.keys()));
         
-        // Show user-friendly error message
-        showError(
-          `Configuration section "${sectionName}" not found in your config files. The section may be missing or in multiple files causing a conflict. Please check your configuration files.`,
-          7000
+        // Show user-friendly warning message
+        showWarning(
+          `Configuration section "${sectionName}" not found in your config files. You can still configure this section - saving will create it. Or return to the Dashboard to see all missing sections.`,
+          8000
         );
         
         // Set empty object so the editor can still open

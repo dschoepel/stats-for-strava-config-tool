@@ -132,7 +132,7 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
     if (isOpen && hierarchicalPreview.length > 0) {
       setError(null);
       
-      // Initialize split configuration - all top-level selected, first child kept with parent, rest split
+      // Initialize split configuration - all top-level selected, all subsections kept by default
       const initialConfig = {};
       hierarchicalPreview.forEach(item => {
         initialConfig[item.topKey] = {
@@ -142,11 +142,12 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
         
         item.secondLevelKeys.forEach((child, index) => {
           initialConfig[item.topKey].secondLevel[child.secondKey] = {
-            split: index > 0 // First child stays with parent by default, others split
+            split: false // All subsections default to "Keep" - let user decide what to split
           };
         });
       });
       
+      console.log('SplitConfigModal: Initialized config with all split=false:', initialConfig);
       setSplitConfig(initialConfig);
       
       // Expand all sections by default
@@ -228,7 +229,7 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
       };
       item.secondLevelKeys.forEach((child, index) => {
         newConfig[item.topKey].secondLevel[child.secondKey] = {
-          split: index > 0
+          split: false // Default to "Keep" for all subsections
         };
       });
     });
@@ -244,7 +245,7 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
       };
       item.secondLevelKeys.forEach((child, index) => {
         newConfig[item.topKey].secondLevel[child.secondKey] = {
-          split: index > 0
+          split: false // Default to "Keep" for all subsections
         };
       });
     });
@@ -622,6 +623,8 @@ const SplitConfigModal = ({ file, isOpen, onClose, onSplit }) => {
                             <VStack align="stretch" gap={2}>
                               {item.secondLevelKeys.map((child) => {
                                 const shouldSplit = splitConfig[item.topKey]?.secondLevel?.[child.secondKey]?.split;
+                                
+                                console.log(`Rendering ${child.secondKey}: shouldSplit=${shouldSplit}`);
                                 
                                 return (
                                   <Flex

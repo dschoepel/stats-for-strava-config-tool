@@ -72,7 +72,18 @@ export async function POST(request) {
     const extraSections = Array.from(foundSections).filter(section => !EXPECTED_SECTIONS.includes(section));
     
     // Check for required subsection mappings
-    const missingSubsections = REQUIRED_SUBSECTION_MAPPINGS.filter(subsection => !foundSections.has(subsection));
+    // For subsections, check both the simple name (e.g., "athlete") and the full path (e.g., "general.athlete")
+    const missingSubsections = REQUIRED_SUBSECTION_MAPPINGS.filter(subsection => {
+      // Check if subsection exists as standalone mapping
+      if (foundSections.has(subsection)) return false;
+      
+      // Check if subsection exists as full path mapping (e.g., "general.athlete")
+      const fullPathExists = Array.from(foundSections).some(key => 
+        key.includes('.') && key.split('.').pop() === subsection
+      );
+      
+      return !fullPathExists;
+    });
     
     const isComplete = missingSections.length === 0 && missingSubsections.length === 0;
     const hasIssues = missingSections.length > 0 || extraSections.length > 0 || missingSubsections.length > 0;
