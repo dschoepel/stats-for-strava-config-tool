@@ -308,6 +308,9 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       let nestedMappings = Array.from(sectionToFileMap.entries())
         .filter(([key]) => key.startsWith(`${sectionKey}.`));
 
+      // Capture original nested mappings before filtering (needed to exclude athlete from parentData)
+      const originalNestedMappings = [...nestedMappings];
+
       // IMPORTANT: When saving "general" section, exclude "athlete" from nested sections
       // because athlete is loaded/saved separately via the athlete editor
       if (sectionKey === 'general') {
@@ -316,7 +319,8 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       }
 
       // If we have nested mappings (split files), save each nested key to its respective file
-      if (nestedMappings.length > 0) {
+      // Use originalNestedMappings to check since nestedMappings may be filtered (e.g., athlete removed from general)
+      if (originalNestedMappings.length > 0) {
         // IMPORTANT: Save nested sections SEQUENTIALLY, not in parallel
         // This prevents race conditions when multiple saves modify the same file
 
@@ -351,10 +355,13 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
         const parentInfo = sectionToFileMap.get(sectionKey);
         if (parentInfo) {
           // Extract keys that belong in parent file (not in any nested mapping)
+          // IMPORTANT: Use originalNestedMappings (before filtering) to determine which keys to exclude
           const nestedKeys = nestedMappings.map(([key]) => key.split('.')[1]);
+          const allNestedKeys = originalNestedMappings.map(([key]) => key.split('.')[1]);
           const parentData = {};
           for (const [key, value] of Object.entries(data)) {
-            if (!nestedKeys.includes(key)) {
+            // Exclude keys that are in ANY nested mapping (including filtered ones like athlete)
+            if (!allNestedKeys.includes(key)) {
               parentData[key] = value;
             }
           }
