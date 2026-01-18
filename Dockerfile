@@ -39,7 +39,7 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh /healthcheck.sh
 
 # Create persistent directories
-RUN mkdir -p /data/configs /data/logs
+RUN mkdir -p /data/config /data/logs
 
 # Note: We don't chown /app here because the user UID/GID will be remapped at runtime via entrypoint.sh
 # The entrypoint will fix permissions after UID/GID remapping

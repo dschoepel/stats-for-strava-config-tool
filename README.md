@@ -100,8 +100,8 @@ services:
 
     volumes: 
       - ./.env.config-tool:/app/.env  # Authentication settings (must be writable)
-      - ./statistics-for-strava/config:/data/statistics-for-strava/config  # Config files
-      - ./statistics-for-strava/storage:/data/statistics-for-strava/storage  # Gear maintenance
+      - ./statistics-for-strava/config:/data/config  # Config files
+      - ./statistics-for-strava/storage:/data/storage  # Gear maintenance
       - ./statistics-for-strava/logs:/data/logs  # Application logs
     ports:
       - '8092:80'  # Access at http://localhost:8092
@@ -121,10 +121,10 @@ This tool uses **two separate .env files** to avoid Docker Compose variable expa
 
 ```bash
 # Path where Stats for Strava stores config.yaml
-DEFAULT_STATS_CONFIG_PATH=/data/statistics-for-strava/config
+DEFAULT_STATS_CONFIG_PATH=/data/config
 
 # Path where gear maintenance files are stored
-DEFAULT_GEAR_MAINTENANCE_PATH=/data/statistics-for-strava/storage/gear_maintenance
+DEFAULT_GEAR_MAINTENANCE_PATH=/data/storage/gear-maintenance
 
 # User/Group ID for file permissions (Linux/Mac)
 USERMAP_UID=1000
@@ -155,8 +155,8 @@ Docker Compose expands `${VARIABLE}` syntax in .env files, which breaks bcrypt p
 
 | Variable                        | Required    | Default                                                | Description                                    |
 | ------------------------------- | ----------- | ------------------------------------------------------ | ---------------------------------------------- |
-| `DEFAULT_STATS_CONFIG_PATH`     | Recommended | `/data/statistics-for-strava/config`                   | Path where Stats for Strava stores config.yaml |
-| `DEFAULT_GEAR_MAINTENANCE_PATH` | Recommended | `/data/statistics-for-strava/storage/gear_maintenance` | Path for gear maintenance files                |
+| `DEFAULT_STATS_CONFIG_PATH`     | Recommended | `/data/config`                   | Path where Stats for Strava stores config.yaml |
+| `DEFAULT_GEAR_MAINTENANCE_PATH` | Recommended | `/data/storage/gear-maintenance` | Path for gear maintenance files                |
 | `USERMAP_UID`                   | No          | `1000`                                                 | User ID for file permissions (Linux/Mac)       |
 | `USERMAP_GID`                   | No          | `1000`                                                 | Group ID for file permissions (Linux/Mac)      |
 
@@ -472,7 +472,7 @@ Navigate to `https://your-domain.com` in your browser. The connection will be:
 2. **Open Settings** (gear icon in top navigation)
 3. **Go to Files tab** and set your default config path
 
-   - Example: `/data/statistics-for-strava/config` (Docker - use container path)
+   - Example: `/data/config` (Docker - use container path)
    - Example: `C:\strava\config` (Windows standalone)
 4. **The tool will auto-create default files** if they don't exist
 
@@ -538,7 +538,7 @@ If you need to preserve all comments, edit the YAML files manually.
 
 **For Docker users**: Use the **container path** in settings - this is the path you entered in the environment variabale `DEFAULT_STATS_CONFIG_PATH` , not the host path.  Be sure to use the fully expanded path.
 
-- Container path: `/app/config/config.yaml` ✅
+- Container path: `/data/config/config.yaml` ✅
 - Host path: `./config/app/config.yaml` ❌
 
 ### 🔄 Applying Changes
@@ -588,11 +588,11 @@ A: Not recommended - the tool is designed for single-user access and doesn't hav
 
 **Q: Where are my configuration files stored?**  
 
-A: In your Stats for Strava config directory, mounted via Docker volumes at `/data/statistics-for-strava/config`.
+A: In your Stats for Strava config directory, mounted via Docker volumes at `/data/config`.
 
 **Q: Where are backup files saved?**  
 
-A: In `<config-path>/backups/` folder (auto-created). Example: `/data/statistics-for-strava/config/backups/config-20260116-143025.yaml`
+A: In `<config-path>/backups/` folder (auto-created). Example: `/data/config/backups/config-20260116-143025.yaml`
 
 **Q: Does this replace the Stats for Strava app?**  
 
@@ -605,7 +605,7 @@ A: No! This is just a configuration editor. You still need Stats for Strava to i
 **"Cannot read configuration file"**
 
 - Check your config path in Settings → Files
-- For Docker: Use container path (e.g., `/data/statistics-for-strava/config`)
+- For Docker: Use container path (e.g., `/data/config`)
 - Verify the file exists and has proper permissions
 
 **"Permission denied" when saving**

@@ -5,8 +5,8 @@
  * This file contains all default paths and settings used across API routes
  */
 
-export const DEFAULT_CONFIG_PATH = '/data/statistics-for-strava/config/';
-export const DEFAULT_GEAR_MAINTENANCE_PATH = '/data/statistics-for-strava/storage/gear-maintenance';
+export const DEFAULT_CONFIG_PATH = '/data/config/';
+export const DEFAULT_GEAR_MAINTENANCE_PATH = '/data/storage/gear-maintenance';
 
 /**
  * Get the default configuration path from environment or fallback to default

@@ -8,11 +8,11 @@ import { loadSettings } from '../utils/settingsManager';
  * @param {Map} sectionToFileMap - Map of section names to file paths
  * @param {Function} showError - Function to display error messages
  * @param {Function} showSuccess - Function to display success messages
+ * @param {Function} showWarning - Function to display warning messages
  * @param {Function} setHasUnsavedChanges - Function to update unsaved changes state
- * @param {Function} handleNavClick - Function to navigate after save
  * @returns {Object} - Returns sectionData, loading state, and methods to load/save sections
  */
-export const useConfigData = (fileCache, sectionToFileMap, showError, showSuccess, setHasUnsavedChanges, handleNavClick) => {
+export const useConfigData = (fileCache, sectionToFileMap, showError, showSuccess, showWarning, setHasUnsavedChanges) => {
   const [sectionData, setSectionData] = useState({});
   const [isLoadingSectionData, setIsLoadingSectionData] = useState(false);
 
@@ -21,7 +21,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     let filePath = null;
     let topLevelKey = null;
     let secondLevelKey = null;
-    
+
     if (typeof sectionInfo === 'string') {
       filePath = `${fileCache.directory}/${sectionInfo}`;
     } else if (sectionInfo && sectionInfo.filePath) {
@@ -29,16 +29,16 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       topLevelKey = sectionInfo.topLevelKey;
       secondLevelKey = sectionInfo.secondLevelKey;
     }
-    
+
     if (!filePath) return null;
-    
+
     const result = await readFile(filePath);
-    
+
     if (!result.success) {
       console.error('Failed to load file:', filePath, result.error);
       return null;
     }
-    
+
     const YAML = await import('yaml');
     let parsedData;
     try {
@@ -49,18 +49,18 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       console.error('File content preview:', result.content?.substring(0, 500));
       return {};
     }
-    
+
     // Check if parsing returned null/undefined (empty file)
     if (!parsedData || typeof parsedData !== 'object') {
       console.warn('YAML file is empty or not an object:', filePath);
       return {};
     }
-    
+
     // Handle split files
     if (topLevelKey && secondLevelKey) {
       return parsedData[topLevelKey]?.[secondLevelKey] || parsedData[topLevelKey] || {};
     }
-    
+
     // Handle nested section keys (e.g., "appearance.dashboard")
     if (sectionKey.includes('.')) {
       const [topKey, ...restKeys] = sectionKey.split('.');
@@ -74,7 +74,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       }
       return data || {};
     }
-    
+
     // Return the section data for simple keys
     return parsedData[sectionKey] || {};
   }, [fileCache.directory]);
@@ -87,36 +87,36 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       const sectionKeyMap = {
         'scheduling daemon': 'daemon',
       };
-      
+
       const sectionKey = sectionKeyMap[sectionName.toLowerCase()] || sectionName.toLowerCase();
-      
+
       let sectionInfo = null;
-      
+
       // First try direct match
       sectionInfo = sectionToFileMap.get(sectionKey);
-      
+
       // Special case: athlete section can be stored as "general.athlete" in split files
       if (!sectionInfo && sectionKey === 'athlete') {
         sectionInfo = sectionToFileMap.get('general.athlete');
       }
-      
+
       // Check for nested mappings (e.g., "appearance" might have "appearance.dashboard")
       // This should be checked regardless of whether we found a direct match
       if (!sectionKey.includes('.')) {
         // Look for any nested paths that start with this key
         const nestedMappings = Array.from(sectionToFileMap.entries())
           .filter(([key]) => key.startsWith(`${sectionKey}.`));
-        
+
         if (nestedMappings.length > 0) {
           // Load all nested sections and combine them
           const combinedData = {};
-          
+
           // Also load parent section if it exists
           if (sectionInfo) {
             const parentData = await loadSectionFile(sectionInfo, sectionKey);
             Object.assign(combinedData, parentData);
           }
-          
+
           // Load each nested section
           for (const [nestedKey, nestedInfo] of nestedMappings) {
             const nestedData = await loadSectionFile(nestedInfo, nestedKey);
@@ -126,7 +126,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
               combinedData[secondKey] = nestedData;
             }
           }
-          
+
           // Set the combined data and return early
           setSectionData(prev => ({
             ...prev,
@@ -136,16 +136,16 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
           return;
         }
       }
-      
+
       if (!sectionInfo) {
         // Section info not found in mapping
       }
-      
+
       // Handle both string filename and full object formats
       let filePath = null;
       let topLevelKey = null;
       let secondLevelKey = null;
-      
+
       if (typeof sectionInfo === 'string') {
         // API returned simple mapping with just filename
         filePath = `${fileCache.directory}/${sectionInfo}`;
@@ -158,18 +158,18 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
           // This is a split file
         }
       }
-      
+
       if (filePath) {
         const result = await readFile(filePath);
-        
+
         if (result.success) {
           // Parse YAML and extract the section data
           const YAML = await import('yaml');
           const parsedData = YAML.parse(result.content);
           console.log('Parsed YAML data:', parsedData);
-          
+
           let sectionContent = {};
-          
+
           // Handle split files differently
           if (topLevelKey && secondLevelKey) {
             // This is a split file - the content is under topLevelKey.secondLevelKey
@@ -186,7 +186,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
             // Other sections are top-level - use sectionKey not sectionName
             sectionContent = parsedData[sectionKey] || {};
           }
-          
+
           setSectionData(prev => ({
             ...prev,
             [sectionKey]: sectionContent
@@ -202,13 +202,13 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
         // Log as warning instead of error to avoid triggering AppShell error handler
         console.warn('Section info not found for:', sectionKey);
         console.warn('Available sections:', Array.from(sectionToFileMap.keys()));
-        
+
         // Show user-friendly warning message
         showWarning(
           `Configuration section "${sectionName}" not found in your config files. You can still configure this section - saving will create it. Or return to the Dashboard to see all missing sections.`,
           8000
         );
-        
+
         // Set empty object so the editor can still open
         setSectionData(prev => ({
           ...prev,
@@ -229,7 +229,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     } finally {
       setIsLoadingSectionData(false);
     }
-  }, [sectionToFileMap, fileCache.directory, showError, loadSectionFile]);
+  }, [sectionToFileMap, fileCache.directory, showWarning, loadSectionFile]);
 
   // Helper function to save a single section to a file
   const saveSingleSection = useCallback(async (sectionInfo, sectionKey, data, isAthlete = false, preserveNestedKeys = []) => {
@@ -239,27 +239,27 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     } else if (sectionInfo && sectionInfo.filePath) {
       filePath = sectionInfo.filePath;
     }
-    
+
     if (!filePath) {
       return { success: false, error: 'No file path found' };
     }
-    
+
     if (preserveNestedKeys.length > 0) {
       // Preserving nested keys during save
     }
-    
+
     // Create backup before saving if autoBackup is enabled
     const settings = loadSettings();
     if (settings.files?.autoBackup !== false) {
       try {
         // Use backupsDir setting for backup location
-        const backupBaseDir = typeof settings.files?.backupsDir === 'string' 
-          ? settings.files.backupsDir 
-          : (typeof settings.files?.defaultPath === 'string' 
-            ? settings.files.defaultPath 
-            : '/data/statistics-for-strava/config');
+        const backupBaseDir = typeof settings.files?.backupsDir === 'string'
+          ? settings.files.backupsDir
+          : (typeof settings.files?.defaultPath === 'string'
+            ? settings.files.defaultPath
+            : '/data/config');
         const backupDir = `${backupBaseDir}/backups`;
-        
+
         const backupResult = await backupConfig({
           filePath,
           backupDirectory: backupDir
@@ -274,7 +274,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
         // Don't fail the save if backup fails
       }
     }
-    
+
     const result = await updateSection({
       filePath,
       sectionName: sectionKey,
@@ -282,12 +282,12 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       isAthlete,
       preserveNestedKeys
     });
-    
+
     if (!result.success) {
       console.error('Save failed for section:', sectionKey);
       console.error('Error:', result.error);
     }
-    
+
     return result;
   }, [fileCache.directory]);
 
@@ -296,24 +296,36 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     setIsLoadingSectionData(true);
     try {
       const sectionKey = sectionName.toLowerCase();
+
       let sectionInfo = sectionToFileMap.get(sectionKey);
-      
+
+      // Special case: athlete section can be stored as "general.athlete" in split files
+      if (!sectionInfo && sectionKey === 'athlete') {
+        sectionInfo = sectionToFileMap.get('general.athlete');
+      }
+
       // Check if there are nested mappings for this section
-      const nestedMappings = Array.from(sectionToFileMap.entries())
+      let nestedMappings = Array.from(sectionToFileMap.entries())
         .filter(([key]) => key.startsWith(`${sectionKey}.`));
-      
+
+      // IMPORTANT: When saving "general" section, exclude "athlete" from nested sections
+      // because athlete is loaded/saved separately via the athlete editor
+      if (sectionKey === 'general') {
+        // Filter out athlete from nested mappings - it should only be saved from athlete editor
+        nestedMappings = nestedMappings.filter(([key]) => !key.endsWith('.athlete'));
+      }
+
       // If we have nested mappings (split files), save each nested key to its respective file
       if (nestedMappings.length > 0) {
         // IMPORTANT: Save nested sections SEQUENTIALLY, not in parallel
         // This prevents race conditions when multiple saves modify the same file
-        
+
         const nestedResults = [];
-        
+
         // Save each nested section to its split file
         for (const [nestedKey, nestedInfo] of nestedMappings) {
           const secondKey = nestedKey.split('.')[1];
           if (data[secondKey]) {
-            console.log(`Saving nested section ${nestedKey}...`);
             const result = await saveSingleSection(nestedInfo, nestedKey, data[secondKey], false);
             nestedResults.push(result);
             if (!result.success) {
@@ -322,9 +334,9 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
             }
           }
         }
-        
+
         const nestedSuccess = nestedResults.every(r => r.success);
-        
+
         if (!nestedSuccess) {
           console.error('Failed to save nested sections');
           nestedResults.forEach((r, i) => {
@@ -334,7 +346,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
           });
           throw new Error('Failed to save nested sections');
         }
-        
+
         // Now save parent section data (keys that aren't split out)
         const parentInfo = sectionToFileMap.get(sectionKey);
         if (parentInfo) {
@@ -346,13 +358,12 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
               parentData[key] = value;
             }
           }
-          
+
           if (Object.keys(parentData).length > 0) {
-            console.log(`Saving parent section ${sectionKey} with nested keys to preserve:`, nestedKeys);
             const parentResult = await saveSingleSection(
-              parentInfo, 
-              sectionKey, 
-              parentData, 
+              parentInfo,
+              sectionKey,
+              parentData,
               sectionKey === 'athlete',
               nestedKeys // Pass nested keys to preserve
             );
@@ -361,21 +372,21 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
             }
           }
         }
-        
+
         // All saves successful
         await loadSectionData(sectionName);
         showSuccess('Configuration saved successfully!');
         setHasUnsavedChanges(false);
-        
+
         setIsLoadingSectionData(false);
         return;
       }
-      
+
       // Fallback: if athlete section not found, try to use general section
       if (!sectionInfo && sectionKey === 'athlete') {
         sectionInfo = sectionToFileMap.get('general');
       }
-      
+
       // Handle both string filename and full object formats
       let filePath = null;
       if (typeof sectionInfo === 'string') {
@@ -383,16 +394,16 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       } else if (sectionInfo && sectionInfo.filePath) {
         filePath = sectionInfo.filePath;
       }
-      
+
       // Define nested keys that should be preserved during save (even if not split files)
       // This handles cases where a section has nested subsections that are edited separately
       const NESTED_KEYS_TO_PRESERVE = {
         general: ['athlete'], // athlete is edited on separate page but stored under general
         // Add other sections here if they have similar patterns in the future
       };
-      
+
       const preserveNestedKeys = NESTED_KEYS_TO_PRESERVE[sectionKey] || [];
-      
+
       if (filePath) {
         const result = await updateSection({
           filePath,
@@ -401,13 +412,13 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
           isAthlete: sectionName.toLowerCase() === 'athlete',
           preserveNestedKeys
         });
-        
+
         if (result.success) {
           // Reload section data to ensure form reflects actual saved data
           await loadSectionData(sectionName);
-          
+
           showSuccess('Configuration saved successfully!');
-          
+
           // Clear unsaved changes flag
           setHasUnsavedChanges(false);
         } else {
@@ -425,7 +436,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     } finally {
       setIsLoadingSectionData(false);
     }
-  }, [sectionToFileMap, fileCache.directory, showError, showSuccess, setHasUnsavedChanges, handleNavClick, saveSingleSection, loadSectionData]);
+  }, [sectionToFileMap, fileCache.directory, showError, showSuccess, setHasUnsavedChanges, saveSingleSection, loadSectionData]);
 
   return {
     sectionData,
