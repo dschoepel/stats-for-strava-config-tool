@@ -19,9 +19,17 @@ export async function POST(request) {
       }, { status: 400 });
     }
     
-    debugLog('Updating section:', sectionName);
+    debugLog('=== UPDATE SECTION API CALL ===');
+    debugLog('Section:', sectionName);
+    debugLog('File:', filePath);
+    debugLog('isAthlete:', isAthlete);
+    debugLog('preserveNestedKeys:', preserveNestedKeys);
+    debugLog('Section data keys:', Object.keys(sectionData));
+    
     if (preserveNestedKeys.length > 0) {
-      debugLog('Will preserve nested keys:', preserveNestedKeys);
+      debugLog('⚠️ Will preserve these nested keys:', preserveNestedKeys);
+    } else {
+      debugLog('✓ No nested keys to preserve (they are in separate files)');
     }
 
     // Check if this is a nested section (e.g., "appearance.dashboard")
