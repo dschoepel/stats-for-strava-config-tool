@@ -59,7 +59,12 @@ const ConfigFileList = forwardRef((props, ref) => {
 
       if (result.success) {
         setValidationStatus(result);
-        setMissingSections(result.missingSections || []);
+        // Combine missing sections and subsections for display
+        const allMissing = [
+          ...(result.missingSections || []),
+          ...(result.missingSubsections || [])
+        ];
+        setMissingSections(allMissing);
 
         if (!result.isComplete) {
           const missingCount = (result.missingSections?.length || 0) + (result.missingSubsections?.length || 0);
@@ -306,7 +311,7 @@ const ConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [settingsHydrated, hasConfigInitialized]);
+  }, [settingsHydrated, hasConfigInitialized, settings, fileCache.files, fileCache.directory, parseSections, showError, showInfo, showSuccess, showWarning, updateFileCache, updateHasConfigInitialized]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
@@ -572,7 +577,7 @@ const ConfigFileList = forwardRef((props, ref) => {
             )}
             {configMode === 'invalid' && (
               <Text color="red.500" fontSize="sm">
-                Missing required config.yaml file - configuration editing is disabled
+                Missing required section(s) in the configuration file(s) - pick one of the resolution options to resolve
               </Text>
             )}
           </Box>
@@ -595,8 +600,11 @@ const ConfigFileList = forwardRef((props, ref) => {
                   Configuration Incomplete
                 </Heading>
                 <Text color="orange.700" _dark={{ color: 'orange.300' }} fontSize="sm" mb={2}>
-                  {missingSections.length} required section{missingSections.length > 1 ? 's are' : ' is'} missing from your configuration. 
-                  Configuration editing is disabled until this is resolved.
+                  {missingSections.length} required section{missingSections.length > 1 ? 's are' : ' is'} missing from your configuration files. 
+                  {validationStatus.missingSubsections?.length > 0 && (
+                    <> This includes {validationStatus.missingSubsections.length} subsection{validationStatus.missingSubsections.length > 1 ? 's' : ''} (like <strong>{validationStatus.missingSubsections[0]}</strong>) that {validationStatus.missingSubsections.length > 1 ? 'are' : 'is'} stored within another section.</>
+                  )}
+                  {' '}Configuration editing is disabled until this is resolved.
                 </Text>
                 <Box
                   p={3}
@@ -621,6 +629,7 @@ const ConfigFileList = forwardRef((props, ref) => {
                         fontSize="sm"
                       >
                         {section}
+                        {validationStatus.missingSubsections?.includes(section) && ' (subsection)'}
                       </Code>
                     ))}
                   </Flex>
@@ -629,20 +638,44 @@ const ConfigFileList = forwardRef((props, ref) => {
                   Resolution Options:
                 </Text>
                 <VStack align="stretch" gap={2}>
-                  <Button
-                    size="sm"
-                    onClick={handleMergeToSingleFile}
-                    isLoading={isMerging}
-                    loadingText="Merging..."
-                    bg="orange.600"
-                    color="white"
-                    _hover={{ bg: "orange.700" }}
-                  >
-                    Option 1: Create Complete Single File Configuration
-                  </Button>
-                  <Text fontSize="xs" color="orange.600" _dark={{ color: 'orange.400' }} pl={2}>
-                    Merges existing sections and fills in missing ones with defaults. Creates backup automatically.
-                  </Text>
+                  {validationStatus.missingSubsections?.length > 0 ? (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const subsection = validationStatus.missingSubsections[0];
+                          // Capitalize first letter for display
+                          const displayName = subsection.charAt(0).toUpperCase() + subsection.slice(1);
+                          showInfo(`Navigate to the ${displayName} section in the sidebar and save the configuration to create this section.`, 7000);
+                        }}
+                        bg="orange.600"
+                        color="white"
+                        _hover={{ bg: "orange.700" }}
+                      >
+                        Option 1: Use {validationStatus.missingSubsections[0].charAt(0).toUpperCase() + validationStatus.missingSubsections[0].slice(1)} Editor
+                      </Button>
+                      <Text fontSize="xs" color="orange.600" _dark={{ color: 'orange.400' }} pl={2}>
+                        Navigate to the {validationStatus.missingSubsections[0].charAt(0).toUpperCase() + validationStatus.missingSubsections[0].slice(1)} section using the sidebar menu, configure it, and save. This will create the missing subsection in your config file.
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={handleMergeToSingleFile}
+                        isLoading={isMerging}
+                        loadingText="Merging..."
+                        bg="orange.600"
+                        color="white"
+                        _hover={{ bg: "orange.700" }}
+                      >
+                        Option 1: Create Complete Single File Configuration
+                      </Button>
+                      <Text fontSize="xs" color="orange.600" _dark={{ color: 'orange.400' }} pl={2}>
+                        Merges existing sections and fills in missing ones with defaults. Creates backup automatically.
+                      </Text>
+                    </>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
