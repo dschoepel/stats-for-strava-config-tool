@@ -18,6 +18,11 @@ const EXPECTED_SECTIONS = [
   'daemon'
 ];
 
+// Sections that should always have a mapping even if they're nested under another section
+const REQUIRED_SUBSECTION_MAPPINGS = [
+  'athlete' // Should be detected in general section
+];
+
 export async function POST(request) {
   try {
     const { files, sectionMapping } = await request.json();
@@ -66,8 +71,11 @@ export async function POST(request) {
     // Find extra sections (not in expected list)
     const extraSections = Array.from(foundSections).filter(section => !EXPECTED_SECTIONS.includes(section));
     
-    const isComplete = missingSections.length === 0;
-    const hasIssues = missingSections.length > 0 || extraSections.length > 0;
+    // Check for required subsection mappings
+    const missingSubsections = REQUIRED_SUBSECTION_MAPPINGS.filter(subsection => !foundSections.has(subsection));
+    
+    const isComplete = missingSections.length === 0 && missingSubsections.length === 0;
+    const hasIssues = missingSections.length > 0 || extraSections.length > 0 || missingSubsections.length > 0;
     
     return NextResponse.json({
       success: true,
@@ -77,11 +85,13 @@ export async function POST(request) {
       foundSections: Array.from(foundSections),
       missingSections,
       extraSections,
+      missingSubsections,
       summary: {
         total: EXPECTED_SECTIONS.length,
         found: foundSections.size,
         missing: missingSections.length,
-        extra: extraSections.length
+        extra: extraSections.length,
+        missingSubsections: missingSubsections.length
       }
     });
     
