@@ -68,7 +68,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
   }, [isDirty, onDirtyChange]);
 
   // Get gear maintenance path from settings
-  const gearMaintenancePath = getSetting('files.gearMaintenancePath', '/data/statistics-for-strava/storage/gear-maintenance');
+  const gearMaintenancePath = getSetting('files.gearMaintenancePath', '/data/storage/gear-maintenance');
 
   const loadConfig = useCallback(async () => {
     setLoading(true);

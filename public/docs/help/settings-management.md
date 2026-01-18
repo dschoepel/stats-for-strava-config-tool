@@ -18,7 +18,7 @@ The primary location where your Stats for Strava config.yaml file is stored.
 
 **Docker users:** Use the container path, not the host path
 
-Example: `/data/statistics-for-strava/config/config.yaml`
+Example: `/data/config/config.yaml`
 
 ### Settings Directory
 
@@ -32,7 +32,7 @@ Location where automatic backups of configuration files are saved before editing
 
 Example (Windows): `C:\Users\username\Documents\config\backups`
 
-Example (Docker): `/data/statistics-for-strava/config/backups`
+Example (Docker): `/data/config/backups`
 
 ### Auto Backup
 

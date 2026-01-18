@@ -284,7 +284,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
               type="text"
               value={settings.files?.gearMaintenancePath || ''}
               onChange={(e) => handleChange('files.gearMaintenancePath', e.target.value)}
-              placeholder="/data/statistics-for-strava/storage/gear-maintenance"
+              placeholder="/data/storage/gear-maintenance"
               bg="inputBg"
             />
             <Text fontSize="sm" color="gray.500" mt={1}>Where gear maintenance images and data are stored</Text>
@@ -538,7 +538,7 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
               type="text"
               value={settings.files?.gearMaintenancePath || ''}
               onChange={(e) => handleChange('files.gearMaintenancePath', e.target.value)}
-              placeholder="/data/statistics-for-strava/storage/gear-maintenance"
+              placeholder="/data/storage/gear-maintenance"
               bg="inputBg"
             />
             <Text fontSize="sm" color="gray.500" mt={1}>Where gear maintenance images and data are stored</Text>
