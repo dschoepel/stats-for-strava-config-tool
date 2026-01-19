@@ -43,6 +43,7 @@ const intervalUnitCollection = createListCollection({
     { label: 'Kilometers', value: 'km' },
     { label: 'Miles', value: 'mi' },
     { label: 'Hours', value: 'hours' },
+    { label: 'Days Used', value: 'daysUsed' },
     { label: 'Days', value: 'days' }
   ]
 });
