@@ -8,7 +8,7 @@ import WeightHistoryEditor from '../../_components/fields/WeightHistoryEditor';
 import FtpHistoryEditor from '../../_components/fields/FtpHistoryEditor';
 import RestingHeartRateEditor from '../../_components/fields/RestingHeartRateEditor';
 import { DateInput } from '../../_components/fields/DateInput';
-import { calculateMaxHeartRate } from '../../../src/utils/heartRateUtils';
+import { calculateMaxHeartRate, validateZoneConsecutiveness } from '../../../src/utils/heartRateUtils';
 
 /**
  * AthleteConfigEditor - Handles athlete-specific configuration fields
@@ -33,12 +33,41 @@ const AthleteConfigEditor = ({
     const hasDefaultZones = heartRateZones?.default && Object.keys(heartRateZones.default).length > 0;
     const hasDateRanges = heartRateZones?.dateRanges && Object.keys(heartRateZones.dateRanges).length > 0;
     const hasSportTypes = heartRateZones?.sportTypes && Object.keys(heartRateZones.sportTypes).length > 0;
+    const zoneMode = getNestedValue(formData, 'heartRateZones.mode');
     
     if (hasDefaultZones || hasDateRanges || hasSportTypes) {
-      const mode = getNestedValue(formData, 'heartRateZones.mode');
-      if (mode === null || mode === undefined || mode === '') {
+      if (zoneMode === null || zoneMode === undefined || zoneMode === '') {
         errors['heartRateZones.mode'] = 'Zone Mode is required when heart rate zones are configured';
       }
+    }
+    
+    // Validate zone consecutiveness for default zones
+    if (hasDefaultZones) {
+      const defaultZones = heartRateZones.default;
+      const zoneErrors = validateZoneConsecutiveness(defaultZones, zoneMode);
+      Object.entries(zoneErrors).forEach(([zone, message]) => {
+        errors[`heartRateZones.default.${zone}`] = message;
+      });
+    }
+    
+    // Validate zone consecutiveness for date ranges
+    if (hasDateRanges) {
+      Object.entries(heartRateZones.dateRanges).forEach(([date, zones]) => {
+        const zoneErrors = validateZoneConsecutiveness(zones, zoneMode);
+        Object.entries(zoneErrors).forEach(([zone, message]) => {
+          errors[`heartRateZones.dateRanges.${date}.${zone}`] = message;
+        });
+      });
+    }
+    
+    // Validate zone consecutiveness for sport types
+    if (hasSportTypes) {
+      Object.entries(heartRateZones.sportTypes).forEach(([sport, zones]) => {
+        const zoneErrors = validateZoneConsecutiveness(zones, zoneMode);
+        Object.entries(zoneErrors).forEach(([zone, message]) => {
+          errors[`heartRateZones.sportTypes.${sport}.${zone}`] = message;
+        });
+      });
     }
     
     // Validate weight history entries
