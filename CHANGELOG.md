@@ -1,3 +1,29 @@
+## [1.0.1] — 2026-01-19
+
+### Added
+
+- **Resting Heart Rate Configuration**: Added support for tracking resting heart rate history in the Athlete section
+  - New RestingHeartRateEditor component for managing resting HR values over time
+  - Integrated with athlete configuration schema
+- **Gear Maintenance Enhancement**: Added "days used" as a new unit option for tracking gear usage
+  - Provides more flexible tracking options alongside existing distance-based units
+
+### Fixed
+
+- **Configuration Integrity**: Resolved critical issue where athlete section content was being merged back into `config.yaml` when saving general section, despite athlete being in a separate `config-general-athlete.yaml` file
+  - Fixed split file save logic to properly exclude nested sections from parent file
+  - Ensures clean separation of configuration sections across split files
+- **Code Quality**: Resolved lint errors in AthleteConfigEditor component
+  - Removed React Hooks from inside render prop callback
+  - Cleaned up unused imports and variables
+
+### Changed
+
+- Updated configuration schemas to support new resting heart rate field
+- Enhanced gear maintenance schema with additional unit option
+
+---
+
 ## [1.0.0] — 2026-01-16
 
 ### Initial Release
