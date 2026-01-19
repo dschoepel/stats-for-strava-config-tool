@@ -33,29 +33,96 @@ export const calculateMaxHeartRate = (birthday, formula) => {
 export const calculateDefaultZones = (maxHR, mode) => {
   if (!maxHR) return null;
   
-  const zoneRanges = [
-    { from: 50, to: 60 },  // Zone 1
-    { from: 61, to: 70 },  // Zone 2  
-    { from: 71, to: 80 },  // Zone 3
-    { from: 81, to: 90 },  // Zone 4
-    { from: 91, to: null } // Zone 5
-  ];
+  if (mode === 'relative') {
+    // For relative mode, use consecutive percentage boundaries (no overlap)
+    return {
+      zone1: { from: 50, to: 59 },
+      zone2: { from: 60, to: 69 },
+      zone3: { from: 70, to: 79 },
+      zone4: { from: 80, to: 89 },
+      zone5: { from: 90, to: null }
+    };
+  } else { // absolute
+    // For absolute mode, calculate BPM values and ensure consecutive zones with no gaps
+    const percentages = [50, 60, 70, 80, 90];
+    
+    // Calculate BPM thresholds
+    const thresholds = percentages.map(pct => Math.round((pct / 100) * maxHR));
+    
+    // Create zones with consecutive boundaries (no gaps)
+    return {
+      zone1: { from: thresholds[0], to: thresholds[1] - 1 },
+      zone2: { from: thresholds[1], to: thresholds[2] - 1 },
+      zone3: { from: thresholds[2], to: thresholds[3] - 1 },
+      zone4: { from: thresholds[3], to: thresholds[4] - 1 },
+      zone5: { from: thresholds[4], to: null }
+    };
+  }
+};
+
+/**
+ * Validate that heart rate zones have no gaps between consecutive zones
+ * @param {Object} zones - Zone object with zone1-zone5
+ * @param {string} mode - Zone mode: 'relative' or 'absolute'
+ * @returns {Object} - Object with zone keys and error messages
+ */
+export const validateZoneConsecutiveness = (zones, mode = 'absolute') => {
+  const errors = {};
   
-  const zones = {};
-  zoneRanges.forEach((range, index) => {
-    const zoneNum = index + 1;
-    if (mode === 'relative') {
-      zones[`zone${zoneNum}`] = {
-        from: range.from,
-        to: range.to
-      };
-    } else { // absolute
-      zones[`zone${zoneNum}`] = {
-        from: Math.round((range.from / 100) * maxHR),
-        to: range.to === null ? null : Math.round((range.to / 100) * maxHR)
+  if (!zones || typeof zones !== 'object') {
+    return errors;
+  }
+  
+  // Validate consecutiveness in both relative and absolute modes
+  // Check zones 1-4 (zone 5 is open-ended)
+  for (let i = 1; i <= 4; i++) {
+    const currentZone = zones[`zone${i}`];
+    const nextZone = zones[`zone${i + 1}`];
+    
+    if (currentZone && nextZone) {
+      const currentTo = currentZone.to;
+      const nextFrom = nextZone.from;
+      
+      if (currentTo !== null && nextFrom !== null) {
+        const expectedNextFrom = currentTo + 1;
+        if (nextFrom !== expectedNextFrom) {
+          const unit = mode === 'relative' ? '%' : 'BPM';
+          errors[`zone${i + 1}`] = `Zone ${i + 1} must start at ${expectedNextFrom}${unit} (Zone ${i} ends at ${currentTo}${unit})`;
+        }
+      }
+    }
+  }
+  
+  return errors;
+};
+
+/**
+ * Fix gaps in heart rate zones by making them consecutive
+ * @param {Object} zones - Zone object with zone1-zone5
+ * @returns {Object} - Fixed zones object
+ */
+export const fixZoneGaps = (zones) => {
+  if (!zones || typeof zones !== 'object') {
+    return zones;
+  }
+  
+  const fixed = { ...zones };
+  
+  // Fix zones 1-4 to be consecutive
+  for (let i = 1; i <= 4; i++) {
+    const currentZone = fixed[`zone${i}`];
+    const nextZone = fixed[`zone${i + 1}`];
+    
+    if (currentZone && nextZone && currentZone.to !== null) {
+      if (!fixed[`zone${i + 1}`]) {
+        fixed[`zone${i + 1}`] = {};
+      }
+      fixed[`zone${i + 1}`] = {
+        ...nextZone,
+        from: currentZone.to + 1
       };
     }
-  });
+  }
   
-  return zones;
+  return fixed;
 };

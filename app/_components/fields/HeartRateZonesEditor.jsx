@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Input, Flex, Text, VStack, HStack, Table, Heading, Icon, Field } from '@chakra-ui/react';
 import { NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
-import { MdAdd, MdInfo, MdDelete } from 'react-icons/md';
-import { calculateAge, calculateMaxHeartRate, calculateDefaultZones } from '../../../src/utils/heartRateUtils';
+import { MdAdd, MdInfo, MdDelete, MdBuild } from 'react-icons/md';
+import { calculateAge, calculateMaxHeartRate, calculateDefaultZones, validateZoneConsecutiveness, fixZoneGaps } from '../../../src/utils/heartRateUtils';
 import { readSportsList, initialSportsList } from '../../../src/utils/sportsListManager';
 import { DateInput } from './DateInput';
 
@@ -68,6 +68,28 @@ const HeartRateZonesEditor = ({
   
   // Handle mode change
   const handleModeChange = (newMode) => {
+    // Auto-recalculate zones when switching modes
+    if (calculatedMaxHR && newMode !== currentMode) {
+      const defaultZones = calculateDefaultZones(calculatedMaxHR, newMode);
+      if (defaultZones) {
+        // Create a fresh zones object with only the mode and new default zones
+        const updatedZones = {
+          mode: newMode,
+          default: defaultZones
+        };
+        
+        // Preserve dateRanges and sportTypes if they exist, but don't auto-convert them
+        if (zones.dateRanges && Object.keys(zones.dateRanges).length > 0) {
+          updatedZones.dateRanges = zones.dateRanges;
+        }
+        if (zones.sportTypes && Object.keys(zones.sportTypes).length > 0) {
+          updatedZones.sportTypes = zones.sportTypes;
+        }
+        
+        onChange(updatedZones);
+        return;
+      }
+    }
     onChange({ ...zones, mode: newMode });
   };
   
@@ -103,6 +125,43 @@ const HeartRateZonesEditor = ({
         onChange({ ...zones, default: defaultZones });
       }
     }
+  };
+  
+  // Fix gaps in default zones
+  const handleFixDefaultGaps = () => {
+    const fixed = fixZoneGaps(currentZones);
+    onChange({ ...zones, default: fixed });
+  };
+  
+  // Fix gaps in date range zones
+  const handleFixDateRangeGaps = (date) => {
+    const fixed = fixZoneGaps(dateRanges[date]);
+    const updated = { ...dateRanges, [date]: fixed };
+    onChange({ ...zones, dateRanges: updated });
+  };
+  
+  // Fix gaps in sport type zones
+  const handleFixSportTypeGaps = (sport) => {
+    const sportData = sportTypes[sport];
+    const fixed = fixZoneGaps(sportData.default || sportData);
+    const updated = { ...sportTypes, [sport]: { ...sportData, default: fixed } };
+    onChange({ ...zones, sportTypes: updated });
+  };
+  
+  // Fix gaps in sport date range zones
+  const handleFixSportDateRangeGaps = (sport, date) => {
+    const sportData = sportTypes[sport];
+    const dateRangeData = sportData.dateRanges || {};
+    const fixed = fixZoneGaps(dateRangeData[date]);
+    const updatedDateRanges = { ...dateRangeData, [date]: fixed };
+    const updated = { 
+      ...sportTypes, 
+      [sport]: { 
+        ...sportData, 
+        dateRanges: updatedDateRanges 
+      } 
+    };
+    onChange({ ...zones, sportTypes: updated });
   };
   
   // Handle date range operations
@@ -267,83 +326,97 @@ const HeartRateZonesEditor = ({
   });
   
   // Render zone table
-  const renderZoneTable = (zonesData, onZoneChange, keyPrefix = '') => (
-    <Box overflowX="auto" borderWidth="1px" borderColor="border" borderRadius="md">
-      <Table.Root size="sm" variant="outline">
-        <Table.Header>
-          <Table.Row bg="tableHeaderBg">
-            <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Values</Table.ColumnHeader>
-            <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-1</Table.ColumnHeader>
-            <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-2</Table.ColumnHeader>
-            <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-3</Table.ColumnHeader>
-            <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-4</Table.ColumnHeader>
-            <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-5</Table.ColumnHeader>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          <Table.Row>
-            <Table.Cell fontWeight="500">From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
-            {[1, 2, 3, 4, 5].map(zoneNum => (
-              <Table.Cell key={`${keyPrefix}-zone${zoneNum}-from`}>
-                <Flex align="center" gap={1}>
-                  <Input
-                    type="number"
-                    value={zonesData[`zone${zoneNum}`]?.from || ''}
-                    onChange={(e) => onZoneChange(zoneNum, 'from', e.target.value)}
-                    size="sm"
-                    width="80px"
-                    min="0"
-                    max="250"
-                    placeholder="0"
-                    bg="inputBg"
-                  />
-                  <Text fontSize="xs" color="textMuted">
-                    {currentMode === 'relative' ? '%' : 'BPM'}
-                  </Text>
-                </Flex>
-              </Table.Cell>
+  const renderZoneTable = (zonesData, onZoneChange, keyPrefix = '', zoneErrors = {}) => {
+    return (
+      <Box>
+        <Box overflowX="auto" borderWidth="1px" borderColor="border" borderRadius="md">
+          <Table.Root size="sm" variant="outline">
+            <Table.Header>
+              <Table.Row bg="tableHeaderBg">
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Values</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-1</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-2</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-3</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-4</Table.ColumnHeader>
+                <Table.ColumnHeader fontWeight="600" color="tableHeaderText">Zone-5</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell fontWeight="500">From {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                {[1, 2, 3, 4, 5].map(zoneNum => (
+                  <Table.Cell key={`${keyPrefix}-zone${zoneNum}-from`}>
+                    <Flex align="center" gap={1}>
+                      <Input
+                        type="number"
+                        value={zonesData[`zone${zoneNum}`]?.from || ''}
+                        onChange={(e) => onZoneChange(zoneNum, 'from', e.target.value)}
+                        size="sm"
+                        width="80px"
+                        min="0"
+                        max="250"
+                        placeholder="0"
+                        bg="inputBg"
+                      />
+                      <Text fontSize="xs" color="textMuted">
+                        {currentMode === 'relative' ? '%' : 'BPM'}
+                      </Text>
+                    </Flex>
+                  </Table.Cell>
+                ))}
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell fontWeight="500">To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
+                {[1, 2, 3, 4, 5].map(zoneNum => (
+                  <Table.Cell key={`${keyPrefix}-zone${zoneNum}-to`}>
+                    {zoneNum === 5 ? (
+                      <Input
+                        type="text"
+                        value="∞"
+                        readOnly
+                        size="sm"
+                        width="80px"
+                        title="Zone 5 'to' value is always infinity (null)"
+                        cursor="not-allowed"
+                        bg="inputBg"
+                      />
+                    ) : (
+                      <Flex align="center" gap={1}>
+                        <Input
+                          type="number"
+                          value={zonesData[`zone${zoneNum}`]?.to || ''}
+                          onChange={(e) => onZoneChange(zoneNum, 'to', e.target.value)}
+                          size="sm"
+                          width="80px"
+                          min="0"
+                          max="250"
+                          placeholder="0"
+                          bg="inputBg"
+                        />
+                        <Text fontSize="xs" color="textMuted">
+                          {currentMode === 'relative' ? '%' : 'BPM'}
+                        </Text>
+                      </Flex>
+                    )}
+                  </Table.Cell>
+                ))}
+              </Table.Row>
+            </Table.Body>
+          </Table.Root>
+        </Box>
+        {/* Display zone errors below the table */}
+        {Object.keys(zoneErrors).length > 0 && (
+          <Box mt={2}>
+            {Object.entries(zoneErrors).map(([zone, message]) => (
+              <Text key={zone} color="red.500" fontSize="sm">
+                • {message}
+              </Text>
             ))}
-          </Table.Row>
-          <Table.Row>
-            <Table.Cell fontWeight="500">To {currentMode === 'relative' ? '(%)' : '(BPM)'}:</Table.Cell>
-            {[1, 2, 3, 4, 5].map(zoneNum => (
-              <Table.Cell key={`${keyPrefix}-zone${zoneNum}-to`}>
-                {zoneNum === 5 ? (
-                  <Input
-                    type="text"
-                    value="∞"
-                    readOnly
-                    size="sm"
-                    width="80px"
-                    title="Zone 5 'to' value is always infinity (null)"
-                    cursor="not-allowed"
-                    bg="inputBg"
-                  />
-                ) : (
-                  <Flex align="center" gap={1}>
-                    <Input
-                      type="number"
-                      value={zonesData[`zone${zoneNum}`]?.to || ''}
-                      onChange={(e) => onZoneChange(zoneNum, 'to', e.target.value)}
-                      size="sm"
-                      width="80px"
-                      min="0"
-                      max="250"
-                      placeholder="0"
-                      bg="inputBg"
-                    />
-                    <Text fontSize="xs" color="textMuted">
-                      {currentMode === 'relative' ? '%' : 'BPM'}
-                    </Text>
-                  </Flex>
-                )}
-              </Table.Cell>
-            ))}
-          </Table.Row>
-        </Table.Body>
-      </Table.Root>
-    </Box>
-  );
+          </Box>
+        )}
+      </Box>
+    );
+  };
   
   return (
     <Box mb={6}>
@@ -398,21 +471,47 @@ const HeartRateZonesEditor = ({
       {/* Default Zones */}
       <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
         <Heading size="sm" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">Default Heart Rate Zones</Heading>
-        {calculatedMaxHR && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={autoPopulateZones}
-            title="Recalculate zones based on current age and formula"
-            flexShrink={0}
-            colorPalette={needsRecalculation ? "orange" : undefined}
-          >
-            Recalculate Zones{needsRecalculation && ' *'}
-          </Button>
-        )}
+        <Flex gap={2} flexWrap="wrap">
+          {(() => {
+            const defaultZoneErrors = validateZoneConsecutiveness(currentZones, currentMode);
+            const hasGaps = Object.keys(defaultZoneErrors).length > 0;
+            return hasGaps && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleFixDefaultGaps}
+                title="Automatically fix gaps between zones"
+                flexShrink={0}
+                colorPalette="blue"
+              >
+                <MdBuild /> Fix All Gaps
+              </Button>
+            );
+          })()}
+          {calculatedMaxHR && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={autoPopulateZones}
+              title="Recalculate zones based on current age and formula"
+              flexShrink={0}
+              colorPalette={needsRecalculation ? "orange" : undefined}
+            >
+              Recalculate Zones{needsRecalculation && ' *'}
+            </Button>
+          )}
+        </Flex>
       </Flex>
       <Box mb={6}>
-        {renderZoneTable(currentZones, handleZoneChange, 'default')}
+        {(() => {
+          const defaultZoneErrors = validateZoneConsecutiveness(currentZones, currentMode);
+          const errorMessages = {};
+          // Map errors to match the error key format from validation
+          Object.entries(defaultZoneErrors).forEach(([zone, message]) => {
+            errorMessages[zone] = errors[`heartRateZones.default.${zone}`] || message;
+          });
+          return renderZoneTable(currentZones, handleZoneChange, 'default', errorMessages);
+        })()}
       </Box>
 
       {/* Date Ranges Section */}
@@ -431,7 +530,7 @@ const HeartRateZonesEditor = ({
             .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
             .map(([date, zonesData]) => (
             <Box key={date} p={4} borderWidth="1px" borderColor="border" borderRadius="md">
-              <Flex justify="space-between" align="center" mb={3}>
+              <Flex justify="space-between" align="center" mb={3} gap={2} flexWrap="wrap">
                 <Field.Root maxW="200px">
                   <Field.Label srOnly>Effective Date</Field.Label>
                   <DateInput
@@ -440,11 +539,36 @@ const HeartRateZonesEditor = ({
                     bg="inputBg"
                   />
                 </Field.Root>
-                <Button onClick={() => handleRemoveDateRange(date)} size="sm" variant="outline" colorPalette="red" title="Remove date range">
-                  <MdDelete />
-                </Button>
+                <Flex gap={2} flexWrap="wrap">
+                  {(() => {
+                    const dateRangeErrors = validateZoneConsecutiveness(zonesData, currentMode);
+                    const hasGaps = Object.keys(dateRangeErrors).length > 0;
+                    return hasGaps && (
+                      <Button
+                        onClick={() => handleFixDateRangeGaps(date)}
+                        size="sm"
+                        variant="outline"
+                        colorPalette="blue"
+                        title="Fix gaps in this date range"
+                        flexShrink={0}
+                      >
+                        <MdBuild /> Fix Gaps
+                      </Button>
+                    );
+                  })()}
+                  <Button onClick={() => handleRemoveDateRange(date)} size="sm" variant="outline" colorPalette="red" title="Remove date range" flexShrink={0}>
+                    <MdDelete />
+                  </Button>
+                </Flex>
               </Flex>
-              {renderZoneTable(zonesData, (zoneNum, field, value) => handleDateRangeZoneChange(date, zoneNum, field, value), `date-${date}`)}
+              {(() => {
+                const dateRangeErrors = validateZoneConsecutiveness(zonesData, currentMode);
+                const errorMessages = {};
+                Object.entries(dateRangeErrors).forEach(([zone, message]) => {
+                  errorMessages[zone] = errors[`heartRateZones.dateRanges.${date}.${zone}`] || message;
+                });
+                return renderZoneTable(zonesData, (zoneNum, field, value) => handleDateRangeZoneChange(date, zoneNum, field, value), `date-${date}`, errorMessages);
+              })()}
             </Box>
           ))}
         </VStack>
@@ -477,8 +601,33 @@ const HeartRateZonesEditor = ({
               
               {/* Default zones for this sport */}
               <Box mb={4}>
-                <Heading size="xs" mb={2} lineHeight="1.2" wordBreak="break-word">Default Zones</Heading>
-                {renderZoneTable(sportData.default || {}, (zoneNum, field, value) => handleSportTypeZoneChange(sportName, zoneNum, field, value), `sport-${sportName}`)}
+                <Flex justify="space-between" align="center" mb={2} gap={2} flexWrap="wrap">
+                  <Heading size="xs" lineHeight="1.2" wordBreak="break-word" flex="1" minW="fit-content">Default Zones</Heading>
+                  {(() => {
+                    const sportZoneErrors = validateZoneConsecutiveness(sportData.default || {}, currentMode);
+                    const hasGaps = Object.keys(sportZoneErrors).length > 0;
+                    return hasGaps && (
+                      <Button
+                        onClick={() => handleFixSportTypeGaps(sportName)}
+                        size="xs"
+                        variant="outline"
+                        colorPalette="blue"
+                        title="Fix gaps in this sport's zones"
+                        flexShrink={0}
+                      >
+                        <MdBuild /> Fix Gaps
+                      </Button>
+                    );
+                  })()}
+                </Flex>
+                {(() => {
+                  const sportZoneErrors = validateZoneConsecutiveness(sportData.default || {}, currentMode);
+                  const errorMessages = {};
+                  Object.entries(sportZoneErrors).forEach(([zone, message]) => {
+                    errorMessages[zone] = errors[`heartRateZones.sportTypes.${sportName}.${zone}`] || message;
+                  });
+                  return renderZoneTable(sportData.default || {}, (zoneNum, field, value) => handleSportTypeZoneChange(sportName, zoneNum, field, value), `sport-${sportName}`, errorMessages);
+                })()}
               </Box>
               
               {/* Date ranges for this sport */}
@@ -514,11 +663,36 @@ const HeartRateZonesEditor = ({
                             size="sm"
                           />
                         </Field.Root>
-                        <Button onClick={() => handleRemoveSportDateRange(sportName, date)} size="xs" variant="outline" colorPalette="red" flexShrink={0} title="Remove date range">
-                          <MdDelete />
-                        </Button>
+                        <Flex gap={2} flexWrap="wrap">
+                          {(() => {
+                            const sportDateErrors = validateZoneConsecutiveness(zonesData, currentMode);
+                            const hasGaps = Object.keys(sportDateErrors).length > 0;
+                            return hasGaps && (
+                              <Button
+                                onClick={() => handleFixSportDateRangeGaps(sportName, date)}
+                                size="xs"
+                                variant="outline"
+                                colorPalette="blue"
+                                title="Fix gaps in this date range"
+                                flexShrink={0}
+                              >
+                                <MdBuild /> Fix
+                              </Button>
+                            );
+                          })()}
+                          <Button onClick={() => handleRemoveSportDateRange(sportName, date)} size="xs" variant="outline" colorPalette="red" flexShrink={0} title="Remove date range">
+                            <MdDelete />
+                          </Button>
+                        </Flex>
                       </Flex>
-                      {renderZoneTable(zonesData, (zoneNum, field, value) => handleSportDateRangeZoneChange(sportName, date, zoneNum, field, value), `sport-${sportName}-date-${date}`)}
+                      {(() => {
+                        const sportDateErrors = validateZoneConsecutiveness(zonesData, currentMode);
+                        const errorMessages = {};
+                        Object.entries(sportDateErrors).forEach(([zone, message]) => {
+                          errorMessages[zone] = errors[`heartRateZones.sportTypes.${sportName}.dateRanges.${date}.${zone}`] || message;
+                        });
+                        return renderZoneTable(zonesData, (zoneNum, field, value) => handleSportDateRangeZoneChange(sportName, date, zoneNum, field, value), `sport-${sportName}-date-${date}`, errorMessages);
+                      })()}
                     </Box>
                   ))}
                 </VStack>
