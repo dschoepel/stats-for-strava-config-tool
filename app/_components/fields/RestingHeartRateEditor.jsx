@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Box, Button, Flex, Text, Table, Heading, Field, NumberInput, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { MdAdd, MdDelete } from 'react-icons/md';
 import { DateInput } from './DateInput';
@@ -26,20 +26,12 @@ const RestingHeartRateEditor = ({
     return 'formula'; // default: string 'heuristicAgeBased' or undefined
   };
 
-  const [mode, setMode] = useState(() => getMode(value));
+  // Derive mode directly from value - no need for separate state sync
+  const mode = getMode(value);
   const [editingDate, setEditingDate] = useState(null);
-
-  // Sync mode when external value changes
-  useEffect(() => {
-    const newMode = getMode(value);
-    if (newMode !== mode) {
-      setMode(newMode);
-    }
-  }, [value]);
 
   // Handle mode change
   const handleModeChange = (newMode) => {
-    setMode(newMode);
     setEditingDate(null);
 
     // Convert value to appropriate type for new mode
