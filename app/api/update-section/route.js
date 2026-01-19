@@ -8,6 +8,34 @@ import { debugLog } from '../../../src/utils/debug';
 // Configure runtime to use Node.js
 export const runtime = 'nodejs';
 
+// Define the field order for the athlete section to ensure consistent YAML output
+const ATHLETE_FIELD_ORDER = [
+  'birthday',
+  'maxHeartRateFormula',
+  'restingHeartRateFormula',
+  'heartRateZones',
+  'weightHistory',
+  'ftpHistory'
+];
+
+// Helper function to order object entries according to a predefined order
+function orderObjectEntries(obj, fieldOrder) {
+  const ordered = [];
+  // First, add fields in the specified order
+  for (const key of fieldOrder) {
+    if (key in obj) {
+      ordered.push([key, obj[key]]);
+    }
+  }
+  // Then, add any remaining fields not in the order list
+  for (const key of Object.keys(obj)) {
+    if (!fieldOrder.includes(key)) {
+      ordered.push([key, obj[key]]);
+    }
+  }
+  return ordered;
+}
+
 export async function POST(request) {
   try {
     const { filePath, sectionName, sectionData, isAthlete, preserveNestedKeys = [] } = await request.json();
@@ -100,14 +128,15 @@ export async function POST(request) {
                 const athleteIndent = ' '.repeat(generalIndent + 2);
                 result.push(`${athleteIndent}athlete:`);
                 const baseIndent = ' '.repeat(generalIndent + 4);
-                Object.entries(sectionData).forEach(([key, value]) => {
+                // Use ordered entries to maintain consistent field order
+                orderObjectEntries(sectionData, ATHLETE_FIELD_ORDER).forEach(([key, value]) => {
                   let valueStr;
                   if (value === null) {
                     valueStr = 'null';
                   } else if (typeof value === 'string') {
-                    // Always quote birthday field and date-like values (YYYY-MM-DD format)
+                    // Always quote birthday field, date-like values, and restingHeartRateFormula
                     const isDateValue = /^\d{4}-\d{2}-\d{2}$/.test(value);
-                    const needsQuoting = key === 'birthday' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+                    const needsQuoting = key === 'birthday' || key === 'restingHeartRateFormula' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
                     if (needsQuoting) {
                       valueStr = `'${value.replace(/'/g, "''")}'`;
                     } else {
@@ -140,22 +169,23 @@ export async function POST(request) {
               }
               break;
             }
-            
+
             if (subTrimmed === 'athlete:') {
               foundAthlete = true;
               result.push(subLine);
               const athleteIndent = subLine.length - subLine.trimStart().length;
-              
+
               // Add new athlete data with proper quoting
               const baseIndent = ' '.repeat(athleteIndent + 2);
-              Object.entries(sectionData).forEach(([key, value]) => {
+              // Use ordered entries to maintain consistent field order
+              orderObjectEntries(sectionData, ATHLETE_FIELD_ORDER).forEach(([key, value]) => {
                 let valueStr;
                 if (value === null) {
                   valueStr = 'null';
                 } else if (typeof value === 'string') {
-                  // Always quote birthday field and date-like values (YYYY-MM-DD format)
+                  // Always quote birthday field, date-like values, and restingHeartRateFormula
                   const isDateValue = /^\d{4}-\d{2}-\d{2}$/.test(value);
-                  const needsQuoting = key === 'birthday' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
+                  const needsQuoting = key === 'birthday' || key === 'restingHeartRateFormula' || isDateValue || /[:#[\]{}*&!|>'"@`%]|^\s|\s$|^-\s/.test(value);
                   if (needsQuoting) {
                     valueStr = `'${value.replace(/'/g, "''")}'`;
                   } else {

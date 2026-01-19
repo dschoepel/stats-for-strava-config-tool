@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 import { Box, Text, Flex, Icon } from '@chakra-ui/react';
 import { MdInfo, MdWarning } from 'react-icons/md';
 import { Field } from '@chakra-ui/react';
@@ -6,6 +6,7 @@ import BaseConfigEditor from './BaseConfigEditor';
 import HeartRateZonesEditor from '../../_components/fields/HeartRateZonesEditor';
 import WeightHistoryEditor from '../../_components/fields/WeightHistoryEditor';
 import FtpHistoryEditor from '../../_components/fields/FtpHistoryEditor';
+import RestingHeartRateEditor from '../../_components/fields/RestingHeartRateEditor';
 import { DateInput } from '../../_components/fields/DateInput';
 import { calculateMaxHeartRate } from '../../../src/utils/heartRateUtils';
 
@@ -82,35 +83,18 @@ const AthleteConfigEditor = ({
 
         const birthday = getNestedValue(formData, 'birthday');
         const formula = getNestedValue(formData, 'maxHeartRateFormula');
-
-        // Memoize max heart rate calculation
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const maxHR = useMemo(() =>
-          calculateMaxHeartRate(birthday, formula),
-          [birthday, formula]
-        );
-
+        const maxHR = calculateMaxHeartRate(birthday, formula);
         const zoneMode = getNestedValue(formData, 'heartRateZones.mode');
 
         // Check if birthday or formula changed and zone mode is absolute
         const birthdayChanged = birthday !== initialBirthdayRef.current;
         const formulaChanged = formula !== initialFormulaRef.current;
-
-        // Memoize should show reminder check
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const shouldShowReminder = useMemo(() =>
-          zoneMode === 'absolute' && (birthdayChanged || formulaChanged),
-          [zoneMode, birthdayChanged, formulaChanged]
-        );
+        const shouldShowReminder = zoneMode === 'absolute' && (birthdayChanged || formulaChanged);
         
         // Update reminder visibility when relevant fields change
-        useEffect(() => {
-          if (shouldShowReminder && !showRecalculateReminder) {
-            setShowRecalculateReminder(true);
-          } else if (!shouldShowReminder && showRecalculateReminder) {
-            setShowRecalculateReminder(false);
-          }
-        }, [shouldShowReminder, showRecalculateReminder]);
+        if (shouldShowReminder !== showRecalculateReminder) {
+          setShowRecalculateReminder(shouldShowReminder);
+        }
         
         // Custom field change handler that tracks birthday/formula changes
         const handleFieldChangeWithTracking = (fieldPath, value) => {
@@ -167,7 +151,6 @@ const AthleteConfigEditor = ({
                 );
                 
                 // Create a custom wrapper for renderBasicField to track changes
-                const formulaValue = getNestedValue(formData, 'maxHeartRateFormula');
                 const handleFormulaChange = (path, value) => {
                   handleFieldChangeWithTracking(path, value);
                 };
@@ -200,7 +183,14 @@ const AthleteConfigEditor = ({
                 );
               })()}
             </Box>
-            
+
+            {/* Resting Heart Rate Formula Field */}
+            <RestingHeartRateEditor
+              value={getNestedValue(formData, 'restingHeartRateFormula') ?? 'heuristicAgeBased'}
+              onChange={(value) => handleFieldChange('restingHeartRateFormula', value)}
+              errors={errors}
+            />
+
             {/* Recalculate Zones Reminder */}
             {showRecalculateReminder && (
               <Flex

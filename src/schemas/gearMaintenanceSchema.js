@@ -142,7 +142,7 @@ export const gearMaintenanceSchema = {
                             type: 'string',
                             title: 'Interval Unit',
                             description: 'Unit of measurement for the interval',
-                            enum: ['km', 'mi', 'hours', 'days'],
+                            enum: ['km', 'mi', 'hours', 'daysUsed', 'days'],
                             default: 'km'
                           }
                         }

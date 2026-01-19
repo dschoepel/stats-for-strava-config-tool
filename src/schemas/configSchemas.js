@@ -72,6 +72,39 @@ export const athleteSchema = {
         }
       ]
     },
+    restingHeartRateFormula: {
+      oneOf: [
+        {
+          type: "string",
+          title: "Resting Heart Rate Formula",
+          description: "The formula used to calculate your resting heart rate. The default is heuristicAgeBased.",
+          enum: ["heuristicAgeBased"],
+          default: "heuristicAgeBased",
+          enumTitles: ["Heuristic Age-Based (default)"]
+        },
+        {
+          type: "integer",
+          title: "Fixed Resting Heart Rate",
+          description: "Set a fixed resting heart rate (BPM)",
+          minimum: 30,
+          maximum: 120
+        },
+        {
+          type: "object",
+          title: "Custom Resting Heart Rate by Date",
+          description: "Set resting heart rate values for specific date ranges",
+          patternProperties: {
+            "^\\d{4}-\\d{2}-\\d{2}$": {
+              type: "integer",
+              minimum: 30,
+              maximum: 120,
+              title: "Resting Heart Rate (BPM)"
+            }
+          },
+          additionalProperties: false
+        }
+      ]
+    },
     heartRateZones: {
       type: "object",
       title: "Heart Rate Zones",
