@@ -64,7 +64,7 @@ async function isCommandAllowed(command, defaultPath) {
 }
 
 /**
- * POST - Execute a Strava console command with SSE streaming
+ * POST - Execute an SFS console command with SSE streaming
  */
 export async function POST(request) {
   try {

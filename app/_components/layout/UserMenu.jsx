@@ -257,7 +257,7 @@ export default function UserMenu() {
                                     // Emit custom event to open backup manager
                                     window.dispatchEvent(new CustomEvent('open-backup-manager'));
                                   } else if (notification.action.type === 'navigate-strava-console') {
-                                    // Navigate to Strava Console with optional command pre-selected
+                                    // Navigate to SFS Console with optional command pre-selected
                                     const { command } = notification.action.payload || {};
                                     const url = command
                                       ? `/utilities/strava-console?command=${command}`

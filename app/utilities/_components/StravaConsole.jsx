@@ -122,7 +122,7 @@ export default function StravaConsole() {
           <HStack gap={3}>
             <Icon as={MdTerminal} boxSize={7} color="primary" />
             <Heading as="h2" size="xl" color="text">
-              Strava Console
+              Statistics for Strava Console
             </Heading>
           </HStack>
           <HStack gap={2}>
@@ -145,7 +145,7 @@ export default function StravaConsole() {
         </Flex>
 
         <Text color="textMuted" fontSize="md">
-          Execute Strava console commands and view real-time output. Commands run inside the Docker container.
+          Execute Statistics for Strava console commands and view real-time output. Commands run inside the Docker container.
         </Text>
 
         {/* Error display */}

@@ -170,7 +170,7 @@ export default function AppShell({ section = 'config', children }) {
       'Configuration': '/',
       'YAML Utility': '/utilities/yaml',
       'Gear Maintenance': '/utilities/gear-maintenance',
-      'Strava Console': '/utilities/strava-console',
+      'SFS Console': '/utilities/strava-console',
       'Documentation': '/docs/overview',
       'Overview': '/docs/overview',
       'Dashboard Editor Help': '/docs/dashboard-editor',

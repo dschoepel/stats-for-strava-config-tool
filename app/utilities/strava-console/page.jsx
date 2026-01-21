@@ -11,7 +11,7 @@ function LoadingFallback() {
     <Box display="flex" alignItems="center" justifyContent="center" minH="50vh">
       <VStack gap={3}>
         <Spinner size="xl" color="primary" />
-        <Text color="textMuted">Loading Strava Console...</Text>
+        <Text color="textMuted">Loading SFS Console...</Text>
       </VStack>
     </Box>
   );

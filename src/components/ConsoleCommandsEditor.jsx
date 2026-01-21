@@ -30,7 +30,7 @@ import { initialConsoleCommands } from '../utils/consoleCommandsManager';
 
 /**
  * Console Commands Editor
- * Allows users to manage the list of available Strava console commands
+ * Allows users to manage the list of available SFS console commands
  */
 export default function ConsoleCommandsEditor({ settings, onDirtyChange }) {
   const [commands, setCommands] = useState([]);
@@ -290,7 +290,7 @@ export default function ConsoleCommandsEditor({ settings, onDirtyChange }) {
 
         {/* Description */}
         <Text color="textMuted" fontSize="sm">
-          Configure the commands available in the Strava Console. Each command runs inside the Docker container as:
+          Configure the commands available in the SFS Console. Each command runs inside the Docker container as:
           <Text as="span" fontFamily="mono" ml={2}>
             docker compose exec app bin/console app:strava:&#123;command&#125;
           </Text>

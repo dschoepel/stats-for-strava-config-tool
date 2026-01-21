@@ -62,8 +62,8 @@ function getConsoleCommandsPath(defaultPath) {
  * Convert commands array to YAML
  */
 function toYAML(commands) {
-  let yaml = '# Console Commands for Stats for Strava\n';
-  yaml += '# These commands are available in the Strava Console utility\n';
+  let yaml = '# Console Commands for Statistics for Strava\n';
+  yaml += '# These commands are available in the SFS Console utility\n';
   yaml += `# Generated on ${new Date().toISOString()}\n\n`;
 
   yaml += 'commands:\n';

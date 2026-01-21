@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSettings } from '../../../../src/state/SettingsProvider';
 
 /**
- * Custom hook for managing Strava console command execution
+ * Custom hook for managing SFS console command execution
  */
 export function useStravaConsole() {
   const { settings } = useSettings();

@@ -1,6 +1,6 @@
 /**
  * Console Commands Manager
- * Manages console commands stored in a file for the Strava Console utility
+ * Manages console commands stored in a file for the SFS Console utility
  */
 
 import { getSetting } from './settingsManager.js';
@@ -26,7 +26,7 @@ function getConsoleCommandsPath() {
  * @returns {string} YAML formatted string
  */
 function toYAML(commands) {
-  let yaml = '# Console Commands for Stats for Strava\n';
+  let yaml = '# Console Commands for Statistics for Strava\n';
   yaml += '# These commands are available in the Strava Console utility\n';
   yaml += `# Generated on ${new Date().toISOString()}\n\n`;
 

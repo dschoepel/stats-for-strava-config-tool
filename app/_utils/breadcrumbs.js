@@ -29,7 +29,7 @@ export function getBreadcrumbsFromPath(pathname) {
     'utilities': 'Utilities',
     'yaml': 'YAML Utility',
     'gear-maintenance': 'Gear Maintenance',
-    'strava-console': 'Strava Console',
+    'strava-console': 'SFS Console',
 
     // Docs pages
     'docs': 'Documentation',
