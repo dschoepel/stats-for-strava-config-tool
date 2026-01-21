@@ -52,7 +52,7 @@ const MenuItem = ({ page, onClick, isCollapsed, isSubmenu = false, onToggleSideb
           onToggleSidebar();
         }
       }}
-      title={isCollapsed ? (page.fullLabel || page.label) : undefined}
+      title={page.fullLabel || (isCollapsed ? page.label : undefined)}
       position="relative"
       justify={isCollapsed ? "center" : "flex-start"}
     >
@@ -94,7 +94,7 @@ const MenuItemWithSubmenu = ({
           transition="all 0.2s"
           _hover={{ bg: "cardBg", color: "primary" }}
           onClick={onClick}
-          title={isCollapsed ? (page.fullLabel || page.label) : undefined}
+          title={page.fullLabel || (isCollapsed ? page.label : undefined)}
           justify={isCollapsed ? "center" : "flex-start"}
         >
           {Icon && (
@@ -246,6 +246,7 @@ export default function Sidebar({
                   handleNavClick(child.id, child.parent);
                 }}
                 isSubmenu
+                isCollapsed={isCollapsed}
                 onToggleSidebar={onToggle}
               />
             ))}
@@ -277,6 +278,7 @@ export default function Sidebar({
                   handleNavClick(child.id);
                 }}
                 isSubmenu
+                isCollapsed={isCollapsed}
                 onToggleSidebar={onToggle}
               />
             ))}
@@ -308,6 +310,7 @@ export default function Sidebar({
                   handleNavClick(child.id, child.parent);
                 }}
                 isSubmenu
+                isCollapsed={isCollapsed}
                 onToggleSidebar={onToggle}
               />
             ))}
