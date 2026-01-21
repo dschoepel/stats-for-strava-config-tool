@@ -11,7 +11,6 @@ import {
   Flex,
   Switch,
   Icon,
-  NumberInput,
 } from '@chakra-ui/react';
 import { MdFolder, MdSave } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
@@ -19,6 +18,7 @@ import { ConfirmDialog } from '../../../app/_components/ui/ConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import { expandPath as expandPathService, updateEnv } from '../../services';
 import ManageBackupsModal from './ManageBackupsModal';
+import SafeNumberInput from '../ui/SafeNumberInput';
 
 const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBackupManager = false, onBackupManagerOpened }) => {
   const [settings, setSettings] = useState({});
@@ -317,40 +317,15 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
                 <Field.Label fontWeight="500" mb={0} minW="fit-content">
                   Backup file threshold
                 </Field.Label>
-                <NumberInput.Root
-                  value={String(settings.files?.backupThreshold || 10)}
-                  onValueChange={(e) => handleChange('files.backupThreshold', parseInt(e.value) || 10)}
+                <SafeNumberInput
+                  value={settings.files?.backupThreshold || 10}
+                  onChange={(val) => handleChange('files.backupThreshold', val)}
                   min={1}
                   max={100}
                   step={1}
                   width={{ base: "100%", sm: "150px" }}
                   size="sm"
-                >
-                  <NumberInput.Input bg="inputBg" />
-                  <NumberInput.Control css={{
-                    '& button': {
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: 'var(--chakra-colors-text)',
-                      fontSize: '12px',
-                      minHeight: '14px',
-                      height: '14px',
-                      width: '20px',
-                      padding: '0',
-                      borderRadius: '0'
-                    },
-                    '& button:hover': {
-                      backgroundColor: 'transparent',
-                      opacity: '0.7'
-                    },
-                    '& svg': {
-                      width: '12px',
-                      height: '12px',
-                      stroke: 'var(--chakra-colors-text)',
-                      strokeWidth: '2px'
-                    }
-                  }} />
-                </NumberInput.Root>
+                />
               </Flex>
               <Text fontSize="sm" color="gray.500" mt={1}>
                 Show a notification when backup count exceeds this number
@@ -571,40 +546,15 @@ const FilesSettingsModal = ({ isOpen, onClose, embedded = false, shouldOpenBacku
                 <Field.Label fontWeight="500" mb={0} minW="fit-content">
                   Backup file threshold
                 </Field.Label>
-                <NumberInput.Root
-                  value={String(settings.files?.backupThreshold || 10)}
-                  onValueChange={(e) => handleChange('files.backupThreshold', parseInt(e.value) || 10)}
+                <SafeNumberInput
+                  value={settings.files?.backupThreshold || 10}
+                  onChange={(val) => handleChange('files.backupThreshold', val)}
                   min={1}
                   max={100}
                   step={1}
                   width={{ base: "100%", sm: "150px" }}
                   size="sm"
-                >
-                  <NumberInput.Input bg="inputBg" />
-                  <NumberInput.Control css={{
-                    '& button': {
-                      border: 'none',
-                      backgroundColor: 'transparent',
-                      color: 'var(--chakra-colors-text)',
-                      fontSize: '12px',
-                      minHeight: '14px',
-                      height: '14px',
-                      width: '20px',
-                      padding: '0',
-                      borderRadius: '0'
-                    },
-                    '& button:hover': {
-                      backgroundColor: 'transparent',
-                      opacity: '0.7'
-                    },
-                    '& svg': {
-                      width: '12px',
-                      height: '12px',
-                      stroke: 'var(--chakra-colors-text)',
-                      strokeWidth: '2px'
-                    }
-                  }} />
-                </NumberInput.Root>
+                />
               </Flex>
               <Text fontSize="sm" color="gray.500" mt={1}>
                 Show a notification when backup count exceeds this number

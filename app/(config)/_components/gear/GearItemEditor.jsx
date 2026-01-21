@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Box,
@@ -11,10 +11,10 @@ import {
   IconButton,
   Flex,
   Switch,
-  NumberInput,
   Checkbox,
 } from '@chakra-ui/react';
 import { MdDelete, MdArrowUpward, MdArrowDownward, MdExpandMore, MdChevronRight } from 'react-icons/md';
+import SafeNumberInput from '../../../../src/components/ui/SafeNumberInput';
 
 /**
  * GearItemEditor - Reusable component for editing a single gear item
@@ -174,22 +174,15 @@ const GearItemEditor = ({
                   flex={2}
                   invalid={!!errors[`${prefix}[${index}].purchasePrice.amountInCents`]}
                 >
-                  <Field.Label fontSize="sm">Amount (cents)</Field.Label>
-                  <NumberInput.Root
-                    value={gear.purchasePrice?.amountInCents ?? ''}
-                    onValueChange={(details) =>
-                      handlePurchasePriceUpdate('amountInCents', details.valueAsNumber)
-                    }
+                  <SafeNumberInput
+                    value={gear.purchasePrice?.amountInCents}
+                    onChange={(val) => handlePurchasePriceUpdate('amountInCents', val)}
                     min={0}
                     size="sm"
-                  >
-                    <NumberInput.Input placeholder="e.g., 50000 for $500.00" />
-                  </NumberInput.Root>
-                  {errors[`${prefix}[${index}].purchasePrice.amountInCents`] && (
-                    <Field.ErrorText fontSize="xs">
-                      {errors[`${prefix}[${index}].purchasePrice.amountInCents`]}
-                    </Field.ErrorText>
-                  )}
+                    label="Amount (cents)"
+                    placeholder="e.g., 50000 for $500.00"
+                    errorText={errors[`${prefix}[${index}].purchasePrice.amountInCents`]}
+                  />
                 </Field.Root>
 
                 <Field.Root

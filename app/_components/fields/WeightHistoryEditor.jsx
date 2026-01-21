@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Button, Flex, Text, VStack, Table, Heading, Field, NumberInput } from '@chakra-ui/react';
+import { Box, Button, Flex, Text, Table, Heading, Field } from '@chakra-ui/react';
 import { MdAdd, MdDelete } from 'react-icons/md';
 import { DateInput } from './DateInput';
+import SafeNumberInput from '../../../src/components/ui/SafeNumberInput';
 
 /**
  * WeightHistoryEditor - Inline editor for weight history tracking
@@ -13,7 +14,7 @@ const WeightHistoryEditor = ({
   errors = {}
 }) => {
   const [editingDate, setEditingDate] = useState(null);
-  
+
   const handleAddEntry = () => {
     const today = new Date().toISOString().split('T')[0];
     const updated = { ...history };
@@ -48,15 +49,14 @@ const WeightHistoryEditor = ({
     onChange(updated);
     setEditingDate(null);
   };
-  
-  const handleWeightChange = (date, value) => {
+
+  const handleWeightChange = (date, newWeight) => {
     const updated = { ...history };
-    const numValue = parseFloat(value);
-    updated[date] = isNaN(numValue) ? 0 : numValue;
+    updated[date] = newWeight;
     onChange(updated);
   };
-  
-  const sortedEntries = Object.entries(history).sort(([dateA], [dateB]) => 
+
+  const sortedEntries = Object.entries(history).sort(([dateA], [dateB]) =>
     new Date(dateB) - new Date(dateA)
   );
   
@@ -118,39 +118,15 @@ const WeightHistoryEditor = ({
                     )}
                   </Table.Cell>
                   <Table.Cell>
-                    <NumberInput.Root
-                      value={String(weight)}
-                      onValueChange={(e) => handleWeightChange(date, e.value)}
+                    <SafeNumberInput
+                      value={history[date] || 0}
+                      onChange={(newWeight) => handleWeightChange(date, newWeight)}
                       min={0}
                       step={0.1}
                       width="120px"
                       size="sm"
-                    >
-                      <NumberInput.Input bg="inputBg" />
-                      <NumberInput.Control css={{
-                        '& button': {
-                          border: 'none',
-                          backgroundColor: 'transparent',
-                          color: 'var(--chakra-colors-text)',
-                          fontSize: '12px',
-                          minHeight: '14px',
-                          height: '14px',
-                          width: '20px',
-                          padding: '0',
-                          borderRadius: '0'
-                        },
-                        '& button:hover': {
-                          backgroundColor: 'transparent',
-                          opacity: '0.7'
-                        },
-                        '& svg': {
-                          width: '12px',
-                          height: '12px',
-                          stroke: 'var(--chakra-colors-text)',
-                          strokeWidth: '2px'
-                        }
-                      }} />
-                    </NumberInput.Root>
+                      allowDecimal={true}
+                    />
                   </Table.Cell>
                   <Table.Cell>
                     <Button

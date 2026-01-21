@@ -1,3 +1,54 @@
+## [1.1.0] — 2026-01-21
+
+### Added
+
+- **Statistics for Strava Console**: New utility for executing Statistics for Strava console commands directly from the web interface
+  - Terminal-like UI panel with real-time streaming output for running commands inside the container
+  - Command dropdown with allowlist of safe commands:
+    - `app:strava:build-files` - Build Statistics for Strava data files
+    - `app:strava:import-data` - Import activity data from Strava
+    - `app:strava:webhooks-create` - Create Strava webhook subscriptions
+    - `app:strava:webhooks-unsubscribe` - Remove webhook subscriptions
+    - `app:strava:webhooks-view` - View current webhook subscriptions
+  - Server-Sent Events (SSE) for live stdout/stderr streaming
+  - Auto-scrolling output window with monospace font
+  - Status indicators showing command execution state and exit codes
+  - Input disabled during command execution to prevent concurrent runs
+  - Clear output button for managing console history
+  - Secure backend API with command validation against allowlist
+  - Added to utilities navigation alongside YAML tools and gear maintenance
+
+### Fixed
+
+- **NumberInput Multi-Digit Typing Bug**: Resolved critical issue where typing multi-digit numbers (e.g., "42") would result in corrupted input values (e.g., "1220")
+  - Root cause: Chakra UI v3's NumberInput component has a feedback loop when used as controlled component with immediate numeric parsing
+  - Created new `SafeNumberInput` wrapper component that stores raw string during typing and only parses on blur
+  - Replaced all 7 NumberInput instances across the codebase:
+    - Resting heart rate editor (fixed and date range modes)
+    - FTP history editor
+    - Weight history editor
+    - Gear purchase price editor
+    - Backup threshold settings (embedded and modal modes)
+  - Added automatic validation with error UI for invalid, out-of-range, and required values
+  - Added comprehensive developer documentation in `SAFE_NUMBER_INPUT.md`
+
+### Changed
+
+- Improved number input validation with real-time feedback after first blur
+- Number inputs now automatically clamp values to min/max bounds on blur
+- Enhanced user experience with clearer error messages for invalid numeric input
+
+### Technical
+
+- New API route: `/api/strava-console` for secure command execution with SSE streaming
+- New page: `/utilities/strava-console` with terminal-style interface
+- New reusable component: `SafeNumberInput` at `src/components/ui/SafeNumberInput.jsx`
+- Backend uses `child_process.spawn` for safe command execution
+- Removed 100+ lines of boilerplate state management code across multiple components
+- All number inputs now follow consistent validation and error handling patterns
+
+---
+
 ## [1.0.1] — 2026-01-19
 
 ### Added
@@ -6,7 +57,7 @@
   - New RestingHeartRateEditor component for managing resting HR values over time
   - Integrated with athlete configuration schema
 - **Gear Maintenance Enhancement**: Added "days used" as a new unit option for tracking gear usage
-  - Provides more flexible tracking options alongside existing distance-based units
+  - Provides more flexible tracking options alongside exigitsting distance-based units
 
 ### Fixed
 

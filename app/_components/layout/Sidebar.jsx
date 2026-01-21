@@ -3,7 +3,7 @@ import { ChevronRightIcon, ChevronLeftIcon, ChevronDownIcon } from '@chakra-ui/i
 import {
   MdBuild, MdPerson, MdPalette, MdFileDownload,
   MdBarChart, MdDirectionsBike, MdLink, MdSchedule,
-  MdDescription, MdHelp, MdConstruction
+  MdDescription, MdHelp, MdConstruction, MdTerminal
 } from 'react-icons/md';
 import { FcDataConfiguration } from 'react-icons/fc';
 import { SiYaml } from 'react-icons/si';
@@ -26,7 +26,8 @@ const iconMap = {
   'MdSchedule': MdSchedule,
   'MdConstruction': MdConstruction,
   'SiYaml': SiYaml,
-  'MdHelp': MdHelp
+  'MdHelp': MdHelp,
+  'MdTerminal': MdTerminal
 };
 
 const MenuItem = ({ page, onClick, isCollapsed, isSubmenu = false, onToggleSidebar }) => {
@@ -51,7 +52,7 @@ const MenuItem = ({ page, onClick, isCollapsed, isSubmenu = false, onToggleSideb
           onToggleSidebar();
         }
       }}
-      title={isCollapsed ? page.label : undefined}
+      title={page.fullLabel || (isCollapsed ? page.label : undefined)}
       position="relative"
       justify={isCollapsed ? "center" : "flex-start"}
     >
@@ -93,7 +94,7 @@ const MenuItemWithSubmenu = ({
           transition="all 0.2s"
           _hover={{ bg: "cardBg", color: "primary" }}
           onClick={onClick}
-          title={isCollapsed ? page.label : undefined}
+          title={page.fullLabel || (isCollapsed ? page.label : undefined)}
           justify={isCollapsed ? "center" : "flex-start"}
         >
           {Icon && (
@@ -245,6 +246,7 @@ export default function Sidebar({
                   handleNavClick(child.id, child.parent);
                 }}
                 isSubmenu
+                isCollapsed={isCollapsed}
                 onToggleSidebar={onToggle}
               />
             ))}
@@ -276,6 +278,7 @@ export default function Sidebar({
                   handleNavClick(child.id);
                 }}
                 isSubmenu
+                isCollapsed={isCollapsed}
                 onToggleSidebar={onToggle}
               />
             ))}
@@ -307,6 +310,7 @@ export default function Sidebar({
                   handleNavClick(child.id, child.parent);
                 }}
                 isSubmenu
+                isCollapsed={isCollapsed}
                 onToggleSidebar={onToggle}
               />
             ))}

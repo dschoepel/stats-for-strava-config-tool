@@ -115,6 +115,14 @@ export const pages = {
     icon: 'SiYaml',
     group: 'tools'
   },
+  'SFS Console': {
+    id: 'SFS Console',
+    label: 'SFS Console',
+    fullLabel: 'Statistics for Strava Console',
+    parent: 'Utilities',
+    icon: 'MdTerminal',
+    group: 'tools'
+  },
 
   // Documentation pages
   'Documentation': {

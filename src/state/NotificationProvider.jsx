@@ -187,7 +187,12 @@ export const NotificationProvider = ({ children }) => {
         type: 'info',
         message: "You've made/saved changes to the configuration. Remember to execute the 'build-files' command in Statistics for Strava!",
         createdAt: Date.now(),
-        read: false
+        read: false,
+        action: {
+          label: 'Run Build Files',
+          type: 'navigate-strava-console',
+          payload: { command: 'build-files' }
+        }
       };
 
       const updated = [newNotification, ...prev];

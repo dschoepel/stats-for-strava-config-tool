@@ -19,11 +19,13 @@ export const DirtyStateProvider = ({ children }) => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [sportsListDirty, setSportsListDirty] = useState(false);
   const [widgetDefinitionsDirty, setWidgetDefinitionsDirty] = useState(false);
+  const [consoleCommandsDirty, setConsoleCommandsDirty] = useState(false);
 
   const clearAllDirtyState = useCallback(() => {
     setHasUnsavedChanges(false);
     setSportsListDirty(false);
     setWidgetDefinitionsDirty(false);
+    setConsoleCommandsDirty(false);
   }, []);
 
   const checkAndConfirmNavigation = useCallback((onConfirm) => {
@@ -45,25 +47,35 @@ export const DirtyStateProvider = ({ children }) => {
   }, [hasUnsavedChanges, showConfirmDialog, closeDialog]);
 
   const checkAndConfirmModalClose = useCallback((modalName, onClose) => {
-    const isDirty = modalName === 'sportsList' ? sportsListDirty : modalName === 'widgetDefinitions' ? widgetDefinitionsDirty : false;
+    const isDirty = modalName === 'sportsList' ? sportsListDirty
+      : modalName === 'widgetDefinitions' ? widgetDefinitionsDirty
+      : modalName === 'consoleCommands' ? consoleCommandsDirty
+      : false;
+
+    const displayNames = {
+      sportsList: 'Sports List',
+      widgetDefinitions: 'Widget Definitions',
+      consoleCommands: 'Console Commands'
+    };
 
     if (isDirty) {
       showConfirmDialog({
         title: 'Unsaved Changes',
-        message: `You have unsaved changes in ${modalName === 'sportsList' ? 'Sports List' : 'Widget Definitions'}. These changes will be lost if you close without saving.\n\nAre you sure you want to close?`,
+        message: `You have unsaved changes in ${displayNames[modalName] || modalName}. These changes will be lost if you close without saving.\n\nAre you sure you want to close?`,
         confirmText: 'Close Anyway',
         confirmColorPalette: 'orange',
         onConfirm: () => {
           closeDialog();
           if (modalName === 'sportsList') setSportsListDirty(false);
           if (modalName === 'widgetDefinitions') setWidgetDefinitionsDirty(false);
+          if (modalName === 'consoleCommands') setConsoleCommandsDirty(false);
           onClose();
         }
       });
     } else {
       onClose();
     }
-  }, [sportsListDirty, widgetDefinitionsDirty, showConfirmDialog, closeDialog]);
+  }, [sportsListDirty, widgetDefinitionsDirty, consoleCommandsDirty, showConfirmDialog, closeDialog]);
 
   // Memoize context value to prevent unnecessary re-renders of consumers
   // Note: State setters are stable references from useState and safe to include
@@ -71,9 +83,11 @@ export const DirtyStateProvider = ({ children }) => {
     hasUnsavedChanges,
     sportsListDirty,
     widgetDefinitionsDirty,
+    consoleCommandsDirty,
     setHasUnsavedChanges,
     setSportsListDirty,
     setWidgetDefinitionsDirty,
+    setConsoleCommandsDirty,
     clearAllDirtyState,
     checkAndConfirmNavigation,
     checkAndConfirmModalClose
@@ -81,6 +95,7 @@ export const DirtyStateProvider = ({ children }) => {
     hasUnsavedChanges,
     sportsListDirty,
     widgetDefinitionsDirty,
+    consoleCommandsDirty,
     clearAllDirtyState,
     checkAndConfirmNavigation,
     checkAndConfirmModalClose

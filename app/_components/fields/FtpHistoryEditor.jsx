@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Button, Flex, Text, VStack, Table, Heading, Tabs, Field, NumberInput } from '@chakra-ui/react';
+import { Box, Button, Flex, Text, Table, Heading, Field, Tabs } from '@chakra-ui/react';
 import { MdAdd, MdDelete } from 'react-icons/md';
 import { DateInput } from './DateInput';
+import SafeNumberInput from '../../../src/components/ui/SafeNumberInput';
 
 /**
  * FtpHistoryEditor - Inline editor for FTP (Functional Threshold Power) history
@@ -14,7 +15,7 @@ const FtpHistoryEditor = ({
 }) => {
   const [editingDate, setEditingDate] = useState(null);
   const [editingSport, setEditingSport] = useState(null);
-  
+
   const cyclingHistory = history?.cycling || {};
   const runningHistory = history?.running || {};
   
@@ -61,16 +62,15 @@ const FtpHistoryEditor = ({
     setEditingDate(null);
     setEditingSport(null);
   };
-  
-  const handleFtpChange = (sport, date, value) => {
+
+  const handleFtpChange = (sport, date, newFtp) => {
     const updated = { ...history };
     // Deep copy the sport object to ensure React detects the change
     updated[sport] = { ...(updated[sport] || {}) };
-    const numValue = parseInt(value);
-    updated[sport][date] = isNaN(numValue) ? 0 : numValue;
+    updated[sport][date] = newFtp;
     onChange(updated);
   };
-  
+
   const renderTable = (sport, sportHistory) => {
     const sortedEntries = Object.entries(sportHistory).sort(([dateA], [dateB]) => 
       new Date(dateB) - new Date(dateA)
@@ -137,39 +137,14 @@ const FtpHistoryEditor = ({
                       )}
                     </Table.Cell>
                     <Table.Cell>
-                      <NumberInput.Root
-                        value={String(ftp)}
-                        onValueChange={(e) => handleFtpChange(sport, date, e.value)}
+                      <SafeNumberInput
+                        value={history[sport]?.[date] || 0}
+                        onChange={(newFtp) => handleFtpChange(sport, date, newFtp)}
                         min={0}
                         step={1}
                         width="120px"
                         size="sm"
-                      >
-                        <NumberInput.Input bg="inputBg" />
-                        <NumberInput.Control css={{
-                          '& button': {
-                            border: 'none',
-                            backgroundColor: 'transparent',
-                            color: 'var(--chakra-colors-text)',
-                            fontSize: '12px',
-                            minHeight: '14px',
-                            height: '14px',
-                            width: '20px',
-                            padding: '0',
-                            borderRadius: '0'
-                          },
-                          '& button:hover': {
-                            backgroundColor: 'transparent',
-                            opacity: '0.7'
-                          },
-                          '& svg': {
-                            width: '12px',
-                            height: '12px',
-                            stroke: 'var(--chakra-colors-text)',
-                            strokeWidth: '2px'
-                          }
-                        }} />
-                      </NumberInput.Root>
+                      />
                     </Table.Cell>
                     <Table.Cell>
                       <Button
