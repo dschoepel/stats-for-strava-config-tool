@@ -3,7 +3,7 @@ import { ChevronRightIcon, ChevronLeftIcon, ChevronDownIcon } from '@chakra-ui/i
 import {
   MdBuild, MdPerson, MdPalette, MdFileDownload,
   MdBarChart, MdDirectionsBike, MdLink, MdSchedule,
-  MdDescription, MdHelp, MdConstruction
+  MdDescription, MdHelp, MdConstruction, MdTerminal
 } from 'react-icons/md';
 import { FcDataConfiguration } from 'react-icons/fc';
 import { SiYaml } from 'react-icons/si';
@@ -26,7 +26,8 @@ const iconMap = {
   'MdSchedule': MdSchedule,
   'MdConstruction': MdConstruction,
   'SiYaml': SiYaml,
-  'MdHelp': MdHelp
+  'MdHelp': MdHelp,
+  'MdTerminal': MdTerminal
 };
 
 const MenuItem = ({ page, onClick, isCollapsed, isSubmenu = false, onToggleSidebar }) => {

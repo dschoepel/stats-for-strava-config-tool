@@ -3,7 +3,7 @@ import { Box, Button, VStack, HStack, Text, Icon } from '@chakra-ui/react';
 import { ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import {
   MdSettings, MdPalette, MdFolder, MdEdit, MdVerifiedUser,
-  MdSportsSoccer, MdWidgets, MdImportExport
+  MdSportsSoccer, MdWidgets, MdImportExport, MdTerminal
 } from 'react-icons/md';
 
 const SettingsDropdown = ({ onSelectSetting }) => {
@@ -17,6 +17,7 @@ const SettingsDropdown = ({ onSelectSetting }) => {
     { id: 'validation', label: 'Validation', icon: MdVerifiedUser },
     { id: 'sportsList', label: 'Sports List', icon: MdSportsSoccer },
     { id: 'widgetDefinitions', label: 'Widgets', icon: MdWidgets },
+    { id: 'consoleCommands', label: 'Console Commands', icon: MdTerminal },
     { id: 'importExport', label: 'Import/Export', icon: MdImportExport }
   ];
 

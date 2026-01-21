@@ -4,12 +4,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Box, Flex, Heading, IconButton, Icon, HStack, Breadcrumb } from '@chakra-ui/react';
 import { getBreadcrumbsFromPath } from '../../_utils/breadcrumbs';
-import { MdClose, MdSportsBasketball, MdWidgets, MdHome } from 'react-icons/md';
+import { MdClose, MdSportsBasketball, MdWidgets, MdHome, MdTerminal } from 'react-icons/md';
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import SettingsDialog from '../../../src/components/SettingsDialog'
 import SportsListEditor from '../../../src/components/SportsListEditor'
 import WidgetDefinitionsEditor from '../../../src/components/WidgetDefinitionsEditor'
+import ConsoleCommandsEditor from '../../../src/components/ConsoleCommandsEditor'
 import { Toaster } from '../../../src/components/ui/toaster'
 import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { useSettings } from '../../../src/state/SettingsProvider'
@@ -24,7 +25,7 @@ export default function AppShell({ section = 'config', children }) {
   const pathname = usePathname();
   const { theme, toggleTheme, toggleSidebar, isSidebarCollapsed, settings } = useSettings();
   const { confirmDialog, closeDialog } = useDialog();
-  const { setSportsListDirty, setWidgetDefinitionsDirty, checkAndConfirmModalClose, checkAndConfirmNavigation } = useDirtyState();
+  const { setSportsListDirty, setWidgetDefinitionsDirty, setConsoleCommandsDirty, checkAndConfirmModalClose, checkAndConfirmNavigation } = useDirtyState();
   const { currentPage, navigateTo, hasHydrated } = useNavigation();
   const { hasConfigInitialized, updateHasConfigInitialized, updateFileCache, updateSectionToFileMap } = useConfig();
 
@@ -169,6 +170,7 @@ export default function AppShell({ section = 'config', children }) {
       'Configuration': '/',
       'YAML Utility': '/utilities/yaml',
       'Gear Maintenance': '/utilities/gear-maintenance',
+      'Strava Console': '/utilities/strava-console',
       'Documentation': '/docs/overview',
       'Overview': '/docs/overview',
       'Dashboard Editor Help': '/docs/dashboard-editor',
@@ -408,6 +410,63 @@ export default function AppShell({ section = 'config', children }) {
             </Flex>
             <Box flex={1} p={8} overflowY="auto" bg="cardBg">
               <WidgetDefinitionsEditor settings={settings} onDirtyChange={setWidgetDefinitionsDirty} />
+            </Box>
+          </Flex>
+        </Flex>
+      )}
+
+      {activeSettingsModal === 'consoleCommands' && (
+        <Flex
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(0, 0, 0, 0.7)"
+          justify="center"
+          align="center"
+          zIndex={10000}
+          onClick={() => handleCloseModal('consoleCommands')}
+        >
+          <Flex
+            bg="cardBg"
+            borderRadius="xl"
+            boxShadow="0 20px 60px rgba(0, 0, 0, 0.3)"
+            w="90%"
+            maxW="900px"
+            maxH="90vh"
+            flexDirection="column"
+            border="1px solid"
+            borderColor="border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Flex
+              justify="space-between"
+              align="center"
+              p={4}
+              borderBottom="1px solid"
+              borderColor="border"
+              bg="panelBg"
+              borderTopRadius="xl"
+            >
+              <HStack gap={2}>
+                <Icon fontSize="2xl" color="primary"><MdTerminal /></Icon>
+                <Heading as="h2" size="lg" color="text" fontWeight="semibold">
+                  Console Commands
+                </Heading>
+              </HStack>
+              <IconButton
+                onClick={() => handleCloseModal('consoleCommands')}
+                aria-label="Close"
+                size="sm"
+                variant="ghost"
+                colorPalette="gray"
+              >
+                <Icon><MdClose /></Icon>
+              </IconButton>
+            </Flex>
+            <Box flex={1} overflowY="auto" bg="cardBg">
+              <ConsoleCommandsEditor settings={settings} onDirtyChange={setConsoleCommandsDirty} />
             </Box>
           </Flex>
         </Flex>
