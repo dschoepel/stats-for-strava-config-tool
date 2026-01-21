@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Box, Button, Flex, Text, Table, Heading, Field, NumberInput, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
+import { Box, Button, Flex, Text, Table, Heading, Field, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
 import { MdAdd, MdDelete } from 'react-icons/md';
 import { DateInput } from './DateInput';
+import SafeNumberInput from '../../../src/components/ui/SafeNumberInput';
 
 /**
  * RestingHeartRateEditor - Editor for resting heart rate formula configuration
@@ -54,12 +55,6 @@ const RestingHeartRateEditor = ({
     }
   };
 
-  // Fixed mode handlers
-  const handleFixedChange = (newValue) => {
-    const numValue = parseInt(newValue);
-    onChange(isNaN(numValue) ? 60 : Math.max(30, Math.min(120, numValue)));
-  };
-
   // Date range mode handlers
   const handleAddEntry = () => {
     const today = new Date().toISOString().split('T')[0];
@@ -99,11 +94,10 @@ const RestingHeartRateEditor = ({
     setEditingDate(null);
   };
 
-  const handleValueChange = (date, newValue) => {
+  const handleDateValueChange = (date, newValue) => {
     const currentValue = typeof value === 'object' && value !== null ? value : {};
-    const numValue = parseInt(newValue);
     const updated = { ...currentValue };
-    updated[date] = isNaN(numValue) ? 60 : Math.max(30, Math.min(120, numValue));
+    updated[date] = newValue;
     onChange(updated);
   };
 
@@ -140,7 +134,7 @@ const RestingHeartRateEditor = ({
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {sortedEntries.map(([date, hr]) => (
+                {sortedEntries.map(([date]) => (
                   <Table.Row key={date}>
                     <Table.Cell>
                       {editingDate === date ? (
@@ -165,40 +159,15 @@ const RestingHeartRateEditor = ({
                       )}
                     </Table.Cell>
                     <Table.Cell>
-                      <NumberInput.Root
-                        value={String(hr)}
-                        onValueChange={(e) => handleValueChange(date, e.value)}
+                      <SafeNumberInput
+                        value={entries.find(([d]) => d === date)?.[1] || 60}
+                        onChange={(newValue) => handleDateValueChange(date, newValue)}
                         min={30}
                         max={120}
                         step={1}
                         width="120px"
                         size="sm"
-                      >
-                        <NumberInput.Input bg="inputBg" />
-                        <NumberInput.Control css={{
-                          '& button': {
-                            border: 'none',
-                            backgroundColor: 'transparent',
-                            color: 'var(--chakra-colors-text)',
-                            fontSize: '12px',
-                            minHeight: '14px',
-                            height: '14px',
-                            width: '20px',
-                            padding: '0',
-                            borderRadius: '0'
-                          },
-                          '& button:hover': {
-                            backgroundColor: 'transparent',
-                            opacity: '0.7'
-                          },
-                          '& svg': {
-                            width: '12px',
-                            height: '12px',
-                            stroke: 'var(--chakra-colors-text)',
-                            strokeWidth: '2px'
-                          }
-                        }} />
-                      </NumberInput.Root>
+                      />
                     </Table.Cell>
                     <Table.Cell>
                       <Button
@@ -270,45 +239,16 @@ const RestingHeartRateEditor = ({
 
       {mode === 'fixed' && (
         <Box>
-          <Field.Root>
-            <Field.Label fontWeight="500" fontSize="sm">Resting Heart Rate (BPM)</Field.Label>
-            <NumberInput.Root
-              value={String(typeof value === 'number' ? value : 60)}
-              onValueChange={(e) => handleFixedChange(e.value)}
-              min={30}
-              max={120}
-              step={1}
-              width={{ base: "100%", sm: "150px" }}
-            >
-              <NumberInput.Input bg="inputBg" />
-              <NumberInput.Control css={{
-                '& button': {
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: 'var(--chakra-colors-text)',
-                  fontSize: '12px',
-                  minHeight: '14px',
-                  height: '14px',
-                  width: '20px',
-                  padding: '0',
-                  borderRadius: '0'
-                },
-                '& button:hover': {
-                  backgroundColor: 'transparent',
-                  opacity: '0.7'
-                },
-                '& svg': {
-                  width: '12px',
-                  height: '12px',
-                  stroke: 'var(--chakra-colors-text)',
-                  strokeWidth: '2px'
-                }
-              }} />
-            </NumberInput.Root>
-            <Field.HelperText fontSize="xs" color="textMuted">
-              Enter a value between 30 and 120 BPM
-            </Field.HelperText>
-          </Field.Root>
+          <SafeNumberInput
+            value={typeof value === 'number' ? value : 60}
+            onChange={onChange}
+            min={30}
+            max={120}
+            step={1}
+            width={{ base: "100%", sm: "150px" }}
+            label="Resting Heart Rate (BPM)"
+            helperText="Enter a value between 30 and 120 BPM"
+          />
         </Box>
       )}
 
