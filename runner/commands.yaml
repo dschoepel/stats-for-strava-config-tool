@@ -1,0 +1,35 @@
+# Console Commands for Statistics for Strava
+# This file defines the allowed commands that can be executed via the strava-runner API.
+# The runner will automatically reload this file every 5 seconds to pick up changes.
+#
+# Each command entry must have:
+#   - id: Unique identifier for the command
+#   - name: Human-readable display name
+#   - command: The actual Symfony console command (without 'php bin/console' prefix)
+#   - description: Brief description of what the command does
+
+commands:
+  - id: "build-files"
+    name: "Build Files (Updates Dashboard)"
+    command: "build-files"
+    description: "Build Strava files and update the dashboard"
+
+  - id: "import-data"
+    name: "Import Data"
+    command: "import-data"
+    description: "Import new activities from Strava API"
+
+  - id: "webhooks-create"
+    name: "Webhooks Create"
+    command: "webhooks-create"
+    description: "Create a Strava webhook subscription"
+
+  - id: "webhooks-unsubscribe"
+    name: "Webhooks Unsubscribe"
+    command: "webhooks-unsubscribe"
+    description: "Delete a Strava webhook subscription"
+
+  - id: "webhooks-view"
+    name: "Webhooks View"
+    command: "webhooks-view"
+    description: "View Strava webhook subscription(s)"
