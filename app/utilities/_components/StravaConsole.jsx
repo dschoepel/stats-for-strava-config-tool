@@ -23,10 +23,12 @@ import {
   MdStop,
   MdDownload,
   MdDelete,
-  MdHistory,
   MdRefresh,
   MdExpandMore,
-  MdExpandLess
+  MdExpandLess,
+  MdWarning,
+  MdCheckCircle,
+  MdHelp
 } from 'react-icons/md';
 import StravaConsoleTerminal from './strava-console/StravaConsoleTerminal';
 import CommandHistoryPanel from './strava-console/CommandHistoryPanel';
@@ -52,7 +54,11 @@ export default function StravaConsole() {
     stopCommand,
     clearTerminal,
     setTerminalRef,
-    reloadCommands
+    reloadCommands,
+    // Health check state
+    runnerStatus,
+    isFeatureEnabled,
+    checkRunnerHealth
   } = useStravaConsole();
 
   const {
@@ -114,6 +120,60 @@ export default function StravaConsole() {
     }
   }, [commands, selectCommand]);
 
+  // Show disabled state if feature is not enabled
+  if (!isFeatureEnabled) {
+    return (
+      <Box p={6} minH="100vh" bg="bg">
+        <VStack align="stretch" gap={6} maxW="1400px" mx="auto">
+          <HStack gap={3}>
+            <Icon as={MdTerminal} boxSize={7} color="fg.muted" />
+            <Heading as="h2" size="xl" color="text">
+              SFS Console
+            </Heading>
+          </HStack>
+
+          <Box
+            p={6}
+            bg="cardBg"
+            borderRadius="lg"
+            border="1px solid"
+            borderColor="border"
+          >
+            <VStack gap={4} align="center" py={8}>
+              <Icon as={MdTerminal} boxSize={12} color="fg.muted" />
+              <Heading size="md" color="text">SFS Console is Disabled</Heading>
+              <Text color="fg.muted" textAlign="center" maxW="500px">
+                The SFS Console allows you to execute Statistics for Strava commands
+                via the Strava Runner sidecar service.
+              </Text>
+              <VStack align="start" gap={2} mt={4}>
+                <Text color="fg.muted" fontWeight="medium">To enable this feature:</Text>
+                <Text color="fg.muted" fontSize="sm">
+                  1. Enable the Strava Runner sidecar in your docker-compose.yml
+                </Text>
+                <Text color="fg.muted" fontSize="sm">
+                  2. Go to Settings and toggle "Enable SFS Console"
+                </Text>
+              </VStack>
+              <HStack gap={3} mt={4}>
+                <Button
+                  as="a"
+                  href="/help/sfs-console"
+                  colorPalette="blue"
+                  variant="outline"
+                  size="sm"
+                >
+                  <Icon as={MdHelp} mr={2} />
+                  View Documentation
+                </Button>
+              </HStack>
+            </VStack>
+          </Box>
+        </VStack>
+      </Box>
+    );
+  }
+
   return (
     <Box p={6} minH="100vh" bg="bg">
       <VStack align="stretch" gap={6} maxW="1400px" mx="auto">
@@ -126,6 +186,23 @@ export default function StravaConsole() {
             </Heading>
           </HStack>
           <HStack gap={2}>
+            {/* Runner Status Badge */}
+            {runnerStatus === 'online' && (
+              <Badge colorPalette="green" variant="solid" size="sm">
+                <HStack gap={1}>
+                  <Icon as={MdCheckCircle} boxSize={3} />
+                  <Text>Runner Connected</Text>
+                </HStack>
+              </Badge>
+            )}
+            {runnerStatus === 'checking' && (
+              <Badge colorPalette="gray" variant="solid" size="sm">
+                <HStack gap={1}>
+                  <Spinner size="xs" />
+                  <Text>Checking...</Text>
+                </HStack>
+              </Badge>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -145,19 +222,55 @@ export default function StravaConsole() {
         </Flex>
 
         <Text color="textMuted" fontSize="md">
-          Execute Statistics for Strava console commands and view real-time output. Commands run inside the Docker container.
+          Execute Statistics for Strava console commands and view real-time output.
+          Commands run inside the Strava Runner container.
         </Text>
+
+        {/* Runner Offline Warning */}
+        {runnerStatus === 'offline' && (
+          <Box
+            p={4}
+            bg="orange.50"
+            _dark={{ bg: 'rgba(251, 146, 60, 0.1)' }}
+            borderRadius="md"
+            border="1px solid"
+            borderColor="orange.200"
+            _darkBorderColor="orange.700"
+          >
+            <Flex gap={3} align="flex-start">
+              <Icon as={MdWarning} color="orange.500" boxSize={5} mt={0.5} />
+              <VStack align="start" gap={1} flex={1}>
+                <Text fontWeight="medium" color="orange.700" _dark={{ color: 'orange.200' }}>
+                  Strava Runner Offline
+                </Text>
+                <Text fontSize="sm" color="orange.600" _dark={{ color: 'orange.300' }}>
+                  The Strava Runner sidecar is not responding. Make sure it's enabled in your
+                  docker-compose.yml and running. The Run button is disabled until the runner is available.
+                </Text>
+              </VStack>
+              <Button
+                size="sm"
+                variant="outline"
+                colorPalette="orange"
+                onClick={checkRunnerHealth}
+              >
+                <Icon as={MdRefresh} mr={1} />
+                Retry
+              </Button>
+            </Flex>
+          </Box>
+        )}
 
         {/* Error display */}
         {error && (
           <Box
             p={4}
             bg="red.50"
-            _dark={{ bg: 'red.900' }}
+            _dark={{ bg: 'rgba(239, 68, 68, 0.1)' }}
             borderRadius="md"
             border="1px solid"
             borderColor="red.200"
-            _darkBorder={{ borderColor: 'red.700' }}
+            _darkBorderColor="red.700"
           >
             <Text color="red.600" _dark={{ color: 'red.200' }}>
               {error}
@@ -208,7 +321,7 @@ export default function StravaConsole() {
                     {selectedCommand.description}
                   </Text>
                   <Text fontSize="xs" color="textMuted" fontFamily="mono" mt={1}>
-                    docker compose exec app bin/console app:strava:{selectedCommand.command}
+                    php bin/console {selectedCommand.command}
                   </Text>
                 </Box>
               )}
@@ -218,7 +331,7 @@ export default function StravaConsole() {
                   <Button
                     colorPalette="green"
                     onClick={handleRun}
-                    disabled={!selectedCommand || !terminalReady}
+                    disabled={!selectedCommand || !terminalReady || runnerStatus !== 'online'}
                   >
                     <Icon as={MdPlayArrow} mr={2} />
                     Run

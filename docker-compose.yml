@@ -3,7 +3,7 @@ services:
     image: ghcr.io/dschoepel/stats-for-strava-config-tool:latest
     container_name: stats-for-strava-config-tool
     restart: unless-stopped
-    
+
     # Note: Use a separate .env file for config-tool to avoid Docker Compose variable expansion warnings
     # The password hash contains $ characters which conflict with Docker Compose's ${VAR} syntax
     environment:
@@ -12,8 +12,9 @@ services:
       - USERMAP_GID=${USERMAP_GID}
       - DEFAULT_STATS_CONFIG_PATH=${DEFAULT_STATS_CONFIG_PATH}
       - DEFAULT_GEAR_MAINTENANCE_PATH=${DEFAULT_GEAR_MAINTENANCE_PATH}
+      - STRAVA_RUNNER_URL=${STRAVA_RUNNER_URL:-http://strava-runner:8080}
 
-    volumes: 
+    volumes:
       - ./.env.config-tool:/app/.env  # Separate .env file with auth variables (must be writable)
       - ./statistics-for-strava/config:/data/config  # Stats for Strava config directory
       - ./statistics-for-strava/storage:/data/storage  # Gear maintenance images and other storage
@@ -24,6 +25,38 @@ services:
 
     networks:
       - statistics-for-strava-network
+
+  # ---------------------------------------------------------
+  # OPTIONAL: Strava Runner Sidecar
+  # ---------------------------------------------------------
+  # Uncomment this section if you want to enable the SFS Console
+  # feature to execute Symfony commands from the Config Tool UI.
+  #
+  # strava-runner:
+  #   image: ghcr.io/dschoepel/strava-runner:latest
+  #   container_name: strava-runner
+  #   restart: unless-stopped
+  #   working_dir: /var/www
+  #   command: ["node", "server.js"]
+  #   environment:
+  #     - TZ=${TZ}
+  #     - USERMAP_UID=${USERMAP_UID}
+  #     - USERMAP_GID=${USERMAP_GID}
+  #   volumes:
+  #     # Mount Statistics for Strava application directory
+  #     - ./config:/var/www/config/app
+  #     - ./build:/var/www/build
+  #     - ./storage/database:/var/www/storage/database
+  #     - ./storage/files:/var/www/storage/files
+  #     - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
+  #     # Mount commands configuration
+  #     - ./commands.yaml:/var/www/commands.yaml:ro
+  #     # Logs directory
+  #     - ./runner-logs:/var/log/strava-runner
+  #   networks:
+  #     - statistics-for-strava-network
+  #   ports:
+  #     - "8093:8080"
 
 networks:
   statistics-for-strava-network:

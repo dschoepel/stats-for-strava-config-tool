@@ -137,6 +137,24 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               <Switch.Label>Show line numbers in YAML viewer</Switch.Label>
             </Switch.Root>
           </Field.Root>
+
+          {/* Enable SFS Console Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.features?.enableSfsConsole || false}
+              onCheckedChange={(e) => handleChange('features.enableSfsConsole', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Enable SFS Console</Switch.Label>
+            </Switch.Root>
+            <Text fontSize="xs" color="fg.muted" mt={1} ml={10}>
+              When enabled, the SFS Console appears in the sidebar. Requires the Strava Runner sidecar service.
+            </Text>
+          </Field.Root>
         </VStack>
 
         {/* Modal Footer */}
@@ -287,6 +305,24 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
               </Switch.Control>
               <Switch.Label>Show line numbers in YAML viewer</Switch.Label>
             </Switch.Root>
+          </Field.Root>
+
+          {/* Enable SFS Console Setting */}
+          <Field.Root>
+            <Switch.Root
+              checked={settings.features?.enableSfsConsole || false}
+              onCheckedChange={(e) => handleChange('features.enableSfsConsole', e.checked)}
+              colorPalette="blue"
+            >
+              <Switch.HiddenInput />
+              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
+                <Switch.Thumb />
+              </Switch.Control>
+              <Switch.Label>Enable SFS Console</Switch.Label>
+            </Switch.Root>
+            <Text fontSize="xs" color="fg.muted" mt={1} ml={10}>
+              When enabled, the SFS Console appears in the sidebar. Requires the Strava Runner sidecar service.
+            </Text>
           </Field.Root>
         </VStack>
 

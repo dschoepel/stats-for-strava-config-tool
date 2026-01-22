@@ -61,6 +61,9 @@ const getDefaultSettings = () => ({
     autoSave: true,
     showLineNumbers: true,
   },
+  features: {
+    enableSfsConsole: false, // Enable SFS Console (requires Strava Runner sidecar)
+  },
   files: {
     defaultPath: DEFAULT_SETTINGS_PATH,
     autoBackup: true,
