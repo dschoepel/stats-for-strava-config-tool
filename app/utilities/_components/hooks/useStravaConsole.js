@@ -5,6 +5,7 @@ import { useSettings } from '../../../../src/state/SettingsProvider';
 
 /**
  * Custom hook for managing SFS console command execution
+ * Supports both the Strava Runner sidecar and the legacy docker compose exec method
  */
 export function useStravaConsole() {
   const { settings } = useSettings();
@@ -15,8 +16,46 @@ export function useStravaConsole() {
   const [error, setError] = useState(null);
   const [isLoadingCommands, setIsLoadingCommands] = useState(true);
 
+  // Health check state for the Strava Runner sidecar
+  const [runnerStatus, setRunnerStatus] = useState('unknown'); // 'online', 'offline', 'checking', 'unknown'
+  const [lastHealthCheck, setLastHealthCheck] = useState(null);
+
   const abortControllerRef = useRef(null);
   const terminalRef = useRef(null);
+
+  // Check if the SFS Console feature is enabled
+  const isFeatureEnabled = settings?.features?.enableSfsConsole ?? false;
+
+  /**
+   * Check the health of the Strava Runner sidecar
+   */
+  const checkRunnerHealth = useCallback(async () => {
+    setRunnerStatus('checking');
+    try {
+      const response = await fetch('/api/strava-console');
+      const data = await response.json();
+
+      setRunnerStatus(data.success ? 'online' : 'offline');
+      setLastHealthCheck(new Date());
+      return data.success;
+    } catch (err) {
+      console.error('Health check failed:', err);
+      setRunnerStatus('offline');
+      setLastHealthCheck(new Date());
+      return false;
+    }
+  }, []);
+
+  // Check health on mount and periodically when feature is enabled
+  useEffect(() => {
+    if (isFeatureEnabled) {
+      checkRunnerHealth();
+      const interval = setInterval(checkRunnerHealth, 30000); // Every 30 seconds
+      return () => clearInterval(interval);
+    } else {
+      setRunnerStatus('unknown');
+    }
+  }, [isFeatureEnabled, checkRunnerHealth]);
 
   /**
    * Load available commands from the API
@@ -65,7 +104,7 @@ export function useStravaConsole() {
   }, []);
 
   /**
-   * Write text to the terminal
+   * Write text to the terminal with ANSI color codes
    */
   const writeToTerminal = useCallback((text, type = 'stdout') => {
     if (!terminalRef.current) return;
@@ -93,7 +132,7 @@ export function useStravaConsole() {
   }, []);
 
   /**
-   * Run the selected command
+   * Run the selected command via the Strava Runner sidecar
    * @param {Function} onComplete - Callback when command completes
    * @returns {Promise<{success: boolean, logPath: string|null, exitCode: number|null}>}
    */
@@ -121,19 +160,17 @@ export function useStravaConsole() {
       if (terminalRef.current) {
         terminalRef.current.clear();
       }
-      writeToTerminal(`$ docker compose exec app bin/console app:strava:${selectedCommand.command}`, 'info');
+      writeToTerminal(`$ php bin/console ${selectedCommand.command}`, 'info');
       writeToTerminal('', 'stdout');
 
-      const defaultPath = settings?.files?.defaultPath || '/data/config/';
-
-      const response = await fetch('/api/run-strava', {
+      // Use the strava-console API (Strava Runner sidecar)
+      const response = await fetch('/api/strava-console', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          command: selectedCommand.command,
-          defaultPath
+          command: selectedCommand.command
         }),
         signal: abortControllerRef.current.signal
       });
@@ -166,6 +203,9 @@ export function useStravaConsole() {
               const data = JSON.parse(line.slice(6));
 
               switch (data.type) {
+                case 'start':
+                  // Start event from runner, optional handling
+                  break;
                 case 'stdout':
                   writeToTerminal(data.data, 'stdout');
                   break;
@@ -176,9 +216,26 @@ export function useStravaConsole() {
                   writeToTerminal(data.data, 'info');
                   break;
                 case 'error':
-                  writeToTerminal(data.data, 'error');
+                  writeToTerminal(data.data?.message || data.data, 'error');
+                  break;
+                case 'exit':
+                  // Runner uses 'exit' event instead of 'complete'
+                  result = {
+                    success: data.data.code === 0,
+                    logPath: null, // Runner doesn't provide logPath
+                    exitCode: data.data.code
+                  };
+
+                  // Write completion message
+                  writeToTerminal('', 'stdout');
+                  if (data.data.code === 0) {
+                    writeToTerminal('✓ Command completed successfully', 'success');
+                  } else {
+                    writeToTerminal(`✗ Command failed with exit code ${data.data.code}`, 'error');
+                  }
                   break;
                 case 'complete':
+                  // Legacy format from run-strava API
                   result = {
                     success: data.data.success,
                     logPath: data.data.logPath,
@@ -222,7 +279,7 @@ export function useStravaConsole() {
       onComplete?.({ success: false, logPath: null, exitCode: null, error: err.message });
       return { success: false, logPath: null, exitCode: null, error: err.message };
     }
-  }, [getSelectedCommand, isRunning, settings?.files?.defaultPath, writeToTerminal]);
+  }, [getSelectedCommand, isRunning, writeToTerminal]);
 
   /**
    * Stop the currently running command
@@ -268,6 +325,11 @@ export function useStravaConsole() {
     lastLogPath,
     error,
 
+    // Health check state
+    runnerStatus,
+    lastHealthCheck,
+    isFeatureEnabled,
+
     // Actions
     selectCommand,
     runCommand,
@@ -275,6 +337,7 @@ export function useStravaConsole() {
     clearTerminal,
     setTerminalRef,
     reloadCommands,
+    checkRunnerHealth,
 
     // Utilities
     getSelectedCommand

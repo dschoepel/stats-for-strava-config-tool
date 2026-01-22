@@ -1,0 +1,18 @@
+{
+  "name": "strava-runner",
+  "version": "0.1.0",
+  "description": "Sidecar container for running Symfony console commands with real-time streaming",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "yaml": "^2.8.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "author": "",
+  "license": "MIT"
+}

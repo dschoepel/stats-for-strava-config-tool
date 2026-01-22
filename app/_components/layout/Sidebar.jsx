@@ -11,6 +11,7 @@ import { TbBrandZwift } from 'react-icons/tb';
 import { PiGithubLogo } from 'react-icons/pi';
 import packageJson from '../../../package.json';
 import { pages, getChildren } from '../../_config/pages';
+import { useSettings } from '../../../src/state/SettingsProvider';
 
 // Icon map - string to component
 const iconMap = {
@@ -144,11 +145,22 @@ export default function Sidebar({
   setIsHelpExpanded,
   handleNavClick
 }) {
+  const { settings } = useSettings();
+
   // Get pages from config
   const configPage = pages['Configuration'];
   const configChildren = getChildren('Configuration');
   const utilitiesPage = pages['Utilities'];
-  const utilitiesChildren = getChildren('Utilities');
+
+  // Filter utilities children based on settings
+  const utilitiesChildren = getChildren('Utilities').filter(child => {
+    // Hide SFS Console if feature is disabled
+    if (child.id === 'SFS Console' && !settings?.features?.enableSfsConsole) {
+      return false;
+    }
+    return true;
+  });
+
   const documentationPage = pages['Documentation'];
   const documentationChildren = getChildren('Documentation');
 
