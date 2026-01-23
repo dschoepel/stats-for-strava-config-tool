@@ -27,10 +27,11 @@ services:
       - statistics-for-strava-network
 
   # ---------------------------------------------------------
-  # OPTIONAL: Strava Runner Sidecar
+  # OPTIONAL: Strava Runner + Command Helper
   # ---------------------------------------------------------
-  # Uncomment this section if you want to enable the SFS Console
-  # feature to execute Symfony commands from the Config Tool UI.
+  # Uncomment BOTH services below to enable the SFS Console.
+  # The runner validates commands; the helper executes them
+  # inside the statistics-for-strava container via docker exec.
   #
   # strava-runner:
   #   image: ghcr.io/dschoepel/strava-runner:latest
@@ -42,21 +43,30 @@ services:
   #     - TZ=${TZ}
   #     - USERMAP_UID=${USERMAP_UID}
   #     - USERMAP_GID=${USERMAP_GID}
+  #     - HELPER_URL=http://strava-command-helper:${HELPER_PORT:-8081}
   #   volumes:
-  #     # Mount Statistics for Strava application directory
-  #     - ./config:/var/www/config/app
-  #     - ./build:/var/www/build
-  #     - ./storage/database:/var/www/storage/database
-  #     - ./storage/files:/var/www/storage/files
-  #     - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
-  #     # Mount commands configuration
-  #     - ./commands.yaml:/var/www/commands.yaml:ro
-  #     # Logs directory
-  #     - ./runner-logs:/var/log/strava-runner
+  #     - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+  #     - ./statistics-for-strava/runner-logs:/var/log/strava-runner
   #   networks:
   #     - statistics-for-strava-network
   #   ports:
   #     - "8093:8080"
+  #
+  # strava-command-helper:
+  #   image: ghcr.io/dschoepel/strava-command-helper:latest
+  #   container_name: strava-command-helper
+  #   restart: unless-stopped
+  #   working_dir: /var/www
+  #   command: ["node", "server.js"]
+  #   environment:
+  #     - TZ=${TZ}
+  #     - PORT=${HELPER_PORT:-8081}
+  #     - TARGET_CONTAINER=statistics-for-strava
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+  #   networks:
+  #     - statistics-for-strava-network
 
 networks:
   statistics-for-strava-network:

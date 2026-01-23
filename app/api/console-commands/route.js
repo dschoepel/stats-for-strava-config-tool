@@ -59,21 +59,27 @@ function getConsoleCommandsPath(defaultPath) {
 }
 
 /**
- * Convert commands array to YAML
+ * Convert commands array to map-based YAML format
+ *
+ * Output format:
+ *   commands:
+ *     build-files:
+ *       name: "Build Files"
+ *       description: "Build Strava files"
+ *       command: ["php", "bin/console", "build-files"]
  */
 function toYAML(commands) {
   let yaml = '# Console Commands for Statistics for Strava\n';
-  yaml += '# These commands are available in the SFS Console utility\n';
-  yaml += `# Generated on ${new Date().toISOString()}\n\n`;
+  yaml += '# Managed by the Stats for Strava Config Tool\n';
+  yaml += `# Updated: ${new Date().toISOString()}\n\n`;
 
   yaml += 'commands:\n';
 
   commands.forEach(cmd => {
-    yaml += `  - id: "${cmd.id}"\n`;
+    yaml += `  ${cmd.id}:\n`;
     yaml += `    name: "${cmd.name}"\n`;
-    yaml += `    command: "${cmd.command}"\n`;
     yaml += `    description: "${cmd.description}"\n`;
-    yaml += '\n';
+    yaml += `    command: ["php", "bin/console", "${cmd.command}"]\n\n`;
   });
 
   return yaml;
@@ -93,7 +99,23 @@ export async function GET(request) {
       const content = await fs.readFile(filePath, 'utf8');
       const parsed = YAML.parse(content);
 
+      if (parsed?.commands && typeof parsed.commands === 'object' && !Array.isArray(parsed.commands)) {
+        // New map-based format
+        const commands = Object.entries(parsed.commands).map(([id, entry]) => ({
+          id,
+          name: entry.name || id,
+          command: id,
+          description: entry.description || ''
+        }));
+        return NextResponse.json({
+          success: true,
+          commands,
+          filePath
+        });
+      }
+
       if (parsed && Array.isArray(parsed.commands)) {
+        // Legacy array-based format
         return NextResponse.json({
           success: true,
           commands: parsed.commands.map(cmd => ({

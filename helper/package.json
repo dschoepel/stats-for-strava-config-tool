@@ -1,7 +1,7 @@
 {
-  "name": "strava-runner",
+  "name": "strava-command-helper",
   "version": "0.3.0",
-  "description": "Sidecar container for running Symfony console commands with real-time streaming",
+  "description": "Privileged helper container that executes validated commands inside the statistics-for-strava container",
   "type": "module",
   "main": "server.js",
   "scripts": {
