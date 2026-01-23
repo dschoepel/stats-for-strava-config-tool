@@ -19,6 +19,7 @@ services:
       - ./statistics-for-strava/config:/data/config  # Stats for Strava config directory
       - ./statistics-for-strava/storage:/data/storage  # Gear maintenance images and other storage
       - ./statistics-for-strava/logs:/data/logs  # Application and service logs
+      - ./strava-sh-logs:/var/log/strava-helper/command-logs:ro  # Command execution logs (read-only)
 
     ports:
       - "8092:80"  # Access at http://localhost:8092
@@ -65,6 +66,7 @@ services:
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+  #     - ./strava-sh-logs:/var/log/strava-helper/command-logs  # Command execution logs (read-write)
   #   networks:
   #     - statistics-for-strava-network
 

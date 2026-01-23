@@ -1,7 +1,7 @@
 {
   "name": "stats-for-strava-config-tool",
   "private": true,
-  "version": "1.1.0-rc4",
+  "version": "1.1.0-rc5",
   "type": "module",
   "scripts": {
     "dev": "next dev",

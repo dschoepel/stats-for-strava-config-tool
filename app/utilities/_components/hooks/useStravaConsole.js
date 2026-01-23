@@ -291,9 +291,14 @@ export function useStravaConsole() {
                   // Runner uses 'exit' event instead of 'complete'
                   result = {
                     success: data.data.code === 0,
-                    logPath: null, // Runner doesn't provide logPath
+                    logPath: data.data.logPath || null,
                     exitCode: data.data.code
                   };
+                  
+                  // Set log path if provided
+                  if (data.data.logPath) {
+                    setLastLogPath(data.data.logPath);
+                  }
 
                   // Write completion message
                   writeToTerminal('', 'stdout');
