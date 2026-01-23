@@ -71,7 +71,13 @@ function loadCommands() {
         if (Array.isArray(entry.command) && entry.command.length > 0) {
           // Validate all command array elements are strings
           if (entry.command.every(arg => typeof arg === 'string')) {
-            allowedCommands.set(id, entry);
+            // Extract the full command name (last element of command array)
+            // e.g., ["php", "bin/console", "app:strava:webhooks-view"] -> "app:strava:webhooks-view"
+            const fullCommandName = entry.command[entry.command.length - 1];
+            allowedCommands.set(fullCommandName, {
+              ...entry,
+              id // Keep the original short ID for reference
+            });
           }
         }
       }
