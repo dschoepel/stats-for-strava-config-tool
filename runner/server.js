@@ -9,6 +9,7 @@ const COMMANDS_FILE = process.env.COMMANDS_FILE || '/var/www/console-commands.ya
 const HELPER_URL = process.env.HELPER_URL || 'http://strava-command-helper:8081';
 const LOG_FILE = process.env.LOG_FILE || '/var/log/strava-runner/runner.log';
 const RELOAD_INTERVAL_MS = 5000;
+const DISCOVER_TIMEOUT_MS = 35000;
 
 // In-memory command cache
 let allowedCommands = new Map();
@@ -118,7 +119,7 @@ async function parseJsonBody(req) {
     req.on('end', () => {
       try {
         resolve(JSON.parse(body));
-      } catch (err) {
+      } catch {
         reject(new Error('Invalid JSON body'));
       }
     });
@@ -130,8 +131,12 @@ async function parseJsonBody(req) {
  * Send JSON response
  */
 function sendJson(res, statusCode, data) {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(data));
+  try {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  } catch {
+    // Connection already closed
+  }
 }
 
 /**
@@ -189,16 +194,30 @@ async function handleRun(req, res) {
 
   // Send event helper function
   const sendEvent = (type, data) => {
-    const payload = JSON.stringify({ type, data });
-    res.write(`data: ${payload}\n\n`);
+    try {
+      const payload = JSON.stringify({ type, data });
+      res.write(`data: ${payload}\n\n`);
+    } catch {
+      // Connection already closed
+    }
   };
+
+  // AbortController for propagating client disconnect to helper
+  const controller = new AbortController();
+
+  // Handle client disconnect - abort the upstream fetch
+  req.on('close', () => {
+    controller.abort();
+    log({ event: 'client_disconnect', command });
+  });
 
   try {
     // Forward to the command helper container
     const helperRes = await fetch(`${HELPER_URL}/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ commandId: command })
+      body: JSON.stringify({ commandId: command }),
+      signal: controller.signal
     });
 
     if (!helperRes.ok) {
@@ -211,7 +230,7 @@ async function handleRun(req, res) {
       }
       log({ event: 'error', command, error: errorMsg });
       sendEvent('error', { message: errorMsg });
-      res.end();
+      try { res.end(); } catch { /* already closed */ }
       return;
     }
 
@@ -223,7 +242,12 @@ async function handleRun(req, res) {
       const { done, value } = await reader.read();
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
-      res.write(chunk);
+      try {
+        res.write(chunk);
+      } catch {
+        // Client disconnected, abort will handle cleanup
+        break;
+      }
 
       // Log streamed events (parse to capture exit events for logging)
       const lines = chunk.split('\n\n');
@@ -247,18 +271,49 @@ async function handleRun(req, res) {
       }
     }
 
-    res.end();
+    try { res.end(); } catch { /* already closed */ }
   } catch (err) {
+    if (err.name === 'AbortError') {
+      // Client disconnected, connection already closed
+      return;
+    }
     const durationMs = Date.now() - startTime;
     log({ event: 'error', command, error: err.message, durationMs });
     sendEvent('error', { message: `Helper unavailable: ${err.message}` });
-    res.end();
+    try { res.end(); } catch { /* already closed */ }
   }
+}
 
-  // Handle client disconnect
-  req.on('close', () => {
-    log({ event: 'client_disconnect', command });
-  });
+/**
+ * Handle GET /discover - proxy discovery request to helper
+ */
+async function handleDiscover(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), DISCOVER_TIMEOUT_MS);
+
+    const helperRes = await fetch(`${HELPER_URL}/discover`, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    const data = await helperRes.json();
+    sendJson(res, helperRes.status, data);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      sendJson(res, 504, { success: false, error: 'Discovery request timed out' });
+      return;
+    }
+    log({ event: 'discover_error', error: err.message });
+    sendJson(res, 503, {
+      success: false,
+      error: `Helper unavailable: ${err.message}`
+    });
+  }
 }
 
 /**
@@ -321,8 +376,13 @@ function handleRequest(req, res) {
     return;
   }
 
+  if (url.pathname === '/discover' && req.method === 'GET') {
+    handleDiscover(req, res);
+    return;
+  }
+
   // 404 for everything else
-  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'GET /commands', 'POST /run'] });
+  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'GET /commands', 'POST /run', 'GET /discover'] });
 }
 
 // Initialize
@@ -335,6 +395,12 @@ setInterval(loadCommands, RELOAD_INTERVAL_MS);
 const server = http.createServer(handleRequest);
 
 server.listen(PORT, () => {
+  // Disable all Node.js HTTP server timeouts for long-running commands (20+ minutes)
+  server.keepAliveTimeout = 0;
+  server.headersTimeout = 0;
+  server.requestTimeout = 0;
+  server.timeout = 0;
+
   log({ event: 'server_start', port: PORT, helperUrl: HELPER_URL, commandsFile: COMMANDS_FILE });
   console.log(`strava-runner listening on port ${PORT}`);
   console.log(`Helper URL: ${HELPER_URL}`);
@@ -355,4 +421,8 @@ process.on('SIGINT', () => {
   server.close(() => {
     process.exit(0);
   });
+});
+
+process.on('unhandledRejection', (reason) => {
+  log({ event: 'unhandled_rejection', error: reason?.message || String(reason) });
 });

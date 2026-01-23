@@ -28,18 +28,36 @@ import {
   MdExpandLess,
   MdWarning,
   MdCheckCircle,
-  MdHelp
+  MdHelp,
+  MdSearch,
+  MdVerticalAlignBottom
 } from 'react-icons/md';
 import StravaConsoleTerminal from './strava-console/StravaConsoleTerminal';
 import CommandHistoryPanel from './strava-console/CommandHistoryPanel';
+import DiscoverCommandsDialog from './strava-console/DiscoverCommandsDialog';
 import { useStravaConsole } from './hooks/useStravaConsole';
 import { useCommandHistory } from './hooks/useCommandHistory';
+
+/**
+ * Format elapsed milliseconds as H:MM:SS or M:SS
+ */
+function formatElapsedTime(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
 
 export default function StravaConsole() {
   const searchParams = useSearchParams();
   const terminalRef = useRef(null);
   const [showHistory, setShowHistory] = useState(false);
   const [terminalReady, setTerminalReady] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   const {
     commands,
@@ -58,7 +76,19 @@ export default function StravaConsole() {
     // Health check state
     runnerStatus,
     isFeatureEnabled,
-    checkRunnerHealth
+    checkRunnerHealth,
+    // Connection state
+    connectionState,
+    // Elapsed time
+    elapsedMs,
+    // Auto-scroll
+    setAutoScroll: hookSetAutoScroll,
+    // Discovery
+    isDiscovering,
+    discoveredCommands,
+    discoverError,
+    discoverCommands,
+    clearDiscovered
   } = useStravaConsole();
 
   const {
@@ -119,6 +149,65 @@ export default function StravaConsole() {
       selectCommand(matchingCmd.id);
     }
   }, [commands, selectCommand]);
+
+  // Handle auto-scroll toggle
+  const handleAutoScrollToggle = useCallback(() => {
+    const newVal = !autoScroll;
+    setAutoScroll(newVal);
+    hookSetAutoScroll(newVal);
+  }, [autoScroll, hookSetAutoScroll]);
+
+  // Handle discover
+  const handleDiscover = useCallback(() => {
+    discoverCommands();
+  }, [discoverCommands]);
+
+  // Handle merge discovered commands
+  const handleMergeCommands = useCallback(async (newCommands) => {
+    // Merge: keep existing, add new
+    const existingIds = new Set(commands.map(cmd => cmd.id));
+    const merged = [...commands];
+    for (const [id, entry] of Object.entries(newCommands)) {
+      if (!existingIds.has(id)) {
+        merged.push({
+          id,
+          name: entry.name || id,
+          command: id,
+          description: entry.description || ''
+        });
+      }
+    }
+    await saveCommands(merged);
+    clearDiscovered();
+    reloadCommands();
+  }, [commands, clearDiscovered, reloadCommands]);
+
+  // Handle overwrite with discovered commands
+  const handleOverwriteCommands = useCallback(async (newCommands) => {
+    const commandsList = Object.entries(newCommands).map(([id, entry]) => ({
+      id,
+      name: entry.name || id,
+      command: id,
+      description: entry.description || ''
+    }));
+    await saveCommands(commandsList);
+    clearDiscovered();
+    reloadCommands();
+  }, [clearDiscovered, reloadCommands]);
+
+  // Save commands to API
+  const saveCommands = async (commandsList) => {
+    try {
+      const defaultPath = '/data/config/';
+      await fetch('/api/console-commands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commands: commandsList, defaultPath })
+      });
+    } catch (err) {
+      console.error('Failed to save commands:', err);
+    }
+  };
 
   // Show disabled state if feature is not enabled
   if (!isFeatureEnabled) {
@@ -357,6 +446,19 @@ export default function StravaConsole() {
                 >
                   <Icon as={MdRefresh} />
                 </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDiscover}
+                  disabled={isRunning || isDiscovering || runnerStatus !== 'online'}
+                  title="Discover commands from the Strava container"
+                  color="text"
+                  borderColor="border"
+                >
+                  {isDiscovering ? <Spinner size="xs" mr={2} /> : <Icon as={MdSearch} mr={2} />}
+                  Discover
+                </Button>
               </HStack>
             </HStack>
           </VStack>
@@ -384,13 +486,57 @@ export default function StravaConsole() {
               <Text fontSize="sm" fontWeight="medium" color="text">
                 Terminal Output
               </Text>
-              {isRunning && (
+              {/* Connection State Badges */}
+              {connectionState === 'running' && (
                 <Badge colorPalette="green" variant="solid" size="sm">
-                  Running
+                  <HStack gap={1}>
+                    <Spinner size="xs" />
+                    <Text>Running</Text>
+                  </HStack>
                 </Badge>
+              )}
+              {connectionState === 'streaming' && (
+                <Badge colorPalette="blue" variant="solid" size="sm">
+                  <HStack gap={1}>
+                    <Spinner size="xs" />
+                    <Text>Streaming</Text>
+                  </HStack>
+                </Badge>
+              )}
+              {connectionState === 'completed' && (
+                <Badge colorPalette="green" variant="subtle" size="sm">
+                  Completed
+                </Badge>
+              )}
+              {connectionState === 'error' && (
+                <Badge colorPalette="red" variant="subtle" size="sm">
+                  Error
+                </Badge>
+              )}
+              {connectionState === 'disconnected' && (
+                <Badge colorPalette="orange" variant="subtle" size="sm">
+                  Disconnected
+                </Badge>
+              )}
+              {/* Elapsed Time */}
+              {isRunning && (
+                <Text fontSize="xs" color="textMuted" fontFamily="mono" ml={2}>
+                  {formatElapsedTime(elapsedMs)}
+                </Text>
               )}
             </HStack>
             <HStack gap={2}>
+              {/* Auto-scroll toggle */}
+              <Button
+                size="xs"
+                variant={autoScroll ? 'solid' : 'ghost'}
+                colorPalette={autoScroll ? 'blue' : 'gray'}
+                onClick={handleAutoScrollToggle}
+                title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
+              >
+                <Icon as={MdVerticalAlignBottom} mr={1} />
+                Auto-scroll
+              </Button>
               {lastLogPath && (
                 <Button
                   size="xs"
@@ -430,6 +576,18 @@ export default function StravaConsole() {
             />
           </Collapsible.Content>
         </Collapsible.Root>
+
+        {/* Discover Commands Dialog */}
+        {discoveredCommands && (
+          <DiscoverCommandsDialog
+            commands={discoveredCommands}
+            existingCommands={commands}
+            onMerge={handleMergeCommands}
+            onOverwrite={handleOverwriteCommands}
+            onClose={clearDiscovered}
+            error={discoverError}
+          />
+        )}
       </VStack>
     </Box>
   );

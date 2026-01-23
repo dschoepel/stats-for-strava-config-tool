@@ -5,7 +5,8 @@ import { useSettings } from '../../../../src/state/SettingsProvider';
 
 /**
  * Custom hook for managing SFS console command execution
- * Supports both the Strava Runner sidecar and the legacy docker compose exec method
+ * Supports streaming SSE output with keep-alive ping filtering,
+ * connection state tracking, elapsed timer, auto-scroll, and command discovery.
  */
 export function useStravaConsole() {
   const { settings } = useSettings();
@@ -20,11 +21,57 @@ export function useStravaConsole() {
   const [runnerStatus, setRunnerStatus] = useState('unknown'); // 'online', 'offline', 'checking', 'unknown'
   const [lastHealthCheck, setLastHealthCheck] = useState(null);
 
+  // Connection state tracking
+  const [connectionState, setConnectionState] = useState('idle');
+  // 'idle' | 'connecting' | 'running' | 'streaming' | 'completed' | 'error' | 'disconnected'
+
+  // Elapsed time tracking
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const elapsedIntervalRef = useRef(null);
+  const startTimeRef = useRef(null);
+
+  // Auto-scroll support
+  const autoScrollRef = useRef(true);
+
+  // Discovery state
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveredCommands, setDiscoveredCommands] = useState(null);
+  const [discoverError, setDiscoverError] = useState(null);
+
   const abortControllerRef = useRef(null);
   const terminalRef = useRef(null);
+  const hasReceivedData = useRef(false);
 
   // Check if the SFS Console feature is enabled
   const isFeatureEnabled = settings?.features?.enableSfsConsole ?? false;
+
+  /**
+   * Start the elapsed timer
+   */
+  const startTimer = useCallback(() => {
+    startTimeRef.current = Date.now();
+    setElapsedMs(0);
+    elapsedIntervalRef.current = setInterval(() => {
+      setElapsedMs(Date.now() - startTimeRef.current);
+    }, 1000);
+  }, []);
+
+  /**
+   * Stop the elapsed timer
+   */
+  const stopTimer = useCallback(() => {
+    if (elapsedIntervalRef.current) {
+      clearInterval(elapsedIntervalRef.current);
+      elapsedIntervalRef.current = null;
+    }
+  }, []);
+
+  /**
+   * Set auto-scroll state
+   */
+  const setAutoScroll = useCallback((val) => {
+    autoScrollRef.current = val;
+  }, []);
 
   /**
    * Check the health of the Strava Runner sidecar
@@ -129,6 +176,11 @@ export function useStravaConsole() {
     }
 
     terminalRef.current.writeln(coloredText);
+
+    // Auto-scroll to bottom if enabled
+    if (autoScrollRef.current) {
+      terminalRef.current.scrollToBottom?.();
+    }
   }, []);
 
   /**
@@ -151,6 +203,9 @@ export function useStravaConsole() {
     setIsRunning(true);
     setError(null);
     setLastLogPath(null);
+    setConnectionState('connecting');
+    hasReceivedData.current = false;
+    startTimer();
 
     // Create abort controller for cancellation
     abortControllerRef.current = new AbortController();
@@ -198,18 +253,31 @@ export function useStravaConsole() {
         buffer = lines.pop() || ''; // Keep incomplete message in buffer
 
         for (const line of lines) {
+          // Skip SSE comments (keep-alive pings from helper)
+          if (line.startsWith(':')) {
+            continue;
+          }
+
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
 
               switch (data.type) {
                 case 'start':
-                  // Start event from runner, optional handling
+                  setConnectionState('running');
                   break;
                 case 'stdout':
+                  if (!hasReceivedData.current) {
+                    hasReceivedData.current = true;
+                    setConnectionState('streaming');
+                  }
                   writeToTerminal(data.data, 'stdout');
                   break;
                 case 'stderr':
+                  if (!hasReceivedData.current) {
+                    hasReceivedData.current = true;
+                    setConnectionState('streaming');
+                  }
                   writeToTerminal(data.data, 'stderr');
                   break;
                 case 'info':
@@ -217,6 +285,7 @@ export function useStravaConsole() {
                   break;
                 case 'error':
                   writeToTerminal(data.data?.message || data.data, 'error');
+                  setConnectionState('error');
                   break;
                 case 'exit':
                   // Runner uses 'exit' event instead of 'complete'
@@ -230,8 +299,10 @@ export function useStravaConsole() {
                   writeToTerminal('', 'stdout');
                   if (data.data.code === 0) {
                     writeToTerminal('✓ Command completed successfully', 'success');
+                    setConnectionState('completed');
                   } else {
                     writeToTerminal(`✗ Command failed with exit code ${data.data.code}`, 'error');
+                    setConnectionState('error');
                   }
                   break;
                 case 'complete':
@@ -247,8 +318,10 @@ export function useStravaConsole() {
                   writeToTerminal('', 'stdout');
                   if (data.data.success) {
                     writeToTerminal('✓ Command completed successfully', 'success');
+                    setConnectionState('completed');
                   } else {
                     writeToTerminal(`✗ Command failed with exit code ${data.data.code}`, 'error');
+                    setConnectionState('error');
                   }
                   break;
               }
@@ -259,15 +332,19 @@ export function useStravaConsole() {
         }
       }
 
+      stopTimer();
       setIsRunning(false);
       onComplete?.(result);
       return result;
 
     } catch (err) {
+      stopTimer();
+
       if (err.name === 'AbortError') {
         writeToTerminal('', 'stdout');
         writeToTerminal('Command cancelled by user', 'info');
         setIsRunning(false);
+        setConnectionState('idle');
         return { success: false, logPath: null, exitCode: null, cancelled: true };
       }
 
@@ -276,10 +353,11 @@ export function useStravaConsole() {
       writeToTerminal('', 'stdout');
       writeToTerminal(`Error: ${err.message}`, 'error');
       setIsRunning(false);
+      setConnectionState('disconnected');
       onComplete?.({ success: false, logPath: null, exitCode: null, error: err.message });
       return { success: false, logPath: null, exitCode: null, error: err.message };
     }
-  }, [getSelectedCommand, isRunning, writeToTerminal]);
+  }, [getSelectedCommand, isRunning, writeToTerminal, startTimer, stopTimer]);
 
   /**
    * Stop the currently running command
@@ -298,6 +376,8 @@ export function useStravaConsole() {
     if (terminalRef.current) {
       terminalRef.current.clear();
     }
+    setElapsedMs(0);
+    setConnectionState('idle');
   }, []);
 
   /**
@@ -315,6 +395,46 @@ export function useStravaConsole() {
     loadCommands();
   }, [loadCommands]);
 
+  /**
+   * Discover available commands from the target container
+   */
+  const discoverCommands = useCallback(async () => {
+    setIsDiscovering(true);
+    setDiscoverError(null);
+    try {
+      const response = await fetch('/api/strava-console/discover');
+      const data = await response.json();
+      if (data.success) {
+        setDiscoveredCommands(data.commands);
+      } else {
+        setDiscoverError(data.error || 'Discovery failed');
+      }
+      return data;
+    } catch (err) {
+      setDiscoverError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setIsDiscovering(false);
+    }
+  }, []);
+
+  /**
+   * Clear discovered commands state
+   */
+  const clearDiscovered = useCallback(() => {
+    setDiscoveredCommands(null);
+    setDiscoverError(null);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (elapsedIntervalRef.current) {
+        clearInterval(elapsedIntervalRef.current);
+      }
+    };
+  }, []);
+
   return {
     // State
     commands,
@@ -330,6 +450,21 @@ export function useStravaConsole() {
     lastHealthCheck,
     isFeatureEnabled,
 
+    // Connection state
+    connectionState,
+
+    // Elapsed time
+    elapsedMs,
+
+    // Auto-scroll
+    autoScrollRef,
+    setAutoScroll,
+
+    // Discovery state
+    isDiscovering,
+    discoveredCommands,
+    discoverError,
+
     // Actions
     selectCommand,
     runCommand,
@@ -338,6 +473,8 @@ export function useStravaConsole() {
     setTerminalRef,
     reloadCommands,
     checkRunnerHealth,
+    discoverCommands,
+    clearDiscovered,
 
     // Utilities
     getSelectedCommand

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+export const maxDuration = 1800; // 30 minutes - support long-running Symfony commands
 
 // Runner URL - configurable via environment variable
 const STRAVA_RUNNER_URL = process.env.STRAVA_RUNNER_URL || 'http://strava-runner:8080';

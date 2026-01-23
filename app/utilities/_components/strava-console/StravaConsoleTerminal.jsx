@@ -40,6 +40,11 @@ const StravaConsoleTerminal = forwardRef(function StravaConsoleTerminal({ onRead
       if (terminalRef.current) {
         terminalRef.current.focus();
       }
+    },
+    scrollToBottom: () => {
+      if (terminalRef.current) {
+        terminalRef.current.scrollToBottom();
+      }
     }
   }));
 
