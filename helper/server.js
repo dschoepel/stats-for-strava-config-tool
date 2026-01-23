@@ -10,6 +10,8 @@ const COMMANDS_FILE = process.env.COMMANDS_FILE || '/var/www/console-commands.ya
 const TARGET_CONTAINER = process.env.TARGET_CONTAINER || 'statistics-for-strava';
 const LOG_FILE = process.env.LOG_FILE || '/var/log/strava-helper/helper.log';
 const RELOAD_INTERVAL_MS = 5000;
+const PING_INTERVAL_MS = 5000;
+const DISCOVER_TIMEOUT_MS = 30000;
 
 // In-memory command cache
 let allowedCommands = new Map();
@@ -94,7 +96,7 @@ async function parseJsonBody(req) {
     req.on('end', () => {
       try {
         resolve(JSON.parse(body));
-      } catch (err) {
+      } catch {
         reject(new Error('Invalid JSON body'));
       }
     });
@@ -106,8 +108,12 @@ async function parseJsonBody(req) {
  * Send JSON response
  */
 function sendJson(res, statusCode, data) {
-  res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify(data));
+  try {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+  } catch {
+    // Connection already closed
+  }
 }
 
 /**
@@ -166,11 +172,33 @@ async function handleRun(req, res) {
   });
 
   const sendEvent = (type, data) => {
-    const payload = JSON.stringify({ type, data });
-    res.write(`data: ${payload}\n\n`);
+    try {
+      const payload = JSON.stringify({ type, data });
+      res.write(`data: ${payload}\n\n`);
+    } catch {
+      // Connection already closed, ignore write errors
+    }
   };
 
   sendEvent('start', { commandId, command: cmdArray, targetContainer: TARGET_CONTAINER });
+
+  // Keep-alive ping interval - prevents proxy/browser timeouts on long-running commands
+  const pingInterval = setInterval(() => {
+    try {
+      res.write(': ping\n\n');
+    } catch {
+      // Connection already closed, interval will be cleared in cleanup
+    }
+  }, PING_INTERVAL_MS);
+
+  // Cleanup function to ensure ping interval is always cleared
+  let cleaned = false;
+  const cleanup = () => {
+    if (!cleaned) {
+      cleaned = true;
+      clearInterval(pingInterval);
+    }
+  };
 
   // Spawn docker exec with array args - NO SHELL for security
   const child = spawn('docker', execArgs, {
@@ -199,6 +227,7 @@ async function handleRun(req, res) {
   });
 
   child.on('close', (code) => {
+    cleanup();
     const durationMs = Date.now() - startTime;
 
     log({
@@ -209,10 +238,11 @@ async function handleRun(req, res) {
     });
 
     sendEvent('exit', { code, durationMs });
-    res.end();
+    try { res.end(); } catch { /* already closed */ }
   });
 
   child.on('error', (err) => {
+    cleanup();
     const durationMs = Date.now() - startTime;
 
     log({
@@ -223,15 +253,109 @@ async function handleRun(req, res) {
     });
 
     sendEvent('error', { message: err.message, durationMs });
-    res.end();
+    try { res.end(); } catch { /* already closed */ }
   });
 
   // Handle client disconnect
   req.on('close', () => {
+    cleanup();
     if (!child.killed) {
       child.kill('SIGTERM');
       log({ event: 'client_disconnect', commandId });
     }
+  });
+}
+
+/**
+ * Handle GET /discover - discover available Symfony commands from target container
+ */
+function handleDiscover(req, res) {
+  const execArgs = ['exec', TARGET_CONTAINER, 'php', 'bin/console', 'list', '--format=json'];
+
+  log({ event: 'discover_start', targetContainer: TARGET_CONTAINER });
+
+  const child = spawn('docker', execArgs, {
+    shell: false,
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+
+  let stdout = '';
+  let stderr = '';
+
+  child.stdout.on('data', (data) => {
+    stdout += data.toString();
+  });
+
+  child.stderr.on('data', (data) => {
+    stderr += data.toString();
+  });
+
+  // Timeout for discovery
+  const timeout = setTimeout(() => {
+    if (!child.killed) {
+      child.kill('SIGTERM');
+      log({ event: 'discover_timeout', targetContainer: TARGET_CONTAINER });
+      sendJson(res, 504, {
+        success: false,
+        error: 'Discovery timed out after 30 seconds'
+      });
+    }
+  }, DISCOVER_TIMEOUT_MS);
+
+  child.on('close', (code) => {
+    clearTimeout(timeout);
+
+    if (code !== 0) {
+      log({ event: 'discover_error', exitCode: code, stderr });
+      sendJson(res, 500, {
+        success: false,
+        error: `Command list failed with exit code ${code}`,
+        stderr
+      });
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stdout);
+      const stravaCommands = {};
+
+      // Symfony list --format=json returns { commands: [{ name, description, ... }] }
+      if (parsed.commands && Array.isArray(parsed.commands)) {
+        for (const cmd of parsed.commands) {
+          if (cmd.name && cmd.name.startsWith('app:strava:')) {
+            // Convert "app:strava:build-files" to id "build-files"
+            const id = cmd.name.replace('app:strava:', '');
+            stravaCommands[id] = {
+              name: cmd.description || id,
+              description: cmd.description || '',
+              command: ['php', 'bin/console', cmd.name]
+            };
+          }
+        }
+      }
+
+      log({ event: 'discover_complete', commandCount: Object.keys(stravaCommands).length });
+      sendJson(res, 200, {
+        success: true,
+        commands: stravaCommands,
+        discoveredCount: Object.keys(stravaCommands).length
+      });
+    } catch (parseErr) {
+      log({ event: 'discover_parse_error', error: parseErr.message });
+      sendJson(res, 500, {
+        success: false,
+        error: `Failed to parse command list: ${parseErr.message}`
+      });
+    }
+  });
+
+  child.on('error', (err) => {
+    clearTimeout(timeout);
+    log({ event: 'discover_error', error: err.message });
+    sendJson(res, 500, {
+      success: false,
+      error: `Failed to run discovery: ${err.message}`
+    });
   });
 }
 
@@ -263,7 +387,12 @@ function handleRequest(req, res) {
     return;
   }
 
-  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'POST /run'] });
+  if (url.pathname === '/discover' && req.method === 'GET') {
+    handleDiscover(req, res);
+    return;
+  }
+
+  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'POST /run', 'GET /discover'] });
 }
 
 // Initialize
@@ -276,6 +405,12 @@ setInterval(loadCommands, RELOAD_INTERVAL_MS);
 const server = http.createServer(handleRequest);
 
 server.listen(PORT, () => {
+  // Disable all Node.js HTTP server timeouts for long-running commands (20+ minutes)
+  server.keepAliveTimeout = 0;
+  server.headersTimeout = 0;
+  server.requestTimeout = 0;
+  server.timeout = 0;
+
   log({ event: 'server_start', port: PORT, targetContainer: TARGET_CONTAINER, commandsFile: COMMANDS_FILE });
   console.log(`strava-command-helper listening on port ${PORT}`);
   console.log(`Target container: ${TARGET_CONTAINER}`);
@@ -296,4 +431,8 @@ process.on('SIGINT', () => {
   server.close(() => {
     process.exit(0);
   });
+});
+
+process.on('unhandledRejection', (reason) => {
+  log({ event: 'unhandled_rejection', error: reason?.message || String(reason) });
 });

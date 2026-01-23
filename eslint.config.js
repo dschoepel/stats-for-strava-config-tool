@@ -36,4 +36,14 @@ export default defineConfig([
       },
     },
   },
+  // Configuration for helper and runner servers (Node.js environment)
+  {
+    files: ['helper/server.js', 'runner/server.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2021,
+      },
+    },
+  },
 ])
