@@ -122,7 +122,7 @@ const StravaConsoleTerminal = forwardRef(function StravaConsoleTerminal({ onRead
           if (fitAddon && terminalContainerRef.current) {
             try {
               fitAddon.fit();
-            } catch (e) {
+            } catch {
               // Ignore fit errors during resize
             }
           }
