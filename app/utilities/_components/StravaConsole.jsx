@@ -485,50 +485,51 @@ export default function StravaConsole() {
 
             <HStack gap={2} mt={4} justify="flex-end">
               {!isRunning ? (
-                  <Button
-                    colorPalette="green"
-                    onClick={handleRun}
-                    disabled={!selectedCommand || !terminalReady || runnerStatus !== 'online'}
-                  >
-                    <Icon as={MdPlayArrow} mr={2} />
-                    Run
-                  </Button>
-                ) : (
-                  <Button
-                    colorPalette="red"
-                    onClick={stopCommand}
-                  >
-                    <Icon as={MdStop} mr={2} />
-                    Stop
-                  </Button>
-                )}
-
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={reloadCommands}
-                  disabled={isRunning}
-                  title="Reload commands"
-                  color="text"
-                  borderColor="border"
+                  colorPalette="green"
+                  onClick={handleRun}
+                  disabled={!selectedCommand || !terminalReady || runnerStatus !== 'online'}
                 >
-                  <Icon as={MdRefresh} />
+                  <Icon as={MdPlayArrow} mr={2} />
+                  Run
                 </Button>
-
+              ) : (
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDiscover}
-                  disabled={isRunning || isDiscovering || runnerStatus !== 'online'}
-                  title="Discover commands from the Strava container"
-                  color="text"
-                  borderColor="border"
+                  colorPalette="red"
+                  onClick={stopCommand}
                 >
-                  {isDiscovering ? <Spinner size="xs" mr={2} /> : <Icon as={MdSearch} mr={2} />}
-                  Discover
+                  <Icon as={MdStop} mr={2} />
+                  Stop
                 </Button>
-              </HStack>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={reloadCommands}
+                disabled={isRunning}
+                title="Reload commands"
+                color="text"
+                borderColor="border"
+              >
+                <Icon as={MdRefresh} />
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDiscover}
+                disabled={isRunning || isDiscovering || runnerStatus !== 'online'}
+                title="Discover commands from the Strava container"
+                color="text"
+                borderColor="border"
+              >
+                {isDiscovering ? <Spinner size="xs" mr={2} /> : <Icon as={MdSearch} mr={2} />}
+                Discover
+              </Button>
             </HStack>
+          </VStack>
+        </Box>
           </VStack>
         </Box>
 
