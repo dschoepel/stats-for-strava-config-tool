@@ -78,7 +78,12 @@ function loadCommands() {
         if (Array.isArray(entry.command) && entry.command.length > 0) {
           // Validate all command array elements are strings
           if (entry.command.every(arg => typeof arg === 'string')) {
-            allowedCommands.set(id, entry);
+            allowedCommands.set(id, {
+              ...entry,
+              acceptsArgs: entry.acceptsArgs || false,
+              argsDescription: entry.argsDescription,
+              argsPlaceholder: entry.argsPlaceholder
+            });
           }
         }
       }
@@ -101,6 +106,53 @@ function isValidCommandFormat(command) {
  */
 function isCommandAllowed(command) {
   return allowedCommands.has(command);
+}
+
+/**
+ * Validate command arguments for safety
+ * @param {string[]} args - Array of argument strings
+ * @returns {{valid: boolean, error?: string}}
+ */
+function validateArgs(args) {
+  if (!Array.isArray(args)) {
+    return { valid: false, error: 'Arguments must be an array' };
+  }
+  
+  // Limit number of args
+  if (args.length > 10) {
+    return { valid: false, error: 'Too many arguments (max 10)' };
+  }
+  
+  // Validate each arg
+  for (const arg of args) {
+    // Must be string
+    if (typeof arg !== 'string') {
+      return { valid: false, error: 'All arguments must be strings' };
+    }
+    
+    // Reasonable length
+    if (arg.length > 100) {
+      return { valid: false, error: 'Argument too long (max 100 characters)' };
+    }
+    
+    // No dangerous characters
+    const dangerousPattern = /[;&|`$(){}[\]<>\\'"]/ ;
+    if (dangerousPattern.test(arg)) {
+      return { valid: false, error: 'Arguments contain invalid characters' };
+    }
+    
+    // No flags
+    if (arg.startsWith('-')) {
+      return { valid: false, error: 'Flags are not allowed in arguments' };
+    }
+    
+    // No empty strings
+    if (arg.trim().length === 0) {
+      return { valid: false, error: 'Empty arguments are not allowed' };
+    }
+  }
+  
+  return { valid: true };
 }
 
 /**
@@ -151,16 +203,34 @@ async function handleRun(req, res) {
     return;
   }
 
-  const { command } = body;
+  const { command, args = [] } = body;
 
   if (!command) {
     sendJson(res, 400, { success: false, error: 'Missing command field' });
     return;
   }
 
+  // Validate args is array
+  if (!Array.isArray(args)) {
+    sendJson(res, 400, { 
+      success: false, 
+      error: 'Arguments must be an array' 
+    });
+    return;
+  }
+
   // Validate command format
   if (!isValidCommandFormat(command)) {
     sendJson(res, 400, { success: false, error: 'Invalid command format. Only alphanumeric characters, hyphens, underscores, and colons are allowed.' });
+    return;
+  }
+
+  // Enforce app:strava:* restriction
+  if (!command.startsWith('app:strava:')) {
+    sendJson(res, 403, { 
+      success: false, 
+      error: 'Only app:strava:* commands are allowed' 
+    });
     return;
   }
 
@@ -174,12 +244,45 @@ async function handleRun(req, res) {
     return;
   }
 
+  // Get command entry for args validation
+  const entry = allowedCommands.get(command);
+
+  // Validate args usage
+  if (args.length > 0 && !entry.acceptsArgs) {
+    sendJson(res, 400, { 
+      success: false, 
+      error: `Command "${command}" does not accept arguments` 
+    });
+    return;
+  }
+
+  if (entry.acceptsArgs && args.length === 0) {
+    sendJson(res, 400, { 
+      success: false, 
+      error: `Command "${command}" requires arguments: ${entry.argsDescription || 'arguments required'}` 
+    });
+    return;
+  }
+
+  // Validate args safety
+  if (args.length > 0) {
+    const argsValidation = validateArgs(args);
+    if (!argsValidation.valid) {
+      sendJson(res, 400, { 
+        success: false, 
+        error: argsValidation.error 
+      });
+      return;
+    }
+  }
+
   const startTime = Date.now();
 
   // Log start
   log({
     event: 'start',
     command,
+    args,
     helperUrl: HELPER_URL
   });
 
@@ -216,7 +319,10 @@ async function handleRun(req, res) {
     const helperRes = await fetch(`${HELPER_URL}/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ commandId: command }),
+      body: JSON.stringify({ 
+        commandId: command,
+        args: args 
+      }),
       signal: controller.signal
     });
 
@@ -260,6 +366,7 @@ async function handleRun(req, res) {
               log({
                 event: 'exit',
                 command,
+                args,
                 exitCode: eventData.data.code,
                 logPath: eventData.data.logPath || null,
                 durationMs
@@ -279,7 +386,7 @@ async function handleRun(req, res) {
       return;
     }
     const durationMs = Date.now() - startTime;
-    log({ event: 'error', command, error: err.message, durationMs });
+    log({ event: 'error', command, args, error: err.message, durationMs });
     sendEvent('error', { message: `Helper unavailable: ${err.message}` });
     try { res.end(); } catch { /* already closed */ }
   }

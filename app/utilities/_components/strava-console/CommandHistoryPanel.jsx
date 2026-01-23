@@ -157,9 +157,13 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
             </HStack>
             <Text fontSize="xs" color="textMuted" fontFamily="mono">
               app:strava:{item.command}
+              {item.args && item.args.length > 0 && (
+                <Text as="span" color="blue.500" ml={2}>
+                  {item.args.join(' ')}
+                </Text>
+              )}
             </Text>
-            <Text fontSize="xs" color="textMuted">
-              {formatRelativeTime(item.timestamp)}
+            <Text fontSize="xs" color="textMuted">{formatRelativeTime(item.timestamp)}
               {item.exitCode !== null && item.exitCode !== 0 && (
                 <Text as="span" ml={2} color="red.500">
                   Exit code: {item.exitCode}
@@ -186,7 +190,7 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
             <Button
               size="xs"
               variant="ghost"
-              onClick={() => onRerun(item.command)}
+              onClick={() => onRerun(item.command, item.args)}
               title="Run this command again"
               color="text"
               disabled={item.status === 'running'}

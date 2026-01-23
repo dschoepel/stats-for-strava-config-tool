@@ -40,6 +40,7 @@ export default function DiscoverCommandsDialog({
       id,
       name: entry.name || id,
       description: entry.description || '',
+      acceptsArgs: entry.acceptsArgs || false,
       isNew: !existingIds.has(id)
     }));
 
@@ -135,6 +136,11 @@ export default function DiscoverCommandsDialog({
                         <Icon as={MdNewReleases} boxSize={3} />
                         <Text>New</Text>
                       </HStack>
+                    </Badge>
+                  )}
+                  {entry.acceptsArgs && (
+                    <Badge colorPalette="blue" variant="subtle" size="xs">
+                      requires arguments
                     </Badge>
                   )}
                 </HStack>

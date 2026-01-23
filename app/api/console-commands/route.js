@@ -67,6 +67,9 @@ function getConsoleCommandsPath(defaultPath) {
  *       name: "Build Files"
  *       description: "Build Strava files"
  *       command: ["php", "bin/console", "build-files"]
+ *       acceptsArgs: true  # optional
+ *       argsDescription: "..."  # optional
+ *       argsPlaceholder: "..."  # optional
  */
 function toYAML(commands) {
   let yaml = '# Console Commands for Statistics for Strava\n';
@@ -79,7 +82,20 @@ function toYAML(commands) {
     yaml += `  ${cmd.id}:\n`;
     yaml += `    name: "${cmd.name}"\n`;
     yaml += `    description: "${cmd.description}"\n`;
-    yaml += `    command: ["php", "bin/console", "${cmd.command}"]\n\n`;
+    yaml += `    command: ["php", "bin/console", "${cmd.command}"]\n`;
+    
+    // Add args fields if present
+    if (cmd.acceptsArgs) {
+      yaml += `    acceptsArgs: true\n`;
+      if (cmd.argsDescription) {
+        yaml += `    argsDescription: "${cmd.argsDescription}"\n`;
+      }
+      if (cmd.argsPlaceholder) {
+        yaml += `    argsPlaceholder: "${cmd.argsPlaceholder}"\n`;
+      }
+    }
+    
+    yaml += '\n';
   });
 
   return yaml;
@@ -105,7 +121,10 @@ export async function GET(request) {
           id,
           name: entry.name || id,
           command: id,
-          description: entry.description || ''
+          description: entry.description || '',
+          acceptsArgs: entry.acceptsArgs || false,
+          argsDescription: entry.argsDescription || '',
+          argsPlaceholder: entry.argsPlaceholder || ''
         }));
         return NextResponse.json({
           success: true,

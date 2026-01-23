@@ -58,12 +58,20 @@ export async function GET() {
  */
 export async function POST(request) {
   try {
-    const { command } = await request.json();
+    const { command, args = [] } = await request.json();
 
     if (!command) {
       return NextResponse.json({
         success: false,
         error: 'Command is required'
+      }, { status: 400 });
+    }
+
+    // Validate args is array
+    if (!Array.isArray(args)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Arguments must be an array'
       }, { status: 400 });
     }
 
@@ -83,7 +91,7 @@ export async function POST(request) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ command })
+        body: JSON.stringify({ command, args })
       });
     } catch (fetchError) {
       return NextResponse.json({
