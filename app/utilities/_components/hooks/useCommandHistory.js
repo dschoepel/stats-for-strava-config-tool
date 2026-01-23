@@ -47,6 +47,7 @@ const saveHistory = (history) => {
  *   id: string,
  *   command: string,        // The command that was run
  *   commandName: string,    // Display name of the command
+ *   args: array,            // Command arguments
  *   timestamp: number,      // When the command was started
  *   status: 'running' | 'success' | 'failed',
  *   logPath: string | null, // Path to log file if available
@@ -65,14 +66,16 @@ export function useCommandHistory() {
    * Add a new command to history
    * @param {string} command - The command being run
    * @param {string} commandName - Display name for the command
+   * @param {Array} args - Command arguments array
    * @returns {string} The ID of the new history item
    */
-  const addToHistory = useCallback((command, commandName) => {
+  const addToHistory = useCallback((command, commandName, args = []) => {
     const id = generateId();
     const newItem = {
       id,
       command,
       commandName: commandName || command,
+      args,
       timestamp: Date.now(),
       status: 'running',
       logPath: null,

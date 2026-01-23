@@ -7,6 +7,9 @@
 #   - name: Human-readable display name
 #   - description: Brief description of what the command does
 #   - command: Array of strings passed directly to `docker exec` (no shell)
+#   - acceptsArgs: (optional) Boolean indicating if command accepts arguments
+#   - argsDescription: (optional) Description of what arguments the command expects
+#   - argsPlaceholder: (optional) Placeholder text for arguments input field
 
 commands:
   build-files:
@@ -28,6 +31,9 @@ commands:
     name: "Webhooks Unsubscribe"
     description: "Delete a Strava webhook subscription"
     command: ["php", "bin/console", "app:strava:webhooks-unsubscribe"]
+    acceptsArgs: true
+    argsDescription: "Subscription ID to unsubscribe"
+    argsPlaceholder: "Enter subscription ID"
 
   webhooks-view:
     name: "Webhooks View"

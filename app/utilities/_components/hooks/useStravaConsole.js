@@ -185,10 +185,11 @@ export function useStravaConsole() {
 
   /**
    * Run the selected command via the Strava Runner sidecar
+   * @param {Array} args - Command arguments array
    * @param {Function} onComplete - Callback when command completes
    * @returns {Promise<{success: boolean, logPath: string|null, exitCode: number|null}>}
    */
-  const runCommand = useCallback(async (onComplete) => {
+  const runCommand = useCallback(async (args = [], onComplete) => {
     const selectedCommand = getSelectedCommand();
     if (!selectedCommand) {
       setError('No command selected');
@@ -215,7 +216,8 @@ export function useStravaConsole() {
       if (terminalRef.current) {
         terminalRef.current.clear();
       }
-      writeToTerminal(`$ php bin/console ${selectedCommand.command}`, 'info');
+      const argsDisplay = args.length > 0 ? ` ${args.join(' ')}` : '';
+      writeToTerminal(`$ php bin/console ${selectedCommand.command}${argsDisplay}`, 'info');
       writeToTerminal('', 'stdout');
 
       // Use the strava-console API (Strava Runner sidecar)
@@ -225,7 +227,8 @@ export function useStravaConsole() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          command: selectedCommand.command
+          command: selectedCommand.command,
+          args
         }),
         signal: abortControllerRef.current.signal
       });

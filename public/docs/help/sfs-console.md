@@ -17,6 +17,7 @@ This feature is disabled by default and can be enabled at any time.
 - 🔴 Connection state badges: Visual indicators for Running, Streaming, Completed, Error states
 - 📡 Keep-alive pings: Prevents timeout on long-running commands (20+ minutes supported)
 - 🎯 Full command names: Commands now use proper `app:strava:*` format
+- 🎛️ **Command arguments**: Support for commands requiring parameters (e.g., subscription IDs)
 
 ---
 
@@ -134,6 +135,14 @@ commands:
     name: "Import Data"
     description: "Import new activities from Strava API"
     command: ["php", "bin/console", "app:strava:import-data"]
+
+  webhooks-unsubscribe:
+    name: "Webhooks Unsubscribe"
+    description: "Delete a Strava webhook subscription"
+    command: ["php", "bin/console", "app:strava:webhooks-unsubscribe"]
+    acceptsArgs: true
+    argsDescription: "Subscription ID to unsubscribe"
+    argsPlaceholder: "Enter subscription ID"
 
   webhooks-view:
     name: "Webhooks View"
@@ -263,11 +272,62 @@ The **Discover** button automatically finds all available Symfony console comman
 3. Displays results in a dialog with:
    - Command names and descriptions
    - Green "New" badges for commands not in your current configuration
+   - Blue "requires arguments" badges for commands accepting parameters
    - Count of new vs existing commands
 
 **Actions:**
 - **Merge** - Adds only new commands to your existing configuration
 - **Replace All** - Replaces your entire command list (shows confirmation warning)
+
+### Command Arguments (New in v1.1.0-rc4)
+
+Some commands require arguments (parameters) to function properly. For example:
+- **webhooks-unsubscribe** - Requires a subscription ID
+
+**How it works:**
+
+1. **YAML Configuration** - Commands declare args support:
+   ```yaml
+   webhooks-unsubscribe:
+     acceptsArgs: true
+     argsDescription: "Subscription ID to unsubscribe"
+     argsPlaceholder: "Enter subscription ID"
+   ```
+
+2. **UI Behavior** - When a command with `acceptsArgs: true` is selected:
+   - An "Arguments" input field appears below the command selector
+   - Field shows the placeholder text (e.g., "Enter subscription ID")
+   - Field displays the description text (e.g., "Subscription ID to unsubscribe")
+   - Run button is disabled until arguments are provided
+
+3. **Execution** - Arguments are:
+   - Validated for safety (no shell injection characters allowed)
+   - Passed as separate array elements to `docker exec` (secure)
+   - Displayed in terminal output: `$ php bin/console app:strava:webhooks-unsubscribe 12345`
+   - Included in log filenames: `2026-01-23_14-30-45_webhooks-unsubscribe_12345_0.log`
+   - Saved in command history for easy rerun
+
+4. **Security Validation** - Arguments are checked for:
+   - No shell metacharacters: `;`, `&`, `|`, backticks, `$`, `()`, `{}`, `[]`, `<>`, `\`, `'`, `"`
+   - No flags starting with `-` or `--`
+   - No empty strings
+   - Maximum 50 characters per argument
+   - Maximum 10 arguments total
+
+5. **Command History** - When rerunning a command from history:
+   - Arguments are automatically restored to the input field
+   - History displays args in blue next to the command name
+   - Original args are preserved for accurate reruns
+
+**Example Usage:**
+```
+1. Select "Webhooks Unsubscribe" command
+2. Arguments field appears with placeholder "Enter subscription ID"
+3. Enter subscription ID: 12345
+4. Click Run
+5. Command executes: php bin/console app:strava:webhooks-unsubscribe 12345
+6. Log file created: 2026-01-23_14-30-45_webhooks-unsubscribe_12345_0.log
+```
 
 ### Live Terminal Output
 
@@ -350,14 +410,16 @@ Each command execution creates a detailed log file:
 |-------|-----------|
 | **Runner** | No Docker socket. Cannot execute anything locally. Pure validator + proxy. |
 | **Helper** | Has Docker socket but only executes predefined commands from the allowlist. |
-| **Command allowlist** | `console-commands.yaml` is the single source of truth. |
+| **Command allowlist** | `console-commands.yaml` is the single source of truth. Only `app:strava:*` commands allowed. |
 | **No arbitrary commands** | Helper resolves `commandId` to a fixed array. Unknown IDs rejected with 403. |
-| **No arbitrary arguments** | Command arrays are fully defined in YAML. No user input is concatenated. |
+| **Argument validation** | Runner validates args: no shell metacharacters, no flags, length limits (50 chars/arg, 10 args max). |
+| **Argument enforcement** | Commands must declare `acceptsArgs: true` to receive arguments. Undeclared commands reject args. |
+| **No shell execution** | `spawn()` with `shell: false` and args as array elements. No interpolation or injection possible. |
 | **No arbitrary containers** | `TARGET_CONTAINER` is set via env var. Cannot exec into other containers. |
-| **No shell** | `spawn()` with `shell: false`. No interpolation, expansion, or injection. |
 | **Network isolation** | Helper has no exposed ports. Only reachable by runner on internal network. |
 | **Read-only commands** | Both services mount `console-commands.yaml` with `:ro`. |
-| **Input validation** | Runner validates format: `/^[a-zA-Z0-9\-_:]+$/` before forwarding. |
+| **Input validation** | Runner validates command format: `/^[a-zA-Z0-9\-_:]+$/` before forwarding. |
+| **Namespace restriction** | All commands must start with `app:strava:` prefix. Other namespaces rejected. |
 
 ---
 

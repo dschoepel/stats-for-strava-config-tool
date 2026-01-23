@@ -15,7 +15,8 @@ import {
   Badge,
   Collapsible,
   NativeSelectRoot,
-  NativeSelectField
+  NativeSelectField,
+  Input
 } from '@chakra-ui/react';
 import {
   MdTerminal,
@@ -58,6 +59,8 @@ export default function StravaConsole() {
   const [showHistory, setShowHistory] = useState(false);
   const [terminalReady, setTerminalReady] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [args, setArgs] = useState('');
+  const [argsError, setArgsError] = useState('');
 
   const {
     commands,
@@ -117,13 +120,31 @@ export default function StravaConsole() {
     }
   }, [searchParams, commands, selectCommand]);
 
+  // Clear args when command changes
+  useEffect(() => {
+    setArgs('');
+    setArgsError('');
+  }, [selectedCommandId]);
+
   // Handle run command
   const handleRun = useCallback(async () => {
     if (!selectedCommand) return;
 
-    const historyId = addToHistory(selectedCommand.command, selectedCommand.name);
+    // Validate args if command requires them
+    if (selectedCommand.acceptsArgs && !args.trim()) {
+      setArgsError('This command requires arguments');
+      return;
+    }
 
-    const result = await runCommand((res) => {
+    // Clear any previous args error
+    setArgsError('');
+
+    // Parse args string into array (split by spaces, preserve quoted strings)
+    const argsArray = args.trim() ? args.trim().split(/\s+/) : [];
+
+    const historyId = addToHistory(selectedCommand.command, selectedCommand.name, argsArray);
+
+    const result = await runCommand(argsArray, (res) => {
       updateStatus(
         historyId,
         res.success ? 'success' : 'failed',
@@ -133,7 +154,7 @@ export default function StravaConsole() {
     });
 
     return result;
-  }, [selectedCommand, addToHistory, runCommand, updateStatus]);
+  }, [selectedCommand, args, addToHistory, runCommand, updateStatus]);
 
   // Handle download log
   const handleDownload = useCallback(() => {
@@ -143,10 +164,14 @@ export default function StravaConsole() {
   }, [lastLogPath]);
 
   // Handle rerun from history
-  const handleRerun = useCallback((command) => {
+  const handleRerun = useCallback((command, historyArgs) => {
     const matchingCmd = commands.find(cmd => cmd.command === command);
     if (matchingCmd) {
       selectCommand(matchingCmd.id);
+      // Restore args from history
+      if (historyArgs && historyArgs.length > 0) {
+        setArgs(historyArgs.join(' '));
+      }
     }
   }, [commands, selectCommand]);
 
@@ -173,7 +198,10 @@ export default function StravaConsole() {
           id,
           name: entry.name || id,
           command: entry.command[2],
-          description: entry.description || ''
+          description: entry.description || '',
+          acceptsArgs: entry.acceptsArgs || false,
+          argsDescription: entry.argsDescription || '',
+          argsPlaceholder: entry.argsPlaceholder || ''
         });
       }
     }
@@ -188,7 +216,10 @@ export default function StravaConsole() {
       id,
       name: entry.name || id,
       command: entry.command[2],
-      description: entry.description || ''
+      description: entry.description || '',
+      acceptsArgs: entry.acceptsArgs || false,
+      argsDescription: entry.argsDescription || '',
+      argsPlaceholder: entry.argsPlaceholder || ''
     }));
     await saveCommands(commandsList);
     clearDiscovered();
@@ -414,9 +445,46 @@ export default function StravaConsole() {
                   </Text>
                 </Box>
               )}
+            </HStack>
 
-              <HStack gap={2} flexShrink={0}>
-                {!isRunning ? (
+            {/* Arguments Input - Show when command accepts args */}
+            {selectedCommand?.acceptsArgs && (
+              <Box mt={4}>
+                <Text fontSize="sm" fontWeight="medium" color="text" mb={2}>
+                  Arguments {selectedCommand.argsDescription && (
+                    <Text as="span" fontWeight="normal" color="textMuted">
+                      — {selectedCommand.argsDescription}
+                    </Text>
+                  )}
+                </Text>
+                <VStack align="stretch" gap={2}>
+                  <Input
+                    value={args}
+                    onChange={(e) => {
+                      setArgs(e.target.value);
+                      setArgsError('');
+                    }}
+                    placeholder={selectedCommand.argsPlaceholder || 'Enter arguments'}
+                    disabled={isRunning}
+                    fontFamily="mono"
+                    fontSize="sm"
+                    borderColor={argsError ? 'red.500' : 'border'}
+                    _focus={{
+                      borderColor: argsError ? 'red.500' : 'blue.500',
+                      boxShadow: argsError ? '0 0 0 1px var(--chakra-colors-red-500)' : '0 0 0 1px var(--chakra-colors-blue-500)'
+                    }}
+                  />
+                  {argsError && (
+                    <Text fontSize="sm" color="red.500">
+                      {argsError}
+                    </Text>
+                  )}
+                </VStack>
+              </Box>
+            )}
+
+            <HStack gap={2} mt={4} justify="flex-end">
+              {!isRunning ? (
                   <Button
                     colorPalette="green"
                     onClick={handleRun}

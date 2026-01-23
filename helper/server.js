@@ -129,10 +129,19 @@ async function handleRun(req, res) {
     return;
   }
 
-  const { commandId } = body;
+  const { commandId, args = [] } = body;
 
   if (!commandId || typeof commandId !== 'string') {
     sendJson(res, 400, { success: false, error: 'Missing or invalid commandId field' });
+    return;
+  }
+
+  // Validate args is array (defensive, runner should validate)
+  if (!Array.isArray(args)) {
+    sendJson(res, 400, { 
+      success: false, 
+      error: 'Arguments must be an array' 
+    });
     return;
   }
 
@@ -153,13 +162,14 @@ async function handleRun(req, res) {
     return;
   }
 
-  const cmdArray = entry.command; // e.g. ["php", "bin/console", "webhooks-view"]
-  const execArgs = ['exec', TARGET_CONTAINER, ...cmdArray];
+  const cmdArray = entry.command; // e.g. ["php", "bin/console", "app:strava:webhooks-unsubscribe"]
+  const execArgs = ['exec', TARGET_CONTAINER, ...cmdArray, ...args];
   const startTime = Date.now();
 
   // Create command log file
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const logFileName = `${timestamp}_${commandId}.log`;
+  const argsSuffix = args.length > 0 ? `_${args[0].substring(0, 20).replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+  const logFileName = `${timestamp}_${commandId}${argsSuffix}.log`;
   const commandLogPath = path.join(COMMAND_LOGS_DIR, logFileName);
   
   // Ensure command logs directory exists
@@ -175,6 +185,10 @@ async function handleRun(req, res) {
   try {
     logStream = fs.createWriteStream(commandLogPath, { flags: 'w' });
     logStream.write(`Command: ${cmdArray.join(' ')}\n`);
+    if (args.length > 0) {
+      logStream.write(`Arguments: ${args.join(' ')}\n`);
+      logStream.write(`Args (JSON): ${JSON.stringify(args)}\n`);
+    }
     logStream.write(`Container: ${TARGET_CONTAINER}\n`);
     logStream.write(`Started: ${new Date().toISOString()}\n`);
     logStream.write('='.repeat(80) + '\n\n');
@@ -185,6 +199,7 @@ async function handleRun(req, res) {
   log({
     event: 'start',
     commandId,
+    args,
     targetContainer: TARGET_CONTAINER,
     execArgs: ['docker', ...execArgs],
     logPath: commandLogPath
@@ -297,6 +312,7 @@ async function handleRun(req, res) {
     log({
       event: 'exit',
       commandId,
+      args,
       exitCode: code,
       durationMs,
       logPath: finalLogPath
@@ -325,6 +341,7 @@ async function handleRun(req, res) {
     log({
       event: 'error',
       commandId,
+      args,
       error: err.message,
       durationMs
     });
@@ -402,10 +419,19 @@ function handleDiscover(req, res) {
           if (cmd.name && cmd.name.startsWith('app:strava:')) {
             // Convert "app:strava:build-files" to id "build-files"
             const id = cmd.name.replace('app:strava:', '');
+            
+            // Determine if command accepts arguments
+            const acceptsArgs = id === 'webhooks-unsubscribe';
+            const argsDescription = acceptsArgs ? 'Subscription ID to unsubscribe' : undefined;
+            const argsPlaceholder = acceptsArgs ? 'Enter subscription ID' : undefined;
+            
             stravaCommands[id] = {
               name: cmd.description || id,
               description: cmd.description || '',
-              command: ['php', 'bin/console', cmd.name]
+              command: ['php', 'bin/console', cmd.name],
+              acceptsArgs,
+              argsDescription,
+              argsPlaceholder
             };
           }
         }
