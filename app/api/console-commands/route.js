@@ -117,15 +117,22 @@ export async function GET(request) {
 
       if (parsed?.commands && typeof parsed.commands === 'object' && !Array.isArray(parsed.commands)) {
         // New map-based format
-        const commands = Object.entries(parsed.commands).map(([id, entry]) => ({
-          id,
-          name: entry.name || id,
-          command: id,
-          description: entry.description || '',
-          acceptsArgs: entry.acceptsArgs || false,
-          argsDescription: entry.argsDescription || '',
-          argsPlaceholder: entry.argsPlaceholder || ''
-        }));
+        const commands = Object.entries(parsed.commands).map(([id, entry]) => {
+          // Extract the actual command name from the command array (last element)
+          const commandName = Array.isArray(entry.command) && entry.command.length > 0
+            ? entry.command[entry.command.length - 1]
+            : id;
+          
+          return {
+            id,
+            name: entry.name || id,
+            command: commandName,
+            description: entry.description || '',
+            acceptsArgs: entry.acceptsArgs || false,
+            argsDescription: entry.argsDescription || '',
+            argsPlaceholder: entry.argsPlaceholder || ''
+          };
+        });
         return NextResponse.json({
           success: true,
           commands,
