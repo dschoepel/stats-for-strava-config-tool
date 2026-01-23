@@ -530,8 +530,6 @@ export default function StravaConsole() {
             </HStack>
           </VStack>
         </Box>
-          </VStack>
-        </Box>
 
         {/* Terminal */}
         <Box
