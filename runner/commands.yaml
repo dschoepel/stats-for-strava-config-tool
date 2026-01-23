@@ -12,24 +12,24 @@ commands:
   build-files:
     name: "Build Files (Updates Dashboard)"
     description: "Build Strava files and update the dashboard"
-    command: ["php", "bin/console", "build-files"]
+    command: ["php", "bin/console", "app:strava:build-files"]
 
   import-data:
     name: "Import Data"
     description: "Import new activities from Strava API"
-    command: ["php", "bin/console", "import-data"]
+    command: ["php", "bin/console", "app:strava:import-data"]
 
   webhooks-create:
     name: "Webhooks Create"
     description: "Create a Strava webhook subscription"
-    command: ["php", "bin/console", "webhooks-create"]
+    command: ["php", "bin/console", "app:strava:webhooks-create"]
 
   webhooks-unsubscribe:
     name: "Webhooks Unsubscribe"
     description: "Delete a Strava webhook subscription"
-    command: ["php", "bin/console", "webhooks-unsubscribe"]
+    command: ["php", "bin/console", "app:strava:webhooks-unsubscribe"]
 
   webhooks-view:
     name: "Webhooks View"
     description: "View Strava webhook subscription(s)"
-    command: ["php", "bin/console", "webhooks-view"]
+    command: ["php", "bin/console", "app:strava:webhooks-view"]

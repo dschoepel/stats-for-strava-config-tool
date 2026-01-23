@@ -4,13 +4,13 @@ import path from 'path';
 
 export const runtime = 'nodejs';
 
-// Directory for storing command logs
-const LOG_DIR = './strava-sh-logs';
+// Directory for storing command logs (Docker volume mount)
+const LOG_DIR = '/var/log/strava-helper/command-logs';
 
 /**
  * GET - Download or view a log file
  * Query params:
- *   - path: (required) Path to the log file
+ *   - path: (required) Path to the log file (absolute path from helper)
  *   - view: (optional) If 'true', returns JSON with content instead of download
  */
 export async function GET(request) {
@@ -26,9 +26,9 @@ export async function GET(request) {
       }, { status: 400 });
     }
 
-    // Security: Validate path is within strava-sh-logs directory
+    // Security: Validate path is within command logs directory
     const normalizedPath = path.normalize(logPath);
-    const resolvedPath = path.resolve(logPath);
+    const resolvedPath = path.resolve(normalizedPath);
     const resolvedLogDir = path.resolve(LOG_DIR);
 
     // Check if the path is within the log directory

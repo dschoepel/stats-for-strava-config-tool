@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 8081;
 const COMMANDS_FILE = process.env.COMMANDS_FILE || '/var/www/console-commands.yaml';
 const TARGET_CONTAINER = process.env.TARGET_CONTAINER || 'statistics-for-strava';
 const LOG_FILE = process.env.LOG_FILE || '/var/log/strava-helper/helper.log';
+const COMMAND_LOGS_DIR = process.env.COMMAND_LOGS_DIR || '/var/log/strava-helper/command-logs';
 const RELOAD_INTERVAL_MS = 5000;
 const PING_INTERVAL_MS = 5000;
 const DISCOVER_TIMEOUT_MS = 30000;
@@ -156,11 +157,37 @@ async function handleRun(req, res) {
   const execArgs = ['exec', TARGET_CONTAINER, ...cmdArray];
   const startTime = Date.now();
 
+  // Create command log file
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const logFileName = `${timestamp}_${commandId}.log`;
+  const commandLogPath = path.join(COMMAND_LOGS_DIR, logFileName);
+  
+  // Ensure command logs directory exists
+  if (!fs.existsSync(COMMAND_LOGS_DIR)) {
+    try {
+      fs.mkdirSync(COMMAND_LOGS_DIR, { recursive: true });
+    } catch (err) {
+      log({ event: 'log_dir_error', error: err.message });
+    }
+  }
+
+  let logStream = null;
+  try {
+    logStream = fs.createWriteStream(commandLogPath, { flags: 'w' });
+    logStream.write(`Command: ${cmdArray.join(' ')}\n`);
+    logStream.write(`Container: ${TARGET_CONTAINER}\n`);
+    logStream.write(`Started: ${new Date().toISOString()}\n`);
+    logStream.write('='.repeat(80) + '\n\n');
+  } catch (err) {
+    log({ event: 'log_file_error', error: err.message, path: commandLogPath });
+  }
+
   log({
     event: 'start',
     commandId,
     targetContainer: TARGET_CONTAINER,
-    execArgs: ['docker', ...execArgs]
+    execArgs: ['docker', ...execArgs],
+    logPath: commandLogPath
   });
 
   // Set up SSE streaming
@@ -212,6 +239,14 @@ async function handleRun(req, res) {
     for (const line of lines) {
       if (line.trim()) {
         sendEvent('stdout', line);
+        // Write to log file
+        if (logStream) {
+          try {
+            logStream.write(line + '\n');
+          } catch (err) {
+            // Ignore write errors
+          }
+        }
       }
     }
   });
@@ -222,6 +257,14 @@ async function handleRun(req, res) {
     for (const line of lines) {
       if (line.trim()) {
         sendEvent('stderr', line);
+        // Write to log file
+        if (logStream) {
+          try {
+            logStream.write('[STDERR] ' + line + '\n');
+          } catch (err) {
+            // Ignore write errors
+          }
+        }
       }
     }
   });
@@ -230,20 +273,54 @@ async function handleRun(req, res) {
     cleanup();
     const durationMs = Date.now() - startTime;
 
+    // Finalize log file
+    if (logStream) {
+      try {
+        logStream.write('\n' + '='.repeat(80) + '\n');
+        logStream.write(`Completed: ${new Date().toISOString()}\n`);
+        logStream.write(`Exit Code: ${code}\n`);
+        logStream.write(`Duration: ${durationMs}ms\n`);
+        logStream.end();
+      } catch (err) {
+        // Ignore write errors
+      }
+    }
+
+    // Rename log file to include exit code
+    const finalLogPath = commandLogPath.replace('.log', `_${code}.log`);
+    try {
+      fs.renameSync(commandLogPath, finalLogPath);
+    } catch (err) {
+      log({ event: 'log_rename_error', error: err.message });
+    }
+
     log({
       event: 'exit',
       commandId,
       exitCode: code,
-      durationMs
+      durationMs,
+      logPath: finalLogPath
     });
 
-    sendEvent('exit', { code, durationMs });
+    sendEvent('exit', { code, durationMs, logPath: finalLogPath });
     try { res.end(); } catch { /* already closed */ }
   });
 
   child.on('error', (err) => {
     cleanup();
     const durationMs = Date.now() - startTime;
+
+    // Finalize log file
+    if (logStream) {
+      try {
+        logStream.write('\n' + '='.repeat(80) + '\n');
+        logStream.write(`Error: ${err.message}\n`);
+        logStream.write(`Duration: ${durationMs}ms\n`);
+        logStream.end();
+      } catch (writeErr) {
+        // Ignore write errors
+      }
+    }
 
     log({
       event: 'error',

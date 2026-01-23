@@ -261,6 +261,7 @@ async function handleRun(req, res) {
                 event: 'exit',
                 command,
                 exitCode: eventData.data.code,
+                logPath: eventData.data.logPath || null,
                 durationMs
               });
             }

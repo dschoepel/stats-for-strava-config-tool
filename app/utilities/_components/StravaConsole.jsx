@@ -172,7 +172,7 @@ export default function StravaConsole() {
         merged.push({
           id,
           name: entry.name || id,
-          command: id,
+          command: entry.command[2],
           description: entry.description || ''
         });
       }
@@ -187,7 +187,7 @@ export default function StravaConsole() {
     const commandsList = Object.entries(newCommands).map(([id, entry]) => ({
       id,
       name: entry.name || id,
-      command: id,
+      command: entry.command[2],
       description: entry.description || ''
     }));
     await saveCommands(commandsList);

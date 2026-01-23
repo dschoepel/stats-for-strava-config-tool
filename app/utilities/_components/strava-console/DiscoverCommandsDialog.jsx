@@ -144,7 +144,7 @@ export default function DiscoverCommandsDialog({
                   </Text>
                 )}
                 <Text fontSize="xs" color="textMuted" fontFamily="mono" mt={0.5}>
-                  php bin/console {entry.id}
+                  php bin/console app:strava:{entry.id}
                 </Text>
               </Box>
             </Flex>
