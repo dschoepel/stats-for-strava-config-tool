@@ -1,35 +1,35 @@
 # Console Commands for Statistics for Strava
 # This file defines the allowed commands that can be executed via the strava-runner API.
-# The runner will automatically reload this file every 5 seconds to pick up changes.
+# Both the runner and helper will automatically reload this file every 5 seconds.
 #
-# Each command entry must have:
-#   - id: Unique identifier for the command
+# Format: Map-based with command ID as key.
+# Each entry must have:
 #   - name: Human-readable display name
-#   - command: The actual Symfony console command (without 'php bin/console' prefix)
 #   - description: Brief description of what the command does
+#   - command: Array of strings passed directly to `docker exec` (no shell)
 
 commands:
-  - id: "build-files"
+  build-files:
     name: "Build Files (Updates Dashboard)"
-    command: "build-files"
     description: "Build Strava files and update the dashboard"
+    command: ["php", "bin/console", "build-files"]
 
-  - id: "import-data"
+  import-data:
     name: "Import Data"
-    command: "import-data"
     description: "Import new activities from Strava API"
+    command: ["php", "bin/console", "import-data"]
 
-  - id: "webhooks-create"
+  webhooks-create:
     name: "Webhooks Create"
-    command: "webhooks-create"
     description: "Create a Strava webhook subscription"
+    command: ["php", "bin/console", "webhooks-create"]
 
-  - id: "webhooks-unsubscribe"
+  webhooks-unsubscribe:
     name: "Webhooks Unsubscribe"
-    command: "webhooks-unsubscribe"
     description: "Delete a Strava webhook subscription"
+    command: ["php", "bin/console", "webhooks-unsubscribe"]
 
-  - id: "webhooks-view"
+  webhooks-view:
     name: "Webhooks View"
-    command: "webhooks-view"
     description: "View Strava webhook subscription(s)"
+    command: ["php", "bin/console", "webhooks-view"]

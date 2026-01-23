@@ -1,9 +1,8 @@
 FROM node:20-alpine
 
-# Install timezone data and user management tools
-# Note: PHP is NOT needed - the runner is a pure validator/proxy.
-# Command execution happens in the strava-command-helper container.
+# Install Docker CLI only (no daemon), timezone data, and user management tools
 RUN apk add --no-cache \
+    docker-cli \
     tzdata \
     shadow \
     su-exec
@@ -18,20 +17,19 @@ RUN npm install --production
 # Copy application files
 COPY server.js ./
 COPY docker/entrypoint.sh /entrypoint.sh
-COPY docker/healthcheck.sh /healthcheck.sh
 
 # Make scripts executable
-RUN chmod +x /entrypoint.sh /healthcheck.sh
+RUN chmod +x /entrypoint.sh
 
 # Create log directory
-RUN mkdir -p /var/log/strava-runner
+RUN mkdir -p /var/log/strava-helper
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8081
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD ["/healthcheck.sh"]
+    CMD wget -qO- http://localhost:8081/health || exit 1
 
 # Entry point for user mapping
 ENTRYPOINT ["/entrypoint.sh"]

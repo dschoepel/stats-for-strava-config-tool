@@ -26,8 +26,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
-        id: meta
+      # --- Config Tool ---
+      - name: Extract metadata (config-tool)
+        id: meta-config-tool
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/stats-for-strava-config-tool
@@ -37,10 +38,50 @@ jobs:
             type=semver,pattern={{major}}
             type=raw,value=latest,enable=${{ !contains(github.ref, '-') }}
 
-      - name: Build and push Docker image
+      - name: Build and push config-tool image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-config-tool.outputs.tags }}
+          labels: ${{ steps.meta-config-tool.outputs.labels }}
+
+      # --- Strava Runner ---
+      - name: Extract metadata (runner)
+        id: meta-runner
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/strava-runner
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ !contains(github.ref, '-') }}
+
+      - name: Build and push runner image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./runner
+          push: true
+          tags: ${{ steps.meta-runner.outputs.tags }}
+          labels: ${{ steps.meta-runner.outputs.labels }}
+
+      # --- Strava Command Helper ---
+      - name: Extract metadata (helper)
+        id: meta-helper
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/strava-command-helper
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ !contains(github.ref, '-') }}
+
+      - name: Build and push helper image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./helper
+          push: true
+          tags: ${{ steps.meta-helper.outputs.tags }}
+          labels: ${{ steps.meta-helper.outputs.labels }}
