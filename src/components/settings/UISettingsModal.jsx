@@ -24,8 +24,8 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
   useEffect(() => {
     if (isOpen) {
       // Use queueMicrotask to defer state updates and avoid cascading renders
-      queueMicrotask(() => {
-        const loaded = loadSettings();
+      queueMicrotask(async () => {
+        const loaded = await loadSettings();
         setSettings(loaded);
         setIsDirty(false);
       });

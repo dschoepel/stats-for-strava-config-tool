@@ -109,7 +109,10 @@ const MenuItemWithSubmenu = ({
         </Flex>
         {!isCollapsed && (
           <IconButton
-            onClick={onToggle}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
             aria-label="Toggle submenu"
             size="sm"
             variant="ghost"

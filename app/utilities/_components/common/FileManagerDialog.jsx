@@ -158,13 +158,19 @@ export default function FileManagerDialog({
 
             {/* Bulk Actions */}
             <Flex gap={2} direction={{ base: "column", sm: "row" }} align="stretch">
-              <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
-                onCheckedChange={handleSelectAll}
-              >
-                <Text fontSize={{ base: "xs", sm: "sm" }}>Select All</Text>
-              </Checkbox>
+              <HStack>
+                <Checkbox.Root
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onCheckedChange={handleSelectAll}
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control />
+                  <Checkbox.Label>
+                    <Text fontSize={{ base: "xs", sm: "sm" }}>Select All</Text>
+                  </Checkbox.Label>
+                </Checkbox.Root>
+              </HStack>
               {canDelete && (
                 <Button
                   size="sm"
@@ -217,7 +223,7 @@ export default function FileManagerDialog({
                         return (
                           <Table.Row key={fileId}>
                             <Table.Cell>
-                              <Checkbox
+                              <Checkbox.Root
                                 checked={selectedFiles.has(fileId)}
                                 onCheckedChange={(e) => {
                                   const newSet = new Set(selectedFiles);
@@ -228,7 +234,10 @@ export default function FileManagerDialog({
                                   }
                                   setSelectedFiles(newSet);
                                 }}
-                              />
+                              >
+                                <Checkbox.HiddenInput />
+                                <Checkbox.Control />
+                              </Checkbox.Root>
                             </Table.Cell>
                             {renderRow(file, columns, false)}
                             <Table.Cell>
@@ -269,7 +278,7 @@ export default function FileManagerDialog({
                         bg="bg"
                       >
                         <HStack justify="space-between" mb={2}>
-                          <Checkbox
+                          <Checkbox.Root
                             checked={selectedFiles.has(fileId)}
                             onCheckedChange={(e) => {
                               const newSet = new Set(selectedFiles);
@@ -280,7 +289,10 @@ export default function FileManagerDialog({
                               }
                               setSelectedFiles(newSet);
                             }}
-                          />
+                          >
+                            <Checkbox.HiddenInput />
+                            <Checkbox.Control />
+                          </Checkbox.Root>
                           {canDownload && (
                             <Button
                               size="xs"

@@ -272,7 +272,7 @@ export default function StravaConsole() {
               <HStack gap={3} mt={4}>
                 <Button
                   as="a"
-                  href="/help/sfs-console"
+                  href="/docs/sfs-console"
                   colorPalette="blue"
                   variant="outline"
                   size="sm"
