@@ -32,6 +32,10 @@ const docConfig = {
   'authentication': {
     file: 'authentication.md',
     pageName: 'Authentication Help'
+  },
+  'sfs-console': {
+    file: 'sfs-console.md',
+    pageName: 'SFS Console Help'
   }
 }
 

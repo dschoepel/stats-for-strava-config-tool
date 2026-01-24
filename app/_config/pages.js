@@ -181,6 +181,13 @@ export const pages = {
     parent: 'Documentation',
     group: 'help',
     helpFile: 'configuration-examples.md'
+  },
+  'SFS Console Help': {
+    id: 'SFS Console Help',
+    label: 'SFS Console',
+    parent: 'Documentation',
+    group: 'help',
+    helpFile: 'sfs-console.md'
   }
 };
 
