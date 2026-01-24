@@ -120,12 +120,6 @@ export default function StravaConsole() {
     }
   }, [searchParams, commands, selectCommand]);
 
-  // Clear args when command changes
-  useEffect(() => {
-    setArgs('');
-    setArgsError('');
-  }, [selectedCommandId]);
-
   // Handle run command
   const handleRun = useCallback(async () => {
     if (!selectedCommand) return;
@@ -187,6 +181,20 @@ export default function StravaConsole() {
     discoverCommands();
   }, [discoverCommands]);
 
+  // Save commands to API
+  const saveCommands = useCallback(async (commandsList) => {
+    try {
+      const defaultPath = '/data/config/';
+      await fetch('/api/console-commands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commands: commandsList, defaultPath })
+      });
+    } catch (err) {
+      console.error('Failed to save commands:', err);
+    }
+  }, []);
+
   // Handle merge discovered commands
   const handleMergeCommands = useCallback(async (newCommands) => {
     // Merge: keep existing, add new
@@ -208,7 +216,7 @@ export default function StravaConsole() {
     await saveCommands(merged);
     clearDiscovered();
     reloadCommands();
-  }, [commands, clearDiscovered, reloadCommands]);
+  }, [commands, clearDiscovered, reloadCommands, saveCommands]);
 
   // Handle overwrite with discovered commands
   const handleOverwriteCommands = useCallback(async (newCommands) => {
@@ -224,21 +232,7 @@ export default function StravaConsole() {
     await saveCommands(commandsList);
     clearDiscovered();
     reloadCommands();
-  }, [clearDiscovered, reloadCommands]);
-
-  // Save commands to API
-  const saveCommands = async (commandsList) => {
-    try {
-      const defaultPath = '/data/config/';
-      await fetch('/api/console-commands', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commands: commandsList, defaultPath })
-      });
-    } catch (err) {
-      console.error('Failed to save commands:', err);
-    }
-  };
+  }, [clearDiscovered, reloadCommands, saveCommands]);
 
   // Show disabled state if feature is not enabled
   if (!isFeatureEnabled) {
