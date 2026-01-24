@@ -104,6 +104,23 @@ export function useStravaConsole() {
     }
   }, [isFeatureEnabled, checkRunnerHealth]);
 
+  // Warn user before leaving page during command execution
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isRunning) {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+        return ''; // Some browsers return this message
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isRunning]);
+
   /**
    * Load available commands from the API
    */
