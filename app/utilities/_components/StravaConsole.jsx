@@ -296,7 +296,31 @@ export default function StravaConsole() {
 
   return (
     <Box p={6} minH="100vh" bg="bg">
-      <VStack align="stretch" gap={6} maxW="1400px" mx="auto">
+      {/* Warning Banner - Command Running */}
+      {isRunning && (
+        <Box
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bg="orange.500"
+          color="white"
+          py={2}
+          px={4}
+          textAlign="center"
+          zIndex={9999}
+          fontWeight="bold"
+          boxShadow="lg"
+        >
+          <HStack justify="center" gap={2}>
+            <Icon as={MdWarning} boxSize={5} />
+            <Text>Command Running - Do Not Close This Page or Navigate Away</Text>
+            <Icon as={MdWarning} boxSize={5} />
+          </HStack>
+        </Box>
+      )}
+
+      <VStack align="stretch" gap={6} maxW="1400px" mx="auto" mt={isRunning ? 12 : 0}>
         {/* Header */}
         <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
           <HStack gap={3}>
