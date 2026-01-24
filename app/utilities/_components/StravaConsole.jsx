@@ -289,7 +289,7 @@ export default function StravaConsole() {
   }
 
   return (
-    <Box p={6} minH="100vh" bg="bg">
+    <Box p={{ base: 3, sm: 4, md: 6 }} minH="100vh" bg="bg">
       {/* Warning Banner - Command Running */}
       {isRunning && (
         <Box
@@ -300,30 +300,35 @@ export default function StravaConsole() {
           bg="orange.500"
           color="white"
           py={2}
-          px={4}
+          px={{ base: 2, sm: 4 }}
           textAlign="center"
           zIndex={9999}
           fontWeight="bold"
           boxShadow="lg"
         >
-          <HStack justify="center" gap={2}>
-            <Icon as={MdWarning} boxSize={5} />
-            <Text>Command Running - Do Not Close This Page or Navigate Away</Text>
-            <Icon as={MdWarning} boxSize={5} />
+          <HStack justify="center" gap={{ base: 1, sm: 2 }}>
+            <Icon as={MdWarning} boxSize={{ base: 4, sm: 5 }} />
+            <Text fontSize={{ base: "xs", sm: "sm" }} display={{ base: "none", sm: "block" }}>
+              Command Running - Do Not Close This Page or Navigate Away
+            </Text>
+            <Text fontSize="xs" display={{ base: "block", sm: "none" }}>
+              Command Running - Don't Navigate Away
+            </Text>
+            <Icon as={MdWarning} boxSize={{ base: 4, sm: 5 }} />
           </HStack>
         </Box>
       )}
 
-      <VStack align="stretch" gap={6} maxW="1400px" mx="auto" mt={isRunning ? 12 : 0}>
+      <VStack align="stretch" gap={{ base: 4, sm: 5, md: 6 }} maxW="1400px" mx="auto" mt={isRunning ? 12 : 0}>
         {/* Header */}
-        <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-          <HStack gap={3}>
-            <Icon as={MdTerminal} boxSize={7} color="primary" />
-            <Heading as="h2" size="xl" color="text">
+        <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} wrap="wrap" gap={4}>
+          <HStack gap={{ base: 2, sm: 3 }}>
+            <Icon as={MdTerminal} boxSize={{ base: 6, sm: 7 }} color="primary" />
+            <Heading as="h2" size={{ base: "md", sm: "lg", md: "xl" }} color="text">
               Statistics for Strava Console
             </Heading>
           </HStack>
-          <HStack gap={2}>
+          <HStack gap={2} flexWrap="wrap" w={{ base: "100%", sm: "auto" }}>
             {/* Runner Status Badge */}
             {runnerStatus === 'online' && (
               <Badge colorPalette="green" variant="solid" size="sm">
@@ -347,9 +352,15 @@ export default function StravaConsole() {
               onClick={() => setShowHistory(!showHistory)}
               color="text"
               borderColor="border"
+              w={{ base: "100%", sm: "auto" }}
             >
               <Icon as={showHistory ? MdExpandLess : MdExpandMore} mr={2} />
-              {showHistory ? 'Hide History' : 'Show History'}
+              <Text display={{ base: "none", sm: "inline" }}>
+                {showHistory ? 'Hide History' : 'Show History'}
+              </Text>
+              <Text display={{ base: "inline", sm: "none" }}>
+                History
+              </Text>
               {history.length > 0 && (
                 <Badge ml={2} colorPalette="blue" variant="solid" size="sm">
                   {history.length}
@@ -418,15 +429,15 @@ export default function StravaConsole() {
 
         {/* Command Selection Card */}
         <Box
-          p={5}
+          p={{ base: 4, sm: 5 }}
           bg="cardBg"
           borderRadius="lg"
           border="1px solid"
           borderColor="border"
         >
           <VStack align="stretch" gap={4}>
-            <HStack gap={4} flexWrap="wrap" align="flex-end">
-              <Box flex="1" minW="250px">
+            <Flex gap={4} direction={{ base: "column", sm: "row" }} align="stretch">
+              <Box flex="1" w={{ base: "100%", sm: "auto" }}>
                 <Text fontSize="sm" fontWeight="medium" color="text" mb={2}>
                   Command
                 </Text>
@@ -454,16 +465,16 @@ export default function StravaConsole() {
               </Box>
 
               {selectedCommand && (
-                <Box flex="2" minW="300px">
+                <Box flex={{ base: "1", sm: "2" }} w={{ base: "100%", sm: "auto" }}>
                   <Text fontSize="sm" color="textMuted">
                     {selectedCommand.description}
                   </Text>
-                  <Text fontSize="xs" color="textMuted" fontFamily="mono" mt={1}>
+                  <Text fontSize="xs" color="textMuted" fontFamily="mono" mt={1} wordBreak="break-word">
                     php bin/console {selectedCommand.command}
                   </Text>
                 </Box>
               )}
-            </HStack>
+            </Flex>
 
             {/* Arguments Input - Show when command accepts args */}
             {selectedCommand?.acceptsArgs && (
@@ -501,23 +512,31 @@ export default function StravaConsole() {
               </Box>
             )}
 
-            <HStack gap={2} mt={4} justify="flex-end">
+            <Flex gap={2} mt={4} justify="flex-end" wrap="wrap">
               {!isRunning ? (
                 <Button
                   colorPalette="green"
                   onClick={handleRun}
                   disabled={!selectedCommand || !terminalReady || runnerStatus !== 'online'}
+                  size={{ base: "sm", sm: "md" }}
                 >
-                  <Icon as={MdPlayArrow} mr={2} />
-                  Run
+                  <Icon as={MdPlayArrow} display={{ base: "inline", sm: "none" }} />
+                  <HStack gap={2} display={{ base: "none", sm: "flex" }}>
+                    <Icon as={MdPlayArrow} />
+                    <Text>Run</Text>
+                  </HStack>
                 </Button>
               ) : (
                 <Button
                   colorPalette="red"
                   onClick={stopCommand}
+                  size={{ base: "sm", sm: "md" }}
                 >
-                  <Icon as={MdStop} mr={2} />
-                  Stop
+                  <Icon as={MdStop} display={{ base: "inline", sm: "none" }} />
+                  <HStack gap={2} display={{ base: "none", sm: "flex" }}>
+                    <Icon as={MdStop} />
+                    <Text>Stop</Text>
+                  </HStack>
                 </Button>
               )}
 
@@ -531,6 +550,7 @@ export default function StravaConsole() {
                 borderColor="border"
               >
                 <Icon as={MdRefresh} />
+                <Text display={{ base: "none", sm: "inline" }} ml={1}>Reload</Text>
               </Button>
 
               <Button
@@ -542,10 +562,10 @@ export default function StravaConsole() {
                 color="text"
                 borderColor="border"
               >
-                {isDiscovering ? <Spinner size="xs" mr={2} /> : <Icon as={MdSearch} mr={2} />}
-                Discover
+                {isDiscovering ? <Spinner size="xs" /> : <Icon as={MdSearch} />}
+                <Text display={{ base: "none", sm: "inline" }} ml={1}>Discover</Text>
               </Button>
-            </HStack>
+            </Flex>
           </VStack>
         </Box>
 
@@ -558,15 +578,17 @@ export default function StravaConsole() {
           overflow="hidden"
         >
           <Flex
-            px={4}
+            px={{ base: 3, sm: 4 }}
             py={3}
             bg="panelBg"
             borderBottom="1px solid"
             borderColor="border"
             justify="space-between"
             align="center"
+            direction={{ base: "column", sm: "row" }}
+            gap={{ base: 2, sm: 0 }}
           >
-            <HStack gap={2}>
+            <HStack gap={2} flexWrap="wrap" w={{ base: "100%", sm: "auto" }}>
               <Icon as={MdTerminal} color="text" />
               <Text fontSize="sm" fontWeight="medium" color="text">
                 Terminal Output
@@ -610,7 +632,7 @@ export default function StravaConsole() {
                 </Text>
               )}
             </HStack>
-            <HStack gap={2}>
+            <HStack gap={2} w={{ base: "100%", sm: "auto" }} justify={{ base: "flex-end", sm: "flex-start" }}>
               {/* Auto-scroll toggle */}
               <Button
                 size="xs"
@@ -619,8 +641,8 @@ export default function StravaConsole() {
                 onClick={handleAutoScrollToggle}
                 title={autoScroll ? 'Auto-scroll enabled' : 'Auto-scroll disabled'}
               >
-                <Icon as={MdVerticalAlignBottom} mr={1} />
-                Auto-scroll
+                <Icon as={MdVerticalAlignBottom} />
+                <Text display={{ base: "none", sm: "inline" }} ml={1}>Auto-scroll</Text>
               </Button>
               {lastLogPath && (
                 <Button
@@ -628,9 +650,10 @@ export default function StravaConsole() {
                   variant="ghost"
                   onClick={handleDownload}
                   color="text"
+                  title="Download Log"
                 >
-                  <Icon as={MdDownload} mr={1} />
-                  Download Log
+                  <Icon as={MdDownload} />
+                  <Text display={{ base: "none", sm: "inline" }} ml={1}>Download</Text>
                 </Button>
               )}
               <Button
@@ -639,9 +662,10 @@ export default function StravaConsole() {
                 onClick={clearTerminal}
                 disabled={isRunning}
                 color="text"
+                title="Clear"
               >
-                <Icon as={MdDelete} mr={1} />
-                Clear
+                <Icon as={MdDelete} />
+                <Text display={{ base: "none", sm: "inline" }} ml={1}>Clear</Text>
               </Button>
             </HStack>
           </Flex>

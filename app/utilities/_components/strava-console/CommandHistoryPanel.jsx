@@ -23,8 +23,10 @@ import {
   MdSync,
   MdExpandMore,
   MdExpandLess,
-  MdVisibility
+  MdVisibility,
+  MdFolder
 } from 'react-icons/md';
+import LogManagementDialog from './LogManagementDialog';
 
 /**
  * Format timestamp to relative time
@@ -133,14 +135,14 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
       borderColor="border"
     >
       <Box
-        px={4}
+        px={{ base: 3, sm: 4 }}
         py={3}
         _hover={{ bg: 'panelBg' }}
         transition="background 0.2s"
       >
-        <Flex justify="space-between" align="flex-start" gap={4}>
-          <VStack align="flex-start" gap={1} flex={1}>
-            <HStack gap={2}>
+        <Flex justify="space-between" align={{ base: "stretch", sm: "flex-start" }} direction={{ base: "column", sm: "row" }} gap={{ base: 3, sm: 4 }}>
+          <VStack align="flex-start" gap={1} flex={1} minW={0}>
+            <HStack gap={2} flexWrap="wrap">
               <Text fontWeight="medium" color="text" fontSize="sm">
                 {item.commandName}
               </Text>
@@ -155,7 +157,7 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
                 </HStack>
               </Badge>
             </HStack>
-            <Text fontSize="xs" color="textMuted" fontFamily="mono">
+            <Text fontSize="xs" color="textMuted" fontFamily="mono" overflow="hidden" textOverflow="ellipsis" whiteSpace={{ base: "normal", sm: "nowrap" }} wordBreak={{ base: "break-word", sm: "normal" }}>
               app:strava:{item.command}
               {item.args && item.args.length > 0 && (
                 <Text as="span" color="blue.500" ml={2}>
@@ -172,7 +174,7 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
             </Text>
           </VStack>
 
-          <HStack gap={1} flexShrink={0}>
+          <HStack gap={1} flexShrink={0} w={{ base: "100%", sm: "auto" }} justify={{ base: "flex-end", sm: "flex-start" }}>
             <Button
               size="xs"
               variant="ghost"
@@ -196,6 +198,7 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
               disabled={item.status === 'running'}
             >
               <Icon as={MdPlayArrow} />
+              <Text display={{ base: "none", sm: "inline" }} ml={1}>Rerun</Text>
             </Button>
             {item.logPath && (
               <Button
@@ -218,14 +221,14 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
       <Collapsible.Root open={isExpanded}>
         <Collapsible.Content>
           <Box
-            mx={4}
+            mx={{ base: 3, sm: 4 }}
             mb={3}
             p={3}
             bg="gray.900"
             borderRadius="md"
             border="1px solid"
             borderColor="border"
-            maxH="200px"
+            maxH={{ base: "150px", sm: "200px" }}
             overflowY="auto"
             css={{
               '&::-webkit-scrollbar': {
@@ -271,6 +274,8 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
  * Displays a list of previously run commands with their status
  */
 export default function CommandHistoryPanel({ history, onRerun, onClear }) {
+  const [showLogManager, setShowLogManager] = useState(false);
+
   if (history.length === 0) {
     return (
       <Box
@@ -300,16 +305,18 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
     >
       {/* Header */}
       <Flex
-        px={4}
+        px={{ base: 3, sm: 4 }}
         py={3}
         bg="panelBg"
         borderBottom="1px solid"
         borderColor="border"
         justify="space-between"
-        align="center"
+        align={{ base: "flex-start", sm: "center" }}
+        direction={{ base: "column", sm: "row" }}
+        gap={{ base: 2, sm: 0 }}
       >
         <HStack gap={2}>
-          <Icon as={MdHistory} color="text" />
+          <Icon as={MdHistory} color="text" boxSize={{ base: 4, sm: 5 }} />
           <Text fontSize="sm" fontWeight="medium" color="text">
             Command History
           </Text>
@@ -317,15 +324,29 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
             {history.length}
           </Badge>
         </HStack>
-        <Button
-          size="xs"
-          variant="ghost"
-          onClick={onClear}
-          color="text"
-        >
-          <Icon as={MdDelete} mr={1} />
-          Clear All
-        </Button>
+        <HStack gap={2} w={{ base: "100%", sm: "auto" }}>
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() => setShowLogManager(true)}
+            color="text"
+            borderColor="border"
+            w={{ base: "50%", sm: "auto" }}
+          >
+            <Icon as={MdFolder} />
+            <Text display={{ base: "none", sm: "inline" }} ml={1}>Manage Logs</Text>
+          </Button>
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={onClear}
+            color="text"
+            w={{ base: "50%", sm: "auto" }}
+          >
+            <Icon as={MdDelete} />
+            <Text display={{ base: "none", sm: "inline" }} ml={1}>Clear All</Text>
+          </Button>
+        </HStack>
       </Flex>
 
       {/* History List */}
@@ -342,6 +363,12 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
           ))}
         </VStack>
       </Box>
+
+      {/* Log Management Dialog */}
+      <LogManagementDialog
+        isOpen={showLogManager}
+        onClose={() => setShowLogManager(false)}
+      />
     </Box>
   );
 }
