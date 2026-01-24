@@ -18,10 +18,13 @@ import {
   DialogFooter,
   DialogCloseTrigger,
   DialogTitle,
+  DialogBackdrop,
+  DialogPositioner,
+  Portal,
   Alert,
   Checkbox
 } from '@chakra-ui/react';
-import { MdDelete, MdDownload } from 'react-icons/md';
+import { MdDelete, MdDownload, MdClose } from 'react-icons/md';
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -125,11 +128,26 @@ export default function FileManagerDialog({
 
   return (
     <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="xl">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <DialogCloseTrigger />
+      <Portal>
+        <DialogBackdrop />
+        <DialogPositioner>
+          <DialogContent 
+            maxW="800px" 
+            bg="cardBg"
+            borderRadius="lg"
+            boxShadow="xl"
+          >
+            <DialogHeader>
+              <DialogTitle>{title}</DialogTitle>
+            </DialogHeader>
+            <DialogCloseTrigger 
+              color="fg.muted"
+              _hover={{ 
+                color: "fg", 
+                bg: "gray.100", 
+                _dark: { bg: "gray.700" } 
+              }}
+            />
         
         <DialogBody>
           <VStack align="stretch" gap={4}>
@@ -139,10 +157,10 @@ export default function FileManagerDialog({
                 formatSummary(metadata, files)
               ) : (
                 <Flex justify="space-between" direction={{ base: "column", sm: "row" }} gap={{ base: 1, sm: 0 }}>
-                  <Text fontSize={{ base: "xs", sm: "sm" }} color="fg.muted">
+                  <Text fontSize={{ base: "xs", sm: "sm" }} color="fg">
                     Total: {metadata.totalCount} files
                   </Text>
-                  <Text fontSize={{ base: "xs", sm: "sm" }} color="fg.muted">
+                  <Text fontSize={{ base: "xs", sm: "sm" }} color="fg">
                     Storage: {formatBytes(metadata.totalSize || 0)}
                   </Text>
                 </Flex>
@@ -322,6 +340,8 @@ export default function FileManagerDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </DialogRoot>
+    </DialogPositioner>
+  </Portal>
+</DialogRoot>
   );
 }
