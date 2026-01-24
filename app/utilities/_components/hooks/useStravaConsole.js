@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useSettings } from '../../../../src/state/SettingsProvider';
 
 /**
@@ -9,6 +10,7 @@ import { useSettings } from '../../../../src/state/SettingsProvider';
  * connection state tracking, elapsed timer, auto-scroll, and command discovery.
  */
 export function useStravaConsole() {
+  const router = useRouter();
   const { settings } = useSettings();
   const [commands, setCommands] = useState([]);
   const [selectedCommandId, setSelectedCommandId] = useState('');
@@ -41,6 +43,7 @@ export function useStravaConsole() {
   const abortControllerRef = useRef(null);
   const terminalRef = useRef(null);
   const hasReceivedData = useRef(false);
+  const mutexErrorDetected = useRef(false);
 
   // Check if the SFS Console feature is enabled
   const isFeatureEnabled = settings?.features?.enableSfsConsole ?? false;
@@ -120,6 +123,39 @@ export function useStravaConsole() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [isRunning]);
+
+  // Block Next.js client-side navigation during command execution
+  useEffect(() => {
+    if (!isRunning) return;
+
+    // Store original router push/replace to intercept
+    const originalPush = router.push;
+    const originalReplace = router.replace;
+    const originalBack = router.back;
+
+    const confirmNavigation = (action, ...args) => {
+      const confirmLeave = window.confirm(
+        'A command is currently running. Leaving this page will interrupt the command. Are you sure you want to leave?'
+      );
+      if (confirmLeave) {
+        return action.apply(router, args);
+      }
+      // Return a rejected promise to prevent navigation
+      return Promise.reject(new Error('Navigation cancelled by user'));
+    };
+
+    // Override router methods
+    router.push = (...args) => confirmNavigation(originalPush, ...args);
+    router.replace = (...args) => confirmNavigation(originalReplace, ...args);
+    router.back = (...args) => confirmNavigation(originalBack, ...args);
+
+    return () => {
+      // Restore original methods
+      router.push = originalPush;
+      router.replace = originalReplace;
+      router.back = originalBack;
+    };
+  }, [isRunning, router]);
 
   /**
    * Load available commands from the API
@@ -223,6 +259,7 @@ export function useStravaConsole() {
     setLastLogPath(null);
     setConnectionState('connecting');
     hasReceivedData.current = false;
+    mutexErrorDetected.current = false;
     startTimer();
 
     // Create abort controller for cancellation
@@ -291,12 +328,56 @@ export function useStravaConsole() {
                     hasReceivedData.current = true;
                     setConnectionState('streaming');
                   }
+                  // Check for mutex lock error pattern
+                  if (!mutexErrorDetected.current && 
+                      (data.data.includes('Lock "') && data.data.includes('is already acquired by'))) {
+                    mutexErrorDetected.current = true;
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+                    writeToTerminal('⚠ COMMAND ALREADY RUNNING', 'error');
+                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('This command uses a mutex lock to prevent concurrent execution.', 'info');
+                    writeToTerminal('The same command is currently running in another process.', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('Possible causes:', 'info');
+                    writeToTerminal('  • The command is still running from a previous execution', 'info');
+                    writeToTerminal('  • You navigated away while the command was running', 'info');
+                    writeToTerminal('  • The command is running in another terminal/session', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('Please wait for the other instance to complete, or stop it manually.', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+                    writeToTerminal('', 'stdout');
+                  }
                   writeToTerminal(data.data, 'stdout');
                   break;
                 case 'stderr':
                   if (!hasReceivedData.current) {
                     hasReceivedData.current = true;
                     setConnectionState('streaming');
+                  }
+                  // Check for mutex lock error pattern in stderr too
+                  if (!mutexErrorDetected.current && 
+                      (data.data.includes('Lock "') && data.data.includes('is already acquired by'))) {
+                    mutexErrorDetected.current = true;
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+                    writeToTerminal('⚠ COMMAND ALREADY RUNNING', 'error');
+                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('This command uses a mutex lock to prevent concurrent execution.', 'info');
+                    writeToTerminal('The same command is currently running in another process.', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('Possible causes:', 'info');
+                    writeToTerminal('  • The command is still running from a previous execution', 'info');
+                    writeToTerminal('  • You navigated away while the command was running', 'info');
+                    writeToTerminal('  • The command is running in another terminal/session', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('Please wait for the other instance to complete, or stop it manually.', 'info');
+                    writeToTerminal('', 'stdout');
+                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+                    writeToTerminal('', 'stdout');
                   }
                   writeToTerminal(data.data, 'stderr');
                   break;
