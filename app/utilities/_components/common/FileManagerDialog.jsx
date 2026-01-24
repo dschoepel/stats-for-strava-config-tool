@@ -5,15 +5,22 @@ import {
   Box,
   VStack,
   HStack,
+  Flex,
   Text,
   Button,
   Icon,
   Spinner,
-  Table
+  Table,
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+  DialogTitle,
+  Alert,
+  Checkbox
 } from '@chakra-ui/react';
-import { DialogRoot, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogCloseTrigger } from '../../../../src/components/ui/dialog';
-import { Checkbox } from '../../../../src/components/ui/checkbox';
-import { Alert } from '../../../../src/components/ui/alert';
 import { MdDelete, MdDownload } from 'react-icons/md';
 
 function formatBytes(bytes) {
@@ -119,7 +126,9 @@ export default function FileManagerDialog({
   return (
     <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="xl">
       <DialogContent>
-        <DialogHeader>{title}</DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         <DialogCloseTrigger />
         
         <DialogBody>
@@ -141,9 +150,10 @@ export default function FileManagerDialog({
             </Box>
 
             {error && (
-              <Alert status="error" title="Error">
-                {error}
-              </Alert>
+              <Alert.Root status="error">
+                <Alert.Title>Error</Alert.Title>
+                <Alert.Description>{error}</Alert.Description>
+              </Alert.Root>
             )}
 
             {/* Bulk Actions */}
