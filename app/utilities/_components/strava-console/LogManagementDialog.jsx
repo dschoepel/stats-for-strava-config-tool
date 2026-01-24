@@ -55,12 +55,22 @@ export default function LogManagementDialog({ isOpen, onClose }) {
     return (
       <>
         <Table.Cell>
-          <Text fontSize="xs" fontFamily="mono" color="fg">
+          <Text 
+            fontSize="xs" 
+            fontFamily="mono" 
+            color="gray.900" 
+            _dark={{ color: "gray.100" }}
+          >
             {log.timestamp}
           </Text>
         </Table.Cell>
         <Table.Cell>
-          <Text fontSize="xs" fontFamily="mono" color="fg">
+          <Text 
+            fontSize="xs" 
+            fontFamily="mono" 
+            color="gray.900" 
+            _dark={{ color: "gray.100" }}
+          >
             {log.command}
           </Text>
         </Table.Cell>
