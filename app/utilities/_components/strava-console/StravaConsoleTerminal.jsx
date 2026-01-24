@@ -131,7 +131,7 @@ const StravaConsoleTerminal = forwardRef(function StravaConsoleTerminal({ onRead
 
         // Write welcome message
         terminal.writeln('\x1b[36m╔════════════════════════════════════════════════╗\x1b[0m');
-        terminal.writeln('\x1b[36m║\x1b[0m  \x1b[1;33mSFS Console\x1b[0m                                    \x1b[36m║\x1b[0m');
+        terminal.writeln('\x1b[36m║\x1b[0m  \x1b[1;33mSFS Console\x1b[0m                                   \x1b[36m║\x1b[0m');
         terminal.writeln('\x1b[36m║\x1b[0m  Select a command and click Run to execute.    \x1b[36m║\x1b[0m');
         terminal.writeln('\x1b[36m╚════════════════════════════════════════════════╝\x1b[0m');
         terminal.writeln('');
