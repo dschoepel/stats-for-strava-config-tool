@@ -50,7 +50,20 @@ export async function GET(request) {
 // POST - Write sports list
 export async function POST(request) {
   try {
-    const { defaultPath, sportsList } = await request.json();
+    const body = await request.json();
+    
+    // Support both parameter formats for backwards compatibility
+    // Old format: { filePath, sports }
+    // New format: { defaultPath, sportsList }
+    const defaultPath = body.defaultPath || (body.filePath ? path.dirname(path.dirname(body.filePath)) : null);
+    const sportsList = body.sportsList || body.sports;
+
+    if (!sportsList || typeof sportsList !== 'object') {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid sports list data'
+      }, { status: 400 });
+    }
 
     const { filePath, settingsDir } = resolveFilePath(defaultPath);
 
