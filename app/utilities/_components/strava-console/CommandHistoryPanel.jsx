@@ -29,7 +29,7 @@ import {
   MdClear
 } from 'react-icons/md';
 import LogManagementDialog from './LogManagementDialog';
-import { ConfirmDialog } from '../../../../src/components/ui/ConfirmDialog';
+import { ConfirmDialog } from '../../../_components/ui/ConfirmDialog';
 
 /**
  * Format timestamp to relative time
