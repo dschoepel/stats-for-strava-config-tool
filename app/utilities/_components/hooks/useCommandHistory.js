@@ -82,17 +82,33 @@ export function useCommandHistory() {
           .slice(0, 10);
         
         // Convert log files to commandHistory format
-        const historicalCommands = recentLogs.map(log => ({
-          id: `historical-${log.filename}`,
-          command: log.command,
-          commandName: log.command,
-          args: [],
-          timestamp: new Date(log.timestamp).getTime(),
-          status: log.exitCode === 0 || log.exitCode === '0' ? 'success' : 'failed',
-          exitCode: parseInt(log.exitCode, 10) || 0,
-          logPath: log.path,
-          isHistorical: true
-        }));
+        const historicalCommands = recentLogs.map(log => {
+          // Parse timestamp: "2026-01-24 21:21:21" format
+          // Use createdAt (ISO format) as fallback if timestamp parsing fails
+          let timestampMs;
+          if (log.timestamp) {
+            // Replace space with 'T' for ISO format, then parse
+            const isoFormat = log.timestamp.replace(' ', 'T');
+            timestampMs = new Date(isoFormat).getTime();
+          }
+          
+          // Fallback to createdAt or current time
+          if (!timestampMs || isNaN(timestampMs)) {
+            timestampMs = log.createdAt ? new Date(log.createdAt).getTime() : Date.now();
+          }
+          
+          return {
+            id: `historical-${log.filename}`,
+            command: log.command,
+            commandName: log.command,
+            args: [],
+            timestamp: timestampMs,
+            status: log.exitCode === 0 || log.exitCode === '0' ? 'success' : 'failed',
+            exitCode: parseInt(log.exitCode, 10) || 0,
+            logPath: log.path,
+            isHistorical: true
+          };
+        });
         
         setHistory(prev => {
           // Remove any existing historical items and add new ones
