@@ -523,11 +523,10 @@ export default function StravaConsole() {
               <Box 
                 p={3} 
                 bg="gray.50" 
-                _dark={{ bg: 'gray.800' }} 
+                _dark={{ bg: 'gray.800', borderColor: 'gray.700' }} 
                 borderRadius="md"
                 border="1px solid"
                 borderColor="gray.200"
-                _dark={{ borderColor: 'gray.700' }}
               >
                 <VStack align="stretch" gap={1}>
                   <Text fontSize="xs" color="gray.700" _dark={{ color: 'gray.200' }}>
