@@ -46,7 +46,7 @@ services:
   #     - TZ=${TZ}
   #     - USERMAP_UID=${USERMAP_UID}
   #     - USERMAP_GID=${USERMAP_GID}
-  #     - HELPER_URL=http://stats-cmd-helper:${HELPER_PORT:-8081}
+  #     - HELPER_URL=http://stats-cmd-helper:${STATS_CMD_HELPER_PORT:-8081}
   #   
   #   # ⚠️ IMPORTANT: console-commands.yaml Setup
   #   # This MUST be a FILE, not a directory, or containers will fail to start.
@@ -78,7 +78,7 @@ services:
   #   command: ["node", "server.js"]
   #   environment:
   #     - TZ=${TZ}
-  #     - PORT=${HELPER_PORT:-8081}
+  #     - PORT=${STATS_CMD_HELPER_PORT:-8081}
   #     - TARGET_CONTAINER=statistics-for-strava
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock

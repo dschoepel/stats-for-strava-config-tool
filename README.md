@@ -152,35 +152,28 @@ services:
 
 This tool uses **two separate .env files** to avoid Docker Compose variable expansion issues with bcrypt password hashes:
 
-1. **`.env`** - Docker Compose variables (volume paths, UID/GID)
-2. **`.env.config-tool`** - Authentication settings (mounted into container)
+1. **`.env`** - Docker Compose variables (volume paths, UID/GID, timezone) - Copy from `.env.example`
+2. **`.env.config-tool`** - Authentication settings (mounted into container) - Copy from `.env.config-tool.example`
 
-**Create `.env` file** in the same directory as your `docker-compose.yml`:
+**Create `.env` file** (copy from `.env.example`) in the same directory as your `docker-compose.yml`:
 
 ```bash
-# Path where Stats for Strava stores config.yaml
-DEFAULT_STATS_CONFIG_PATH=/data/config
+# Copy the example file
+cp .env.example .env
 
-# Path where gear maintenance files are stored
-DEFAULT_GEAR_MAINTENANCE_PATH=/data/storage/gear-maintenance
-
-# User/Group ID for file permissions (Linux/Mac)
-USERMAP_UID=1000
-USERMAP_GID=1000
+# Edit and customize:
+nano .env
 ```
 
 **Create `.env.config-tool` file** (copy from `.env.config-tool.example`):
 
 ```bash
-# Authentication Configuration
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD_HASH=
-PASSWORD_RESET_TOKEN=
-SESSION_SECRET=change-this-to-a-long-random-secret-string
-SESSION_MAX_AGE=604800
+# Copy the example file
+cp .env.config-tool.example .env.config-tool
 
-# Debug Logging
-NEXT_PUBLIC_ENABLE_DEBUG_LOGS=false
+# Generate a secure SESSION_SECRET (see below)
+# Edit and customize:
+nano .env.config-tool
 ```
 
 ⚠️ **IMPORTANT**: The `.env.config-tool` file must be **writable** by the container (UID/GID 1000) so the app can update password hashes during registration and password resets.
