@@ -11,15 +11,20 @@ import {
   Flex,
   Switch,
   Icon,
+  Badge,
+  HStack,
+  Spinner,
 } from '@chakra-ui/react';
-import { MdSave, MdPalette } from 'react-icons/md';
+import { MdSave, MdPalette, MdCheckCircle, MdWarning, MdRefresh, MdWifi } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../../../app/_components/ui/ConfirmDialog';
+import { useRunnerHealth } from '../../hooks/useRunnerHealth';
 
 const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
+  const { status: runnerStatus, checkHealth, isOnline, isOffline, isChecking } = useRunnerHealth();
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +64,35 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
     current[keys[keys.length - 1]] = value;
     setSettings(newSettings);
     setIsDirty(true);
+  };
+
+  /**
+   * Handle SFS Console toggle with health check
+   */
+  const handleSfsConsoleToggle = async (checked) => {
+    // If turning ON, check runner health first
+    if (checked) {
+      const isHealthy = await checkHealth();
+      
+      if (!isHealthy) {
+        // Show warning dialog
+        setConfirmDialog({
+          isOpen: true,
+          title: 'Strava Runner Not Available',
+          message: 'The Strava Runner sidecar is not responding. You can enable this setting now, but the SFS Console won\'t work until you start the runner service in docker-compose.yml.\n\nEnable anyway?',
+          onConfirm: () => {
+            handleChange('features.enableSfsConsole', true);
+            setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          },
+          confirmText: 'Enable Anyway',
+          cancelText: 'Cancel'
+        });
+        return;
+      }
+    }
+    
+    // If turning OFF or runner is healthy, change immediately
+    handleChange('features.enableSfsConsole', checked);
   };
 
   const handleSave = async () => {
@@ -190,8 +224,9 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
           isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
-          confirmText="Leave Anyway"
-          confirmColorPalette="orange"
+          confirmText={confirmDialog.confirmText || "Leave Anyway"}
+          cancelText={confirmDialog.cancelText || "Cancel"}
+          confirmColorPalette={confirmDialog.confirmColorPalette || "orange"}
           onConfirm={confirmDialog.onConfirm || (() => {})}
           onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
         />
