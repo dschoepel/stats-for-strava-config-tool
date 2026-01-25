@@ -56,7 +56,7 @@ if (typeof window !== 'undefined') {
 const getDefaultSettings = () => ({
   version: packageJson.version,
   ui: {
-    theme: 'dark', // 'light' or 'dark'
+    theme: 'light', // 'light' or 'dark'
     sidebarCollapsed: false,
     autoSave: true,
     showLineNumbers: true,
@@ -70,7 +70,7 @@ const getDefaultSettings = () => ({
     backupsDir: DEFAULT_SETTINGS_PATH, // Directory where backups folder will be created
     backupThreshold: 10, // Number of backup files threshold for notification
     validateOnLoad: true,
-    gearMaintenancePath: '/data/statistics-for-strava/storage/gear-maintenance', // Path for gear maintenance images
+    gearMaintenancePath: '/data/storage/gear-maintenance', // Path for gear maintenance images
   },
   editor: {
     fontSize: 14,
