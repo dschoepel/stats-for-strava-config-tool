@@ -49,10 +49,28 @@ The configuration tool can optionally integrate with two companion containers to
 - This separation prevents arbitrary command execution even if the web interface is compromised
 
 **Enabling the SFS Console:**
-1. Uncomment both `stats-cmd-runner` and `stats-cmd-helper` services in `docker-compose.yml`
-2. Create `console-commands.yaml` in your config directory with allowed commands
-3. Restart the Docker stack: `docker compose up -d`
-4. Enable "SFS Console" toggle in Settings → User Interface Settings
+
+1. **Create console-commands.yaml file** (⚠️ Must be done BEFORE starting containers):
+   ```bash
+   # Linux/Mac
+   cp console-commands.yaml.example ./statistics-for-strava/config/settings/console-commands.yaml
+   sudo chown 1000:1000 ./statistics-for-strava/config/settings/console-commands.yaml
+   
+   # Windows (Docker Desktop)
+   copy console-commands.yaml.example ./statistics-for-strava/config/settings/console-commands.yaml
+   ```
+   
+   **Important:** This MUST be a file, not a directory. If the file doesn't exist when you start containers, Docker will create a directory instead, causing errors. See [console-commands.yaml.example](console-commands.yaml.example) for the default configuration.
+
+2. **Uncomment both services** in `docker-compose.yml`:
+   - Uncomment `stats-cmd-runner` service
+   - Uncomment `stats-cmd-helper` service
+
+3. **Ensure UID/GID consistency** - All containers must use the same `USERMAP_UID` and `USERMAP_GID` values from your `.env` file (default: 1000:1000). Log directories will be auto-created with correct ownership.
+
+4. **Restart the Docker stack**: `docker compose up -d`
+
+5. **Enable in UI**: Settings → User Interface Settings → "Enable SFS Console" toggle
 
 When disabled, the SFS Console sidebar item is hidden and the console page shows setup instructions. See the [SFS Console documentation](#sfs-console-optional) for complete setup details.
 

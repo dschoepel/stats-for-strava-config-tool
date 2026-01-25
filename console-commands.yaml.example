@@ -1,0 +1,49 @@
+# Console Commands for Statistics for Strava
+# Managed by Stats for Strava Config Tool
+#
+# IMPORTANT: File Setup Instructions
+# 1. Copy this file to: ./statistics-for-strava/config/settings/console-commands.yaml
+# 2. Set correct ownership:
+#    Linux/Mac: sudo chown 1000:1000 ./statistics-for-strava/config/settings/console-commands.yaml
+#    Windows: Ownership handled automatically by Docker Desktop
+# 3. This MUST be a FILE, not a directory, or containers will fail to start
+#
+# Both runner and helper containers auto-reload this file every 5 seconds.
+#
+# Format: Map-based structure with command ID as key
+# Each entry must have:
+#   - name: Human-readable display name
+#   - description: Brief description of what the command does
+#   - command: Array of strings passed directly to `docker exec` (no shell)
+#   - acceptsArgs: (optional) Boolean indicating if command accepts arguments
+#   - argsDescription: (optional) Description of what arguments the command expects
+#   - argsPlaceholder: (optional) Placeholder text for arguments input field
+
+commands:
+  build-files:
+    name: "Build Files"
+    description: "Build Strava files and update the dashboard"
+    command: ["php", "bin/console", "app:strava:build-files"]
+
+  import-data:
+    name: "Import Data"
+    description: "Import new activities from Strava API"
+    command: ["php", "bin/console", "app:strava:import-data"]
+
+  webhooks-create:
+    name: "Webhooks Create"
+    description: "Create a Strava webhook subscription"
+    command: ["php", "bin/console", "app:strava:webhooks-create"]
+
+  webhooks-unsubscribe:
+    name: "Webhooks Unsubscribe"
+    description: "Delete a Strava webhook subscription"
+    command: ["php", "bin/console", "app:strava:webhooks-unsubscribe"]
+    acceptsArgs: true
+    argsDescription: "Subscription ID to unsubscribe"
+    argsPlaceholder: "Enter subscription ID"
+
+  webhooks-view:
+    name: "Webhooks View"
+    description: "View Strava webhook subscription(s)"
+    command: ["php", "bin/console", "app:strava:webhooks-view"]

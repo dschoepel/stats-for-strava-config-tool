@@ -19,7 +19,7 @@ services:
       - ./statistics-for-strava/config:/data/config  # Stats for Strava config directory
       - ./statistics-for-strava/storage:/data/storage  # Gear maintenance images and other storage
       - ./statistics-for-strava/logs:/data/logs  # Application and service logs
-      - ./stats-cmd-logs:/var/log/stats-cmd/command-logs:ro  # Command execution logs (read-only)
+      - ./stats-cmd-logs:/var/log/stats-cmd/command-logs:rw  # Command execution logs (read-write for viewing)
 
     ports:
       - "8092:80"  # Access at http://localhost:8092
@@ -47,6 +47,21 @@ services:
   #     - USERMAP_UID=${USERMAP_UID}
   #     - USERMAP_GID=${USERMAP_GID}
   #     - HELPER_URL=http://stats-cmd-helper:${HELPER_PORT:-8081}
+  #   
+  #   # ⚠️ IMPORTANT: console-commands.yaml Setup
+  #   # This MUST be a FILE, not a directory, or containers will fail to start.
+  #   # Create the file BEFORE starting containers:
+  #   #
+  #   # Linux/Mac:
+  #   #   cp console-commands.yaml.example ./statistics-for-strava/config/settings/console-commands.yaml
+  #   #   sudo chown ${USERMAP_UID}:${USERMAP_GID} ./statistics-for-strava/config/settings/console-commands.yaml
+  #   #
+  #   # Windows (Docker Desktop):
+  #   #   copy console-commands.yaml.example ./statistics-for-strava/config/settings/console-commands.yaml
+  #   #
+  #   # If this file doesn't exist, Docker will create a DIRECTORY instead, causing errors.
+  #   # Log directories will be auto-created by Docker with correct ownership.
+  #   
   #   volumes:
   #     - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
   #     - ./statistics-for-strava/stats-cmd-runner-logs:/var/log/stats-cmd-runner
@@ -68,7 +83,7 @@ services:
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
-  #     - ./stats-cmd-logs:/var/log/stats-cmd/command-logs  # Command execution logs (read-write)
+  #     - ./stats-cmd-logs:/var/log/stats-cmd/command-logs:rw  # Command execution logs (read-write)
   #   networks:
   #     - statistics-for-strava-network
 
