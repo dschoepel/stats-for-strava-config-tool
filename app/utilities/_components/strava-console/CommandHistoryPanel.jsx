@@ -156,6 +156,11 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
                   <Text>{statusBadge.label}</Text>
                 </HStack>
               </Badge>
+              {item.isHistorical && (
+                <Badge colorPalette="gray" variant="subtle" size="xs">
+                  Previous Session
+                </Badge>
+              )}
             </HStack>
             <Text fontSize="xs" color="textMuted" fontFamily="mono" overflow="hidden" textOverflow="ellipsis" whiteSpace={{ base: "normal", sm: "nowrap" }} wordBreak={{ base: "break-word", sm: "normal" }}>
               app:strava:{item.command}
@@ -278,20 +283,36 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
 
   if (history.length === 0) {
     return (
-      <Box
-        p={6}
-        bg="cardBg"
-        borderRadius="lg"
-        border="1px solid"
-        borderColor="border"
-      >
-        <VStack gap={3}>
-          <Icon as={MdHistory} boxSize={8} color="textMuted" />
-          <Text color="textMuted" fontSize="sm">
-            No command history yet. Run a command to see it here.
-          </Text>
-        </VStack>
-      </Box>
+      <>
+        <Box
+          p={6}
+          bg="cardBg"
+          borderRadius="lg"
+          border="1px solid"
+          borderColor="border"
+        >
+          <VStack gap={3}>
+            <Icon as={MdHistory} boxSize={8} color="textMuted" />
+            <Text color="textMuted" fontSize="sm">
+              No command history yet. Run a command to see it here.
+            </Text>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowLogManager(true)}
+              colorScheme="blue"
+              mt={2}
+            >
+              <Icon as={MdFolder} mr={2} />
+              Manage Command Logs
+            </Button>
+          </VStack>
+        </Box>
+        <LogManagementDialog
+          isOpen={showLogManager}
+          onClose={() => setShowLogManager(false)}
+        />
+      </>
     );
   }
 
@@ -342,9 +363,10 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
             onClick={onClear}
             color="text"
             w={{ base: "50%", sm: "auto" }}
+            title="Clear current session history (keeps previous sessions)"
           >
             <Icon as={MdDelete} />
-            <Text display={{ base: "none", sm: "inline" }} ml={1}>Clear All</Text>
+            <Text display={{ base: "none", sm: "inline" }} ml={1}>Clear Session</Text>
           </Button>
         </HStack>
       </Flex>
