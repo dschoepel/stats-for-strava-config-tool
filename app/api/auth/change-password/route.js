@@ -61,6 +61,10 @@ export async function POST(request) {
     // Hash new password
     const newHash = await hashPassword(newPassword);
 
+    // Generate new SESSION_SECRET to invalidate all existing tokens
+    const crypto = await import('crypto');
+    const newSessionSecret = crypto.randomBytes(64).toString('hex');
+
     // Update .env file
     const envPath = path.join(process.cwd(), '.env');
     let envContent = '';
@@ -72,6 +76,7 @@ export async function POST(request) {
 
     const lines = envContent.split('\n');
     let hashFound = false;
+    let secretFound = false;
     const updatedLines = [];
 
     for (const line of lines) {
@@ -85,6 +90,9 @@ export async function POST(request) {
       if (trimmedLine.startsWith('ADMIN_PASSWORD_HASH=')) {
         updatedLines.push(`ADMIN_PASSWORD_HASH=${newHash.replace(/\$/g, '\\$')}`);
         hashFound = true;
+      } else if (trimmedLine.startsWith('SESSION_SECRET=')) {
+        updatedLines.push(`SESSION_SECRET=${newSessionSecret}`);
+        secretFound = true;
       } else {
         updatedLines.push(line);
       }
@@ -94,12 +102,18 @@ export async function POST(request) {
     if (!hashFound) {
       updatedLines.push(`ADMIN_PASSWORD_HASH="${newHash}"`);
     }
+    
+    // If session secret not found, add it
+    if (!secretFound) {
+      updatedLines.push(`SESSION_SECRET=${newSessionSecret}`);
+    }
 
     // Write back to .env
     await fs.writeFile(envPath, updatedLines.join('\n'), 'utf-8');
 
     console.log('Password changed successfully');
     console.log('New hash written to .env:', newHash);
+    console.log('New SESSION_SECRET generated - all existing tokens invalidated');
     console.log('⚠️ IMPORTANT: Restart the dev server for the new password to take effect');
 
     // Clear session cookie to force re-login
