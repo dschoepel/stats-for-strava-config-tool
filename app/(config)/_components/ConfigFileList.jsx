@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useImperativeHandle, forwardRef, memo, useRef } from 'react';
 import { Box, VStack, HStack, Heading, Text, Button, Flex, Spinner, Code, IconButton, Table, Icon, Badge } from '@chakra-ui/react';
 import { MdFolder, MdRefresh, MdClose, MdExpandMore, MdChevronRight, MdWarning, MdLightbulb, MdError, MdHelp, MdDescription, MdSettings, MdHome } from 'react-icons/md';
 import { useToast } from '../../../src/hooks/useToast';
@@ -250,8 +250,15 @@ const ConfigFileList = forwardRef((props, ref) => {
     }
   }, [selectedDirectory, fileCache.fileHashes, fileCache.files.length, settings.files?.defaultPath, showInfo, scanDirectory]);
 
+  // Guard to prevent duplicate initialization
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
     const initializeApp = async () => {
+      // Prevent duplicate runs
+      if (hasInitialized.current) return;
+      hasInitialized.current = true;
+
       try {
         showInfo('Checking default configuration directory...', 3000);
         
@@ -297,6 +304,7 @@ const ConfigFileList = forwardRef((props, ref) => {
           updateHasConfigInitialized(true);
         }
       } catch (error) {
+        hasInitialized.current = false; // Reset on error to allow retry
         showError(`Failed to initialize: ${error.message}`);
         setError(`Initialization failed: ${error.message}`);
       }
@@ -311,7 +319,8 @@ const ConfigFileList = forwardRef((props, ref) => {
       setSelectedDirectory(fileCache.directory);
       setDefaultPath(fileCache.directory);
     }
-  }, [settingsHydrated, hasConfigInitialized, settings, fileCache.files, fileCache.directory, parseSections, showError, showInfo, showSuccess, showWarning, updateFileCache, updateHasConfigInitialized]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsHydrated, hasConfigInitialized, settings, fileCache.files, fileCache.directory]);
 
   // Listen for settings changes and reload files if default path changed
   useEffect(() => {
@@ -370,7 +379,8 @@ const ConfigFileList = forwardRef((props, ref) => {
     return () => {
       window.removeEventListener('settingsChanged', handleSettingsChanged);
     };
-  }, [defaultPath, showInfo, showSuccess, showWarning, showError, setConfigFiles, setSelectedDirectory, setDefaultPath, updateFileCache, updateHasConfigInitialized, parseSections]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultPath]);
 
   // Merge all config files into a single config.yaml
   const handleMergeToSingleFile = useCallback(async () => {
