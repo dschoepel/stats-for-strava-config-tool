@@ -90,7 +90,14 @@ export function verifySession(token) {
     const decoded = jwt.verify(token, secret);
     return { valid: true, username: decoded.username };
   } catch (error) {
-    return { valid: false, error: error.message };
+    // Distinguish between expired and invalid tokens
+    if (error.name === 'TokenExpiredError') {
+      return { valid: false, error: error.message, code: 'TOKEN_EXPIRED' };
+    } else if (error.name === 'JsonWebTokenError') {
+      return { valid: false, error: error.message, code: 'TOKEN_INVALID' };
+    } else {
+      return { valid: false, error: error.message, code: 'UNKNOWN_ERROR' };
+    }
   }
 }
 

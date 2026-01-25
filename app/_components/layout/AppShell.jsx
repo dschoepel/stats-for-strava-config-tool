@@ -121,8 +121,8 @@ export default function AppShell({ section = 'config', children }) {
   // Keep local UI state only
   const [activeSettingsModal, setActiveSettingsModal] = useState(null)
   const [shouldOpenBackupManager, setShouldOpenBackupManager] = useState(false)
-  // isMainConfigExpanded: true for config section, false for utilities/docs
-  const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(section === 'config')
+  // isMainConfigExpanded: collapsed by default for cleaner UI on page load
+  const [isMainConfigExpanded, setIsMainConfigExpanded] = useState(false)
   // isUtilitiesExpanded: collapsed by default, persisted in localStorage
   const [isUtilitiesExpanded, setIsUtilitiesExpanded] = useState(false)
   // isHelpExpanded: true for docs section, false for config/utilities
