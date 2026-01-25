@@ -12,7 +12,7 @@ export const useSportsList = () => {
 };
 
 export const SportsListProvider = ({ children }) => {
-  const [sportsList, setSportsList] = useState(initialSportsList);
+  const [sportsList, setSportsList] = useState(initialSportsList || {});
   const [isLoading, setIsLoading] = useState(false);
 
   const loadSportsList = useCallback(async () => {
@@ -20,10 +20,10 @@ export const SportsListProvider = ({ children }) => {
     try {
       const settings = JSON.parse(localStorage.getItem('config-tool-settings') || '{}');
       const list = await readSportsList(settings);
-      setSportsList(list);
+      setSportsList(list || initialSportsList || {});
     } catch (error) {
       console.error('Error loading sports list:', error);
-      setSportsList(initialSportsList);
+      setSportsList(initialSportsList || {});
     } finally {
       setIsLoading(false);
     }
@@ -37,11 +37,13 @@ export const SportsListProvider = ({ children }) => {
   // Memoize the flat array of all sport types (prevents recreation on every call)
   const allSportTypes = useMemo(() => {
     const allSports = [];
-    Object.values(sportsList).forEach(categoryArray => {
-      if (Array.isArray(categoryArray)) {
-        allSports.push(...categoryArray);
-      }
-    });
+    if (sportsList && typeof sportsList === 'object') {
+      Object.values(sportsList).forEach(categoryArray => {
+        if (Array.isArray(categoryArray)) {
+          allSports.push(...categoryArray);
+        }
+      });
+    }
     return allSports;
   }, [sportsList]);
 

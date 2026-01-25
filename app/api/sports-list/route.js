@@ -26,11 +26,38 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const defaultPath = searchParams.get('defaultPath');
 
-    const { filePath } = resolveFilePath(defaultPath);
+    const { filePath, settingsDir } = resolveFilePath(defaultPath);
 
     try {
       const content = await fs.readFile(filePath, 'utf-8');
+      
+      // Check if file is empty or contains only whitespace
+      if (!content || content.trim().length === 0) {
+        console.log('Sports list file is empty, repopulating with defaults...');
+        
+        // Ensure directory exists
+        await fs.mkdir(settingsDir, { recursive: true });
+        
+        // Write default sports list
+        const yamlStr = yaml.dump(INITIAL_SPORTS_LIST);
+        await fs.writeFile(filePath, yamlStr, 'utf-8');
+        
+        return NextResponse.json({ success: true, sportsList: INITIAL_SPORTS_LIST });
+      }
+      
       const sportsList = yaml.load(content);
+      
+      // Check if parsed content is empty or invalid
+      if (!sportsList || typeof sportsList !== 'object' || Object.keys(sportsList).length === 0) {
+        console.log('Sports list file contains invalid data, repopulating with defaults...');
+        
+        // Write default sports list
+        const yamlStr = yaml.dump(INITIAL_SPORTS_LIST);
+        await fs.writeFile(filePath, yamlStr, 'utf-8');
+        
+        return NextResponse.json({ success: true, sportsList: INITIAL_SPORTS_LIST });
+      }
+      
       return NextResponse.json({ success: true, sportsList });
     } catch (error) {
       // File doesn't exist, return initial list
@@ -50,7 +77,20 @@ export async function GET(request) {
 // POST - Write sports list
 export async function POST(request) {
   try {
-    const { defaultPath, sportsList } = await request.json();
+    const body = await request.json();
+    
+    // Support both parameter formats for backwards compatibility
+    // Old format: { filePath, sports }
+    // New format: { defaultPath, sportsList }
+    const defaultPath = body.defaultPath || (body.filePath ? path.dirname(path.dirname(body.filePath)) : null);
+    const sportsList = body.sportsList || body.sports;
+
+    if (!sportsList || typeof sportsList !== 'object') {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid sports list data'
+      }, { status: 400 });
+    }
 
     const { filePath, settingsDir } = resolveFilePath(defaultPath);
 
