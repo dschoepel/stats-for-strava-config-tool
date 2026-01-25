@@ -104,7 +104,6 @@ export default function FileManagerDialog({
     
     try {
       const filesToDelete = Array.from(selectedFiles);
-      console.log('Deleting files:', filesToDelete);
       
       const res = await fetch(apiEndpoint, {
         method: 'DELETE',
@@ -116,7 +115,6 @@ export default function FileManagerDialog({
       });
       
       const data = await res.json();
-      console.log('Delete response:', data);
       
       if (data.success || data.deletedCount > 0) {
         setDeleteResult({
@@ -135,7 +133,7 @@ export default function FileManagerDialog({
         setError(errorMsg);
       }
     } catch (err) {
-      console.error('Delete error:', err);
+      console.error('Delete operation failed:', err);
       setError(`Network error: ${err.message}`);
     } finally {
       setIsLoading(false);
@@ -172,17 +170,32 @@ export default function FileManagerDialog({
             borderRadius="lg"
             boxShadow="xl"
           >
-            <DialogHeader>
-              <DialogTitle>{title}</DialogTitle>
+            <DialogHeader 
+              bg="#E2E8F0" 
+              _dark={{ bg: "#334155" }}
+              borderTopRadius="lg"
+            >
+              <DialogTitle color="#1a202c" _dark={{ color: "#f7fafc" }}>
+                {title}
+              </DialogTitle>
             </DialogHeader>
-            <DialogCloseTrigger 
-              color="fg.muted"
-              _hover={{ 
-                color: "fg", 
-                bg: "gray.100", 
-                _dark: { bg: "gray.700" } 
-              }}
-            />
+            <DialogCloseTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                position="absolute"
+                top={2}
+                right={2}
+                color="fg.muted"
+                _hover={{ 
+                  color: "fg", 
+                  bg: "gray.100", 
+                  _dark: { bg: "gray.700" } 
+                }}
+              >
+                <Icon as={MdClose} />
+              </Button>
+            </DialogCloseTrigger>
         
         <DialogBody>
           <VStack align="stretch" gap={4}>            {/* Success Message */}
@@ -197,10 +210,10 @@ export default function FileManagerDialog({
                 formatSummary(metadata, files)
               ) : (
                 <Flex justify="space-between" direction={{ base: "column", sm: "row" }} gap={{ base: 1, sm: 0 }}>
-                  <Text fontSize={{ base: "xs", sm: "sm" }} color="fg">
+                  <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.700" _dark={{ color: "gray.200" }}>
                     Total: {metadata.totalCount} files
                   </Text>
-                  <Text fontSize={{ base: "xs", sm: "sm" }} color="fg">
+                  <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.700" _dark={{ color: "gray.200" }}>
                     Storage: {formatBytes(metadata.totalSize || 0)}
                   </Text>
                 </Flex>
@@ -362,16 +375,28 @@ export default function FileManagerDialog({
                             <Checkbox.HiddenInput />
                             <Checkbox.Control />
                           </Checkbox.Root>
-                          {canDownload && (
-                            <Button
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => handleDownload(file)}
-                              title="Download"
-                            >
-                              <Icon as={MdDownload} />
-                            </Button>
-                          )}
+                          <HStack gap={1}>
+                            {canView && onView && (
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => onView(file)}
+                                title="View"
+                              >
+                                <Icon as={MdVisibility} boxSize={3} />
+                              </Button>
+                            )}
+                            {canDownload && (
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => handleDownload(file)}
+                                title="Download"
+                              >
+                                <Icon as={MdDownload} boxSize={3} />
+                              </Button>
+                            )}
+                          </HStack>
                         </HStack>
                         <VStack align="stretch" gap={1}>
                           {renderRow(file, columns, true)}
@@ -385,7 +410,11 @@ export default function FileManagerDialog({
           </VStack>
         </DialogBody>
 
-        <DialogFooter>
+        <DialogFooter
+          bg="#E2E8F0" 
+          _dark={{ bg: "#334155" }}
+          borderBottomRadius="lg"
+        >
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
