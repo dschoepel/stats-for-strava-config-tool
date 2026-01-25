@@ -38,6 +38,7 @@ import CommandHistoryPanel from './strava-console/CommandHistoryPanel';
 import DiscoverCommandsDialog from './strava-console/DiscoverCommandsDialog';
 import { useStravaConsole } from './hooks/useStravaConsole';
 import { useCommandHistory } from './hooks/useCommandHistory';
+import { useSettings } from '../../../src/state/SettingsProvider';
 
 /**
  * Format elapsed milliseconds as H:MM:SS or M:SS
@@ -55,6 +56,7 @@ function formatElapsedTime(ms) {
 
 export default function StravaConsole() {
   const searchParams = useSearchParams();
+  const { settings } = useSettings();
   const terminalRef = useRef(null);
   const [showHistory, setShowHistory] = useState(false);
   const [terminalReady, setTerminalReady] = useState(false);
@@ -100,7 +102,7 @@ export default function StravaConsole() {
     updateStatus,
     clearHistory,
     loadHistoricalCommands
-  } = useCommandHistory();
+  } = useCommandHistory(settings.features?.enableSfsConsole || false);
 
   // Load historical commands on mount
   useEffect(() => {

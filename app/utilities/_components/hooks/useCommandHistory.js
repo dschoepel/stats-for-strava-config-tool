@@ -12,9 +12,11 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9
 
 /**
  * Load history from localStorage
+ * Only loads if SFS Console feature is enabled
  */
-const loadHistory = () => {
+const loadHistory = (featureEnabled = false) => {
   if (typeof window === 'undefined') return [];
+  if (!featureEnabled) return []; // Don't load localStorage if feature is disabled
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -54,22 +56,27 @@ const saveHistory = (history) => {
  *   exitCode: number | null, // Exit code from command
  *   isHistorical: boolean   // Flag to distinguish from current session
  * }
+ * 
+ * @param {boolean} featureEnabled - Whether SFS Console feature is enabled
  */
-export function useCommandHistory() {
-  const [history, setHistory] = useState(() => loadHistory());
+export function useCommandHistory(featureEnabled = true) {
+  const [history, setHistory] = useState(() => loadHistory(featureEnabled));
   const [hasLoadedHistorical, setHasLoadedHistorical] = useState(false);
 
-  // Save to localStorage whenever history changes (only non-historical)
+  // Save to localStorage whenever history changes (only non-historical and only if feature enabled)
   useEffect(() => {
-    saveHistory(history);
-  }, [history]);
+    if (featureEnabled) {
+      saveHistory(history);
+    }
+  }, [history, featureEnabled]);
 
   /**
    * Load historical commands from log files
+   * Only loads items that actually have log files (filters out localStorage-only "ghost" entries)
    * @returns {Promise<void>}
    */
   const loadHistoricalCommands = useCallback(async () => {
-    if (hasLoadedHistorical) return; // Only load once
+    if (hasLoadedHistorical || !featureEnabled) return; // Only load once and if feature enabled
     
     try {
       const response = await fetch('/api/console-logs');
@@ -110,9 +117,19 @@ export function useCommandHistory() {
           };
         });
         
+        // Create a Set of valid log filenames for quick lookup
+        const validLogPaths = new Set(recentLogs.map(log => log.path));
+        
         setHistory(prev => {
-          // Remove any existing historical items and add new ones
-          const sessionHistory = prev.filter(item => !item.isHistorical);
+          // Filter session history to remove items without log files
+          // (these are localStorage "ghost" entries from when runner wasn't running)
+          const sessionHistory = prev.filter(item => 
+            !item.isHistorical && (
+              !item.logPath || // Running or not yet finished
+              validLogPaths.has(item.logPath) // Has valid log file
+            )
+          );
+          
           return [...sessionHistory, ...historicalCommands];
         });
         setHasLoadedHistorical(true);
@@ -120,7 +137,7 @@ export function useCommandHistory() {
     } catch (error) {
       console.error('Failed to load command history from logs:', error);
     }
-  }, [hasLoadedHistorical]);
+  }, [hasLoadedHistorical, featureEnabled]);
 
   /**
    * Add a new command to history
