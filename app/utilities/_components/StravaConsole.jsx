@@ -435,50 +435,114 @@ export default function StravaConsole() {
           border="1px solid"
           borderColor="border"
         >
-          <VStack align="stretch" gap={4}>
-            <Flex gap={4} direction={{ base: "column", sm: "row" }} align="stretch">
-              <Box flex="1" w={{ base: "100%", sm: "auto" }}>
-                <Text fontSize="sm" fontWeight="medium" color="text" mb={2}>
-                  Command
-                </Text>
-                {isLoadingCommands ? (
-                  <HStack gap={2} h="40px" align="center">
-                    <Spinner size="sm" color="primary" />
-                    <Text fontSize="sm" color="textMuted">Loading commands...</Text>
-                  </HStack>
-                ) : (
-                  <NativeSelectRoot>
-                    <NativeSelectField
-                      value={selectedCommandId || ''}
-                      onChange={(e) => selectCommand(e.target.value)}
-                      disabled={isRunning}
-                      placeholder="Select a command"
-                    >
-                      {commands.map((cmd) => (
-                        <option key={cmd.id} value={cmd.id}>
-                          {cmd.name}
-                        </option>
-                      ))}
-                    </NativeSelectField>
-                  </NativeSelectRoot>
-                )}
-              </Box>
+          <VStack align="stretch" gap={3}>
+            {/* Command Row with Buttons */}
+            <Box>
+              <Text fontSize="sm" fontWeight="medium" color="text" mb={2}>
+                Command
+              </Text>
+              {isLoadingCommands ? (
+                <HStack gap={2} h="40px" align="center">
+                  <Spinner size="sm" color="primary" />
+                  <Text fontSize="sm" color="textMuted">Loading commands...</Text>
+                </HStack>
+              ) : (
+                <Flex gap={2} wrap="wrap" align="center">
+                  <Box flex="1" minW={{ base: "100%", sm: "200px" }}>
+                    <NativeSelectRoot>
+                      <NativeSelectField
+                        value={selectedCommandId || ''}
+                        onChange={(e) => selectCommand(e.target.value)}
+                        disabled={isRunning}
+                        placeholder="Select a command"
+                      >
+                        {commands.map((cmd) => (
+                          <option key={cmd.id} value={cmd.id}>
+                            {cmd.name}
+                          </option>
+                        ))}
+                      </NativeSelectField>
+                    </NativeSelectRoot>
+                  </Box>
 
-              {selectedCommand && (
-                <Box flex={{ base: "1", sm: "2" }} w={{ base: "100%", sm: "auto" }}>
-                  <Text fontSize="sm" color="textMuted">
+                  {/* Action Buttons */}
+                  {!isRunning ? (
+                    <Button
+                      colorPalette="green"
+                      onClick={handleRun}
+                      disabled={!selectedCommand || !terminalReady || runnerStatus !== 'online'}
+                      size="sm"
+                      title="Run command"
+                    >
+                      <Icon as={MdPlayArrow} />
+                      <Text display={{ base: "none", sm: "inline" }} ml={1}>Run</Text>
+                    </Button>
+                  ) : (
+                    <Button
+                      colorPalette="red"
+                      onClick={stopCommand}
+                      size="sm"
+                      title="Stop command"
+                    >
+                      <Icon as={MdStop} />
+                      <Text display={{ base: "none", sm: "inline" }} ml={1}>Stop</Text>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={reloadCommands}
+                    disabled={isRunning}
+                    title="Reload commands"
+                    color="text"
+                    borderColor="border"
+                  >
+                    <Icon as={MdRefresh} />
+                    <Text display={{ base: "none", sm: "inline" }} ml={1}>Reload</Text>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDiscover}
+                    disabled={isRunning || isDiscovering || runnerStatus !== 'online'}
+                    title="Discover commands from the Strava container"
+                    color="text"
+                    borderColor="border"
+                  >
+                    {isDiscovering ? <Spinner size="xs" /> : <Icon as={MdSearch} />}
+                    <Text display={{ base: "none", sm: "inline" }} ml={1}>Discover</Text>
+                  </Button>
+                </Flex>
+              )}
+            </Box>
+
+            {/* Command Info */}
+            {selectedCommand && (
+              <Box 
+                p={3} 
+                bg="gray.50" 
+                _dark={{ bg: 'gray.800' }} 
+                borderRadius="md"
+                border="1px solid"
+                borderColor="gray.200"
+                _dark={{ borderColor: 'gray.700' }}
+              >
+                <VStack align="stretch" gap={1}>
+                  <Text fontSize="xs" color="gray.700" _dark={{ color: 'gray.200' }}>
                     {selectedCommand.description}
                   </Text>
-                  <Text fontSize="xs" color="textMuted" fontFamily="mono" mt={1} wordBreak="break-word">
+                  <Text fontSize="xs" color="gray.600" _dark={{ color: 'gray.300' }} fontFamily="mono" wordBreak="break-word">
                     php bin/console {selectedCommand.command}
                   </Text>
-                </Box>
-              )}
-            </Flex>
+                </VStack>
+              </Box>
+            )}
 
             {/* Arguments Input - Show when command accepts args */}
             {selectedCommand?.acceptsArgs && (
-              <Box mt={4}>
+              <Box mt={3}>
                 <Text fontSize="sm" fontWeight="medium" color="text" mb={2}>
                   Arguments {selectedCommand.argsDescription && (
                     <Text as="span" fontWeight="normal" color="textMuted">
@@ -511,61 +575,6 @@ export default function StravaConsole() {
                 </VStack>
               </Box>
             )}
-
-            <Flex gap={2} mt={4} justify="flex-end" wrap="wrap">
-              {!isRunning ? (
-                <Button
-                  colorPalette="green"
-                  onClick={handleRun}
-                  disabled={!selectedCommand || !terminalReady || runnerStatus !== 'online'}
-                  size={{ base: "sm", sm: "md" }}
-                >
-                  <Icon as={MdPlayArrow} display={{ base: "inline", sm: "none" }} />
-                  <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                    <Icon as={MdPlayArrow} />
-                    <Text>Run</Text>
-                  </HStack>
-                </Button>
-              ) : (
-                <Button
-                  colorPalette="red"
-                  onClick={stopCommand}
-                  size={{ base: "sm", sm: "md" }}
-                >
-                  <Icon as={MdStop} display={{ base: "inline", sm: "none" }} />
-                  <HStack gap={2} display={{ base: "none", sm: "flex" }}>
-                    <Icon as={MdStop} />
-                    <Text>Stop</Text>
-                  </HStack>
-                </Button>
-              )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={reloadCommands}
-                disabled={isRunning}
-                title="Reload commands"
-                color="text"
-                borderColor="border"
-              >
-                <Icon as={MdRefresh} />
-                <Text display={{ base: "none", sm: "inline" }} ml={1}>Reload</Text>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDiscover}
-                disabled={isRunning || isDiscovering || runnerStatus !== 'online'}
-                title="Discover commands from the Strava container"
-                color="text"
-                borderColor="border"
-              >
-                {isDiscovering ? <Spinner size="xs" /> : <Icon as={MdSearch} />}
-                <Text display={{ base: "none", sm: "inline" }} ml={1}>Discover</Text>
-              </Button>
-            </Flex>
           </VStack>
         </Box>
 
