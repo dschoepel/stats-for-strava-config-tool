@@ -83,12 +83,12 @@ export function useCommandHistory() {
         
         // Convert log files to commandHistory format
         const historicalCommands = recentLogs.map(log => {
-          // Parse timestamp: "2026-01-24 21:21:21" format
+          // Parse timestamp: "2026-01-24 21:21:21" format (UTC time from log filename)
           // Use createdAt (ISO format) as fallback if timestamp parsing fails
           let timestampMs;
           if (log.timestamp) {
-            // Replace space with 'T' for ISO format, then parse
-            const isoFormat = log.timestamp.replace(' ', 'T');
+            // Replace space with 'T' and add 'Z' to indicate UTC time
+            const isoFormat = log.timestamp.replace(' ', 'T') + 'Z';
             timestampMs = new Date(isoFormat).getTime();
           }
           
