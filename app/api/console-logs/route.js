@@ -28,21 +28,30 @@ export async function GET() {
       try {
         const stats = await fs.stat(filePath);
         
-        // Parse filename: YYYY-MM-DD_HH-MM-SS_command-id_args_exitcode.log
-        // Example: 2026-01-24_15-30-45_build-files_0.log
+        // Parse filename: YYYY-MM-DDTHH-MM-SS_app:strava:COMMAND_EXITCODE.log
+        // Example: 2026-01-24T21-21-21_app:strava:webhooks-view_0.log
         const parts = file.replace('.log', '').split('_');
         
         if (parts.length < 3) continue; // Skip malformed filenames
         
-        const [date, time, ...rest] = parts;
-        const exitCode = rest[rest.length - 1];
-        const command = rest.slice(0, -1).join('_');
+        // Parse timestamp: "2026-01-24T21-21-21" → "2026-01-24 21:21:21"
+        const timestampPart = parts[0] || '';
+        const timestamp = timestampPart
+          .replace('T', ' ')  // Replace T with space
+          .replace(/(\d{2})-(\d{2})-(\d{2})$/, '$1:$2:$3');  // Replace last three dashes with colons for time
+        
+        // Parse command: "app:strava:webhooks-view" → "webhooks-view"
+        const commandPart = parts[1] || '';
+        const command = commandPart.split(':').pop() || 'unknown';  // Get last part after colons
+        
+        // Parse exit code: "0" → 0
+        const exitCode = parts[2] || '0';
 
         logFiles.push({
           filename: file,
           path: filePath,
-          command: command || 'unknown',
-          timestamp: `${date} ${time.replace(/-/g, ':')}`,
+          command: command,
+          timestamp: timestamp,
           size: stats.size,
           exitCode: parseInt(exitCode, 10) || 0,
           createdAt: stats.birthtime.toISOString()

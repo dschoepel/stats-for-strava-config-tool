@@ -281,11 +281,24 @@ export default function FileManagerDialog({
                       <Table.Row>
                         <Table.ColumnHeader width="40px"></Table.ColumnHeader>
                         {columns.map((col, idx) => (
-                          <Table.ColumnHeader key={idx} width={col.width}>
+                          <Table.ColumnHeader 
+                            key={idx} 
+                            width={col.width}
+                            color="gray.700"
+                            _dark={{ color: "gray.200" }}
+                            fontWeight="semibold"
+                          >
                             {col.header}
                           </Table.ColumnHeader>
                         ))}
-                        <Table.ColumnHeader width="80px">Actions</Table.ColumnHeader>
+                        <Table.ColumnHeader 
+                          width="80px"
+                          color="gray.700"
+                          _dark={{ color: "gray.200" }}
+                          fontWeight="semibold"
+                        >
+                          Actions
+                        </Table.ColumnHeader>
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
