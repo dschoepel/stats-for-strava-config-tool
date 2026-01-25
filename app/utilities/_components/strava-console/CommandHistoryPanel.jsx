@@ -24,9 +24,12 @@ import {
   MdExpandMore,
   MdExpandLess,
   MdVisibility,
-  MdFolder
+  MdFolder,
+  MdWarning,
+  MdClear
 } from 'react-icons/md';
 import LogManagementDialog from './LogManagementDialog';
+import { ConfirmDialog } from '../../../../src/components/ui/ConfirmDialog';
 
 /**
  * Format timestamp to relative time
@@ -161,6 +164,14 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
                   Previous Session
                 </Badge>
               )}
+              {!item.isHistorical && !item.logPath && item.status !== 'running' && (
+                <Badge colorPalette="orange" variant="subtle" size="xs">
+                  <HStack gap={1}>
+                    <Icon as={MdWarning} boxSize={3} />
+                    <Text>No Log File</Text>
+                  </HStack>
+                </Badge>
+              )}
             </HStack>
             <Text fontSize="xs" color="textMuted" fontFamily="mono" overflow="hidden" textOverflow="ellipsis" whiteSpace={{ base: "normal", sm: "nowrap" }} wordBreak={{ base: "break-word", sm: "normal" }}>
               app:strava:{item.command}
@@ -280,6 +291,41 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
  */
 export default function CommandHistoryPanel({ history, onRerun, onClear }) {
   const [showLogManager, setShowLogManager] = useState(false);
+  const [showClearBrowserHistory, setShowClearBrowserHistory] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+
+  // Count session vs historical items
+  const sessionCount = history.filter(item => !item.isHistorical).length;
+  const historicalCount = history.filter(item => item.isHistorical).length;
+
+  const handleClearBrowserHistory = useCallback(async () => {
+    setIsClearing(true);
+    try {
+      // Call API to clear localStorage
+      const response = await fetch('/api/console-history', {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        // Clear localStorage on client side
+        localStorage.removeItem('strava-console-history');
+        
+        // Clear session history (will trigger parent to reload)
+        if (onClear) {
+          onClear();
+        }
+        
+        setShowClearBrowserHistory(false);
+      } else {
+        console.error('Failed to clear browser history:', data.message);
+      }
+    } catch (error) {
+      console.error('Error clearing browser history:', error);
+    } finally {
+      setIsClearing(false);
+    }
+  }, [onClear]);
 
   if (history.length === 0) {
     return (
@@ -344,8 +390,32 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
           <Badge colorPalette="gray" variant="subtle" size="sm">
             {history.length}
           </Badge>
+          {sessionCount > 0 && (
+            <Badge colorPalette="blue" variant="subtle" size="sm">
+              {sessionCount} session
+            </Badge>
+          )}
+          {historicalCount > 0 && (
+            <Badge colorPalette="purple" variant="subtle" size="sm">
+              {historicalCount} historical
+            </Badge>
+          )}
         </HStack>
         <HStack gap={2} w={{ base: "100%", sm: "auto" }}>
+          {sessionCount > 0 && (
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() => setShowClearBrowserHistory(true)}
+              color="text"
+              borderColor="border"
+              w={{ base: "auto", sm: "auto" }}
+              title="Clear browser history (localStorage only, keeps log files)"
+            >
+              <Icon as={MdClear} />
+              <Text display={{ base: "none", sm: "inline" }} ml={1}>Clear Browser History</Text>
+            </Button>
+          )}
           <Button
             size="xs"
             variant="outline"
@@ -390,6 +460,19 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
       <LogManagementDialog
         isOpen={showLogManager}
         onClose={() => setShowLogManager(false)}
+      />
+
+      {/* Clear Browser History Dialog */}
+      <ConfirmDialog
+        isOpen={showClearBrowserHistory}
+        onClose={() => setShowClearBrowserHistory(false)}
+        onConfirm={handleClearBrowserHistory}
+        title="Clear Browser History?"
+        message={`This will remove ${sessionCount} command(s) from browser storage (localStorage). Historical commands from log files will be preserved and remain visible.`}
+        confirmText="Clear History"
+        cancelText="Cancel"
+        confirmColorPalette="orange"
+        isLoading={isClearing}
       />
     </Box>
   );
