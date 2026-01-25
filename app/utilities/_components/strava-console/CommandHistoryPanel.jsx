@@ -346,9 +346,10 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
               size="sm"
               variant="outline"
               onClick={() => setShowLogManager(true)}
-              colorScheme="blue"
+              colorPalette="blue"
               mt={2}
             >
+
               <Icon as={MdFolder} mr={2} />
               Manage Command Logs
             </Button>

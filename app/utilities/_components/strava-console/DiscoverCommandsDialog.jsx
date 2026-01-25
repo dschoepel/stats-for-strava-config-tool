@@ -116,8 +116,8 @@ export default function DiscoverCommandsDialog({
         border="1px solid"
         borderColor="border"
       >
-        <VStack align="stretch" gap={0} divideY="1px" divideColor="border">
-          {commandEntries.map((entry) => (
+        <VStack align="stretch" gap={0}>
+          {commandEntries.map((entry, index) => (
             <Flex
               key={entry.id}
               px={{ base: 3, sm: 4 }}
@@ -126,7 +126,10 @@ export default function DiscoverCommandsDialog({
               gap={3}
               bg={entry.isNew ? 'green.50' : 'transparent'}
               _dark={{ bg: entry.isNew ? 'rgba(34, 197, 94, 0.05)' : 'transparent' }}
+              borderTop={index > 0 ? '1px solid' : 'none'}
+              borderColor="border"
             >
+
               <Box flex="1" minW={0}>
                 <VStack align="flex-start" gap={1}>
                   <Text fontSize="sm" fontWeight="medium" color="text" overflow="hidden" textOverflow="ellipsis" whiteSpace={{ base: "normal", sm: "nowrap" }} wordBreak={{ base: "break-word", sm: "normal" }}>
@@ -149,10 +152,11 @@ export default function DiscoverCommandsDialog({
                   </HStack>
                 </VStack>
                 {entry.description && (
-                  <Text fontSize="xs" color="textMuted" isTruncated mt={1}>
+                  <Text fontSize="xs" color="textMuted" truncate mt={1}>
                     {entry.description}
                   </Text>
                 )}
+
                 <Text fontSize="xs" color="textMuted" fontFamily="mono" mt={0.5} overflow="hidden" textOverflow="ellipsis" whiteSpace={{ base: "normal", sm: "nowrap" }} wordBreak={{ base: "break-word", sm: "normal" }}>
                   php bin/console app:strava:{entry.id}
                 </Text>
@@ -208,12 +212,12 @@ export default function DiscoverCommandsDialog({
         <Box
           p={3}
           bg="orange.50"
-          _dark={{ bg: 'rgba(251, 146, 60, 0.1)' }}
           borderRadius="md"
           border="1px solid"
           borderColor="orange.200"
-          _darkBorderColor="orange.700"
+          _dark={{ bg: 'rgba(251, 146, 60, 0.1)', borderColor: 'orange.700' }}
         >
+
           <Flex gap={2} align="center" mb={3}>
             <Icon as={MdWarning} color="orange.500" boxSize={4} />
             <Text fontSize="sm" fontWeight="medium" color="orange.700" _dark={{ color: 'orange.200' }}>
