@@ -24,7 +24,8 @@ import {
   Alert,
   Checkbox
 } from '@chakra-ui/react';
-import { MdDelete, MdDownload, MdClose } from 'react-icons/md';
+import { MdDelete, MdDownload, MdClose, MdVisibility } from 'react-icons/md';
+import { ConfirmDialog } from '../../../_components/ui/ConfirmDialog';
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -44,13 +45,18 @@ export default function FileManagerDialog({
   formatSummary,
   canDownload = true,
   canDelete = true,
-  downloadUrlGenerator
+  canView = false,
+  downloadUrlGenerator,
+  onView = null,
+  onFilesLoaded = null
 }) {
   const [files, setFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [metadata, setMetadata] = useState({});
   const [error, setError] = useState(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteResult, setDeleteResult] = useState(null);
 
   const loadFiles = async () => {
     setIsLoading(true);
@@ -59,11 +65,15 @@ export default function FileManagerDialog({
       const res = await fetch(apiEndpoint);
       const data = await res.json();
       if (data.success) {
-        setFiles(data.files || data.logs || []);
+        const loadedFiles = data.files || data.logs || [];
+        setFiles(loadedFiles);
         setMetadata({
           totalSize: data.totalSize,
-          totalCount: data.totalCount || data.files?.length || data.logs?.length || 0
+          totalCount: data.totalCount || loadedFiles.length || 0
         });
+        if (onFilesLoaded) {
+          onFilesLoaded(loadedFiles);
+        }
       } else {
         setError(data.error);
       }
@@ -81,28 +91,52 @@ export default function FileManagerDialog({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (selectedFiles.size === 0) return;
-    
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
     setIsLoading(true);
+    setError(null);
+    setDeleteResult(null);
+    
     try {
+      const filesToDelete = Array.from(selectedFiles);
+      console.log('Deleting files:', filesToDelete);
+      
       const res = await fetch(apiEndpoint, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          filenames: Array.from(selectedFiles),
-          files: Array.from(selectedFiles)
+          filenames: filesToDelete,
+          files: filesToDelete
         })
       });
+      
       const data = await res.json();
-      if (data.success) {
+      console.log('Delete response:', data);
+      
+      if (data.success || data.deletedCount > 0) {
+        setDeleteResult({
+          success: true,
+          message: `Successfully deleted ${data.deletedCount} file(s)`
+        });
         setSelectedFiles(new Set());
         await loadFiles();
+        
+        setTimeout(() => setDeleteResult(null), 3000);
       } else {
-        setError(data.error);
+        const errorMsg = data.error || 
+          (data.errors && data.errors.length > 0 
+            ? `Failed to delete ${data.errors.length} file(s): ${data.errors.map(e => e.error).join(', ')}`
+            : 'Delete failed');
+        setError(errorMsg);
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Delete error:', err);
+      setError(`Network error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -127,8 +161,9 @@ export default function FileManagerDialog({
   const someSelected = selectedFiles.size > 0 && selectedFiles.size < files.length;
 
   return (
-    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="xl">
-      <Portal>
+    <>
+      <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="xl">
+        <Portal>
         <DialogBackdrop />
         <DialogPositioner>
           <DialogContent 
@@ -150,7 +185,12 @@ export default function FileManagerDialog({
             />
         
         <DialogBody>
-          <VStack align="stretch" gap={4}>
+          <VStack align="stretch" gap={4}>            {/* Success Message */}
+            {deleteResult?.success && (
+              <Alert.Root status="success">
+                <Alert.Title>{deleteResult.message}</Alert.Title>
+              </Alert.Root>
+            )}
             {/* Summary */}
             <Box p={3} bg="gray.50" _dark={{ bg: 'gray.800' }} borderRadius="md">
               {formatSummary ? (
@@ -184,8 +224,8 @@ export default function FileManagerDialog({
                 >
                   <Checkbox.HiddenInput />
                   <Checkbox.Control />
-                  <Checkbox.Label>
-                    <Text fontSize={{ base: "xs", sm: "sm" }}>Select All</Text>
+                  <Checkbox.Label fontSize={{ base: "xs", sm: "sm" }}>
+                    Select All
                   </Checkbox.Label>
                 </Checkbox.Root>
               </HStack>
@@ -193,12 +233,12 @@ export default function FileManagerDialog({
                 <Button
                   size="sm"
                   colorPalette="red"
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   disabled={selectedFiles.size === 0 || isLoading}
                   w={{ base: "100%", sm: "auto" }}
                 >
                   <Icon as={MdDelete} />
-                  <Text ml={1}>Delete ({selectedFiles.size})</Text>
+                  Delete ({selectedFiles.size})
                 </Button>
               )}
             </Flex>
@@ -259,6 +299,17 @@ export default function FileManagerDialog({
                             </Table.Cell>
                             {renderRow(file, columns, false)}
                             <Table.Cell>
+                              {canView && onView && (
+                                <Button
+                                  size="xs"
+                                  variant="ghost"
+                                  onClick={() => onView(file)}
+                                  title="View"
+                                  mr={1}
+                                >
+                                  <Icon as={MdVisibility} />
+                                </Button>
+                              )}
                               {canDownload && (
                                 <Button
                                   size="xs"
@@ -343,5 +394,17 @@ export default function FileManagerDialog({
     </DialogPositioner>
   </Portal>
 </DialogRoot>
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDelete}
+        onClose={() => setShowConfirmDelete(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Selected Files?"
+        message={`Are you sure you want to delete ${selectedFiles.size} file(s)? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmColorPalette="red"
+      />
+    </>
   );
 }
