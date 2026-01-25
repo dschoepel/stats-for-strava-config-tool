@@ -20,6 +20,32 @@ This guide provides technical documentation for developers working on the Stats 
 
 The application is built with Next.js 16 and React 19, using a modern component-based architecture with custom hooks for shared logic.
 
+### Container Architecture
+
+The configuration tool can optionally integrate with two companion containers for the **SFS Console** feature:
+
+**Container Names (v0.9.0+):**
+- `stats-cmd-runner` - Command validator and request handler
+- `stats-cmd-helper` - Command executor with Docker socket access
+
+**Naming Convention:**
+- Prefix `stats-cmd-*` distinguishes these containers from the upstream Statistics for Strava project
+- Avoids confusion with robiningelbrecht's original project
+
+**Security Model:**
+- **stats-cmd-runner**: No Docker socket access, validates commands against YAML whitelist
+- **stats-cmd-helper**: Has Docker socket access, only accepts pre-validated commands
+- Two-container separation prevents arbitrary command execution
+
+**Environment Variables:**
+- `STATS_CMD_RUNNER_URL` - URL to runner container (default: `http://stats-cmd-runner:8080`)
+- `HELPER_URL` - URL from runner to helper (default: `http://stats-cmd-helper:8081`)
+
+**Log Directories:**
+- `/stats-cmd-logs/` - Command execution logs (helper writes, config-tool reads)
+- `/statistics-for-strava/stats-cmd-runner-logs/` - Runner service logs
+- `/config/config-tool-logs/` - Config tool application logs
+
 ### Project Structure
 
 ```

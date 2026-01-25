@@ -32,15 +32,15 @@ if [ "$(id -u node)" != "$USERMAP_UID" ]; then
 fi
 
 # Ensure log directory exists and has correct ownership
-mkdir -p /var/log/strava-runner
-chown -R node:node /var/log/strava-runner
+mkdir -p /var/log/stats-cmd-runner
+chown -R node:node /var/log/stats-cmd-runner
 
 # Fix ownership of app directory if writable
 if [ -w /var/www ]; then
     chown -R node:node /var/www 2>/dev/null || true
 fi
 
-echo "Starting strava-runner..."
+echo "Starting stats-cmd-runner..."
 
 # Execute command as node user
 exec su-exec node "$@"

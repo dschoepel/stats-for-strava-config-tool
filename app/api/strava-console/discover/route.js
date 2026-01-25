@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-const STRAVA_RUNNER_URL = process.env.STRAVA_RUNNER_URL || 'http://strava-runner:8080';
+const STATS_CMD_RUNNER_URL = process.env.STATS_CMD_RUNNER_URL || 'http://stats-cmd-runner:8080';
 
 /**
  * GET - Discover available Symfony commands from the target container
@@ -13,7 +13,7 @@ export async function GET() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 40000);
 
-    const response = await fetch(`${STRAVA_RUNNER_URL}/discover`, {
+    const response = await fetch(`${STATS_CMD_RUNNER_URL}/discover`, {
       signal: controller.signal
     });
 

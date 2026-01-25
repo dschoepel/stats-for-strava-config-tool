@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 1800; // 30 minutes - support long-running Symfony commands
 
 // Runner URL - configurable via environment variable
-const STRAVA_RUNNER_URL = process.env.STRAVA_RUNNER_URL || 'http://strava-runner:8080';
+const STATS_CMD_RUNNER_URL = process.env.STATS_CMD_RUNNER_URL || 'http://stats-cmd-runner:8080';
 
 /**
  * GET - Health check for the Strava Runner sidecar
@@ -14,7 +14,7 @@ export async function GET() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(`${STRAVA_RUNNER_URL}/health`, {
+    const response = await fetch(`${STATS_CMD_RUNNER_URL}/health`, {
       signal: controller.signal
     });
 
@@ -86,7 +86,7 @@ export async function POST(request) {
     // Forward request to the Strava Runner
     let runnerResponse;
     try {
-      runnerResponse = await fetch(`${STRAVA_RUNNER_URL}/run`, {
+      runnerResponse = await fetch(`${STATS_CMD_RUNNER_URL}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

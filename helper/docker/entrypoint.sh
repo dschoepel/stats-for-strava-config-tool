@@ -49,10 +49,10 @@ if [ -S /var/run/docker.sock ]; then
 fi
 
 # Ensure log directory exists and has correct ownership
-mkdir -p /var/log/strava-helper
-chown -R node:node /var/log/strava-helper
+mkdir -p /var/log/stats-cmd
+chown -R node:node /var/log/stats-cmd
 
-echo "Starting strava-command-helper..."
+echo "Starting stats-cmd-helper..."
 
 # Execute command as node user
 exec su-exec node "$@"

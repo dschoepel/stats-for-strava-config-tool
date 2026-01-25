@@ -1,6 +1,6 @@
 {
-  "name": "strava-runner",
-  "version": "0.7.0",
+  "name": "stats-cmd-runner",
+  "version": "0.9.0",
   "description": "Sidecar container for running Symfony console commands with real-time streaming",
   "type": "module",
   "main": "server.js",

@@ -24,7 +24,7 @@ COPY docker/healthcheck.sh /healthcheck.sh
 RUN chmod +x /entrypoint.sh /healthcheck.sh
 
 # Create log directory
-RUN mkdir -p /var/log/strava-runner
+RUN mkdir -p /var/log/stats-cmd-runner
 
 # Expose port
 EXPOSE 8080

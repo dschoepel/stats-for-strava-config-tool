@@ -1,3 +1,22 @@
+## [1.1.0-rc9] — 2026-01-25
+
+### Changed
+
+- **Container Renaming**: Renamed all "strava-*" container references to "stats-cmd-*" for brand clarity
+  - `strava-runner` → `stats-cmd-runner`
+  - `strava-command-helper` → `stats-cmd-helper`
+  - Environment variable: `STRAVA_RUNNER_URL` → `STATS_CMD_RUNNER_URL`
+  - Log directories: `strava-sh-logs/` → `stats-cmd-logs/`, `runner-logs/` → `stats-cmd-runner-logs/`
+  - Updated docker-compose.yml example with clearer setup instructions and README link
+  - Runner and helper versions bumped to v0.9.0
+
+### Fixed
+
+- **Authentication Security**: SESSION_SECRET now regenerates on password change to invalidate all existing tokens
+- **UI/UX Improvements**: Configuration menu collapsed by default for cleaner initial view
+- **Token Management**: Added `/api/auth/refresh` endpoint for extending user sessions
+- **Error Handling**: Improved token error codes (TOKEN_EXPIRED vs TOKEN_INVALID)
+
 ## [1.1.0] — 2026-01-21
 
 ### Added
