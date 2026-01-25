@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 
-const LOG_DIR = '/var/log/strava-helper/command-logs';
+const LOG_DIR = '/var/log/stats-cmd/command-logs';
 
 export async function GET() {
   try {

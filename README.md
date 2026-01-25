@@ -36,7 +36,27 @@ This is a **web-based configuration editor** for the [Stats for Strava](https://
 - **Required field indicators** mark mandatory fields with red asterisks (*)
 - **Real-time validation** to catch errors before saving
 
-### 🔧 Configuration Sections
+### � Container Architecture (Optional)
+
+The configuration tool can optionally integrate with two companion containers to enable the **SFS Console** feature for executing Symfony console commands:
+
+- **stats-cmd-runner** - Validates commands and handles request/response flow (no Docker socket access)
+- **stats-cmd-helper** - Executes validated commands via `docker exec` with Docker socket access
+
+**Two-container security model:**
+- The runner validates commands from a YAML whitelist but has no execution privileges
+- The helper has Docker socket access but only accepts pre-validated commands from the runner
+- This separation prevents arbitrary command execution even if the web interface is compromised
+
+**Enabling the SFS Console:**
+1. Uncomment both `stats-cmd-runner` and `stats-cmd-helper` services in `docker-compose.yml`
+2. Create `console-commands.yaml` in your config directory with allowed commands
+3. Restart the Docker stack: `docker compose up -d`
+4. Enable "SFS Console" toggle in Settings → User Interface Settings
+
+When disabled, the SFS Console sidebar item is hidden and the console page shows setup instructions. See the [SFS Console documentation](#sfs-console-optional) for complete setup details.
+
+### �🔧 Configuration Sections
 
 Manage all aspects of your Strava statistics dashboard:
 
