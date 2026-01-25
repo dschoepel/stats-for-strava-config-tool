@@ -312,27 +312,28 @@ export default function FileManagerDialog({
                             </Table.Cell>
                             {renderRow(file, columns, false)}
                             <Table.Cell>
-                              {canView && onView && (
-                                <Button
-                                  size="xs"
-                                  variant="ghost"
-                                  onClick={() => onView(file)}
-                                  title="View"
-                                  mr={1}
-                                >
-                                  <Icon as={MdVisibility} />
-                                </Button>
-                              )}
-                              {canDownload && (
-                                <Button
-                                  size="xs"
-                                  variant="ghost"
-                                  onClick={() => handleDownload(file)}
-                                  title="Download"
-                                >
-                                  <Icon as={MdDownload} />
-                                </Button>
-                              )}
+                              <HStack gap={1}>
+                                {canView && onView && (
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => onView(file)}
+                                    title="View"
+                                  >
+                                    <Icon as={MdVisibility} />
+                                  </Button>
+                                )}
+                                {canDownload && (
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => handleDownload(file)}
+                                    title="Download"
+                                  >
+                                    <Icon as={MdDownload} />
+                                  </Button>
+                                )}
+                              </HStack>
                             </Table.Cell>
                           </Table.Row>
                         );
