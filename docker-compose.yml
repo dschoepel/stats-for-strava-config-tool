@@ -1,4 +1,26 @@
 services:
+  # ---------------------------------------------------------
+  # OPTIONAL: Stats for Strava Configuration Tool
+  # ---------------------------------------------------------
+  # The Stats for Strava Config Tool provides a web-based interface
+  # for managing your Statistics for Strava configuration files.
+  #
+  # Features:
+  #   - Visual form-based configuration editor (no YAML knowledge required)
+  #   - Real-time validation to prevent configuration errors
+  #   - YAML utilities for file management and validation
+  #   - Optional SFS Console for executing Symfony commands
+  #
+  # Setup Instructions:
+  #   1. Copy .env.example to .env (Docker Compose variables)
+  #   2. Copy .env.config-tool.example to .env.config-tool (Authentication)
+  #   3. Generate a secure SESSION_SECRET (see .env.config-tool.example)
+  #   4. Start container: docker compose up -d config-manager
+  #   5. Access at http://localhost:8092
+  #
+  # Documentation: https://github.com/dschoepel/stats-for-strava-config-tool
+  # ---------------------------------------------------------
+  
   config-manager:
     image: ghcr.io/dschoepel/stats-for-strava-config-tool:latest
     container_name: stats-for-strava-config-tool
