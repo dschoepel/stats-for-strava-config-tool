@@ -38,6 +38,7 @@ import CommandHistoryPanel from './strava-console/CommandHistoryPanel';
 import DiscoverCommandsDialog from './strava-console/DiscoverCommandsDialog';
 import { useStravaConsole } from './hooks/useStravaConsole';
 import { useCommandHistory } from './hooks/useCommandHistory';
+import { useSettings } from '../../../src/state/SettingsProvider';
 
 /**
  * Format elapsed milliseconds as H:MM:SS or M:SS
@@ -55,6 +56,7 @@ function formatElapsedTime(ms) {
 
 export default function StravaConsole() {
   const searchParams = useSearchParams();
+  const { settings } = useSettings();
   const terminalRef = useRef(null);
   const [showHistory, setShowHistory] = useState(false);
   const [terminalReady, setTerminalReady] = useState(false);
@@ -100,7 +102,7 @@ export default function StravaConsole() {
     updateStatus,
     clearHistory,
     loadHistoricalCommands
-  } = useCommandHistory();
+  } = useCommandHistory(settings.features?.enableSfsConsole || false);
 
   // Load historical commands on mount
   useEffect(() => {
@@ -386,12 +388,12 @@ export default function StravaConsole() {
           <Box
             p={4}
             bg="orange.50"
-            _dark={{ bg: 'rgba(251, 146, 60, 0.1)' }}
             borderRadius="md"
             border="1px solid"
             borderColor="orange.200"
-            _darkBorderColor="orange.700"
+            _dark={{ bg: 'rgba(251, 146, 60, 0.1)', borderColor: 'orange.700' }}
           >
+
             <Flex gap={3} align="flex-start">
               <Icon as={MdWarning} color="orange.500" boxSize={5} mt={0.5} />
               <VStack align="start" gap={1} flex={1}>
@@ -421,12 +423,12 @@ export default function StravaConsole() {
           <Box
             p={4}
             bg="red.50"
-            _dark={{ bg: 'rgba(239, 68, 68, 0.1)' }}
             borderRadius="md"
             border="1px solid"
             borderColor="red.200"
-            _darkBorderColor="red.700"
+            _dark={{ bg: 'rgba(239, 68, 68, 0.1)', borderColor: 'red.700' }}
           >
+
             <Text color="red.600" _dark={{ color: 'red.200' }}>
               {error}
             </Text>

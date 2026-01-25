@@ -11,15 +11,20 @@ import {
   Flex,
   Switch,
   Icon,
+  Badge,
+  HStack,
+  Spinner,
 } from '@chakra-ui/react';
-import { MdSave, MdPalette } from 'react-icons/md';
+import { MdSave, MdPalette, MdCheckCircle, MdWarning, MdRefresh, MdWifi } from 'react-icons/md';
 import { loadSettings, saveSettings } from '../../utils/settingsManager';
 import { ConfirmDialog } from '../../../app/_components/ui/ConfirmDialog';
+import { useRunnerHealth } from '../../hooks/useRunnerHealth';
 
 const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
   const [settings, setSettings] = useState({});
   const [isDirty, setIsDirty] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, onConfirm: null, title: '', message: '' });
+  const { status: runnerStatus, checkHealth, isOnline, isOffline, isChecking } = useRunnerHealth();
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +64,35 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
     current[keys[keys.length - 1]] = value;
     setSettings(newSettings);
     setIsDirty(true);
+  };
+
+  /**
+   * Handle SFS Console toggle with health check
+   */
+  const handleSfsConsoleToggle = async (checked) => {
+    // If turning ON, check runner health first
+    if (checked) {
+      const isHealthy = await checkHealth();
+      
+      if (!isHealthy) {
+        // Show warning dialog
+        setConfirmDialog({
+          isOpen: true,
+          title: 'Strava Runner Not Available',
+          message: 'The Strava Runner sidecar is not responding. You can enable this setting now, but the SFS Console won\'t work until you start the runner service in docker-compose.yml.\n\nEnable anyway?',
+          onConfirm: () => {
+            handleChange('features.enableSfsConsole', true);
+            setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          },
+          confirmText: 'Enable Anyway',
+          cancelText: 'Cancel'
+        });
+        return;
+      }
+    }
+    
+    // If turning OFF or runner is healthy, change immediately
+    handleChange('features.enableSfsConsole', checked);
   };
 
   const handleSave = async () => {
@@ -140,20 +174,71 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
 
           {/* Enable SFS Console Setting */}
           <Field.Root>
-            <Switch.Root
-              checked={settings.features?.enableSfsConsole || false}
-              onCheckedChange={(e) => handleChange('features.enableSfsConsole', e.checked)}
-              colorPalette="blue"
-            >
-              <Switch.HiddenInput />
-              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
-                <Switch.Thumb />
-              </Switch.Control>
-              <Switch.Label>Enable SFS Console</Switch.Label>
-            </Switch.Root>
-            <Text fontSize="xs" color="fg.muted" mt={1} ml={10}>
-              When enabled, the SFS Console appears in the sidebar. Requires the Strava Runner sidecar service.
-            </Text>
+            <VStack align="stretch" gap={2}>
+              <HStack justify="space-between">
+                <Switch.Root
+                  checked={settings.features?.enableSfsConsole || false}
+                  onCheckedChange={(e) => handleSfsConsoleToggle(e.checked)}
+                  colorPalette="blue"
+                  disabled={isChecking}
+                >
+                  <Switch.HiddenInput />
+                  <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Switch.Label>Enable SFS Console</Switch.Label>
+                </Switch.Root>
+                
+                {/* Runner Status Badge */}
+                {settings.features?.enableSfsConsole && (
+                  <>
+                    {isChecking && (
+                      <Badge colorPalette="gray" variant="subtle" size="sm">
+                        <HStack gap={1}>
+                          <Spinner size="xs" />
+                          <Text>Checking...</Text>
+                        </HStack>
+                      </Badge>
+                    )}
+                    {isOnline && (
+                      <Badge colorPalette="green" variant="subtle" size="sm">
+                        <HStack gap={1}>
+                          <Icon as={MdCheckCircle} boxSize={3} />
+                          <Text>Runner Online</Text>
+                        </HStack>
+                      </Badge>
+                    )}
+                    {isOffline && runnerStatus !== 'unknown' && (
+                      <Badge colorPalette="orange" variant="subtle" size="sm">
+                        <HStack gap={1}>
+                          <Icon as={MdWarning} boxSize={3} />
+                          <Text>Runner Offline</Text>
+                        </HStack>
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </HStack>
+              
+              <Text fontSize="xs" color="fg.muted" ml={10}>
+                When enabled, the SFS Console appears in the sidebar. Requires the Strava Runner sidecar service.
+              </Text>
+              
+              {/* Test Connection Button */}
+              {settings.features?.enableSfsConsole && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={checkHealth}
+                  disabled={isChecking}
+                  ml={10}
+                  w="fit-content"
+                >
+                  <Icon as={isChecking ? Spinner : MdWifi} mr={1} boxSize={3} />
+                  Test Connection
+                </Button>
+              )}
+            </VStack>
           </Field.Root>
         </VStack>
 
@@ -190,8 +275,9 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
           isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
-          confirmText="Leave Anyway"
-          confirmColorPalette="orange"
+          confirmText={confirmDialog.confirmText || "Leave Anyway"}
+          cancelText={confirmDialog.cancelText || "Cancel"}
+          confirmColorPalette={confirmDialog.confirmColorPalette || "orange"}
           onConfirm={confirmDialog.onConfirm || (() => {})}
           onClose={() => setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' })}
         />
@@ -309,20 +395,71 @@ const UISettingsModal = ({ isOpen, onClose, embedded = false }) => {
 
           {/* Enable SFS Console Setting */}
           <Field.Root>
-            <Switch.Root
-              checked={settings.features?.enableSfsConsole || false}
-              onCheckedChange={(e) => handleChange('features.enableSfsConsole', e.checked)}
-              colorPalette="blue"
-            >
-              <Switch.HiddenInput />
-              <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
-                <Switch.Thumb />
-              </Switch.Control>
-              <Switch.Label>Enable SFS Console</Switch.Label>
-            </Switch.Root>
-            <Text fontSize="xs" color="fg.muted" mt={1} ml={10}>
-              When enabled, the SFS Console appears in the sidebar. Requires the Strava Runner sidecar service.
-            </Text>
+            <VStack align="stretch" gap={2}>
+              <HStack justify="space-between">
+                <Switch.Root
+                  checked={settings.features?.enableSfsConsole || false}
+                  onCheckedChange={(e) => handleSfsConsoleToggle(e.checked)}
+                  colorPalette="blue"
+                  disabled={isChecking}
+                >
+                  <Switch.HiddenInput />
+                  <Switch.Control bg="gray.300" _dark={{ bg: "gray.600" }} _checked={{ bg: "blue.500", _dark: { bg: "blue.600" } }}>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Switch.Label>Enable SFS Console</Switch.Label>
+                </Switch.Root>
+                
+                {/* Runner Status Badge */}
+                {settings.features?.enableSfsConsole && (
+                  <>
+                    {isChecking && (
+                      <Badge colorPalette="gray" variant="subtle" size="sm">
+                        <HStack gap={1}>
+                          <Spinner size="xs" />
+                          <Text>Checking...</Text>
+                        </HStack>
+                      </Badge>
+                    )}
+                    {isOnline && (
+                      <Badge colorPalette="green" variant="subtle" size="sm">
+                        <HStack gap={1}>
+                          <Icon as={MdCheckCircle} boxSize={3} />
+                          <Text>Runner Online</Text>
+                        </HStack>
+                      </Badge>
+                    )}
+                    {isOffline && runnerStatus !== 'unknown' && (
+                      <Badge colorPalette="orange" variant="subtle" size="sm">
+                        <HStack gap={1}>
+                          <Icon as={MdWarning} boxSize={3} />
+                          <Text>Runner Offline</Text>
+                        </HStack>
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </HStack>
+              
+              <Text fontSize="xs" color="fg.muted" ml={10}>
+                When enabled, the SFS Console appears in the sidebar. Requires the Strava Runner sidecar service.
+              </Text>
+              
+              {/* Test Connection Button */}
+              {settings.features?.enableSfsConsole && (
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={checkHealth}
+                  disabled={isChecking}
+                  ml={10}
+                  w="fit-content"
+                >
+                  <Icon as={isChecking ? Spinner : MdWifi} mr={1} boxSize={3} />
+                  Test Connection
+                </Button>
+              )}
+            </VStack>
           </Field.Root>
         </VStack>
 
