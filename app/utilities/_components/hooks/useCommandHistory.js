@@ -51,16 +51,60 @@ const saveHistory = (history) => {
  *   timestamp: number,      // When the command was started
  *   status: 'running' | 'success' | 'failed',
  *   logPath: string | null, // Path to log file if available
- *   exitCode: number | null // Exit code from command
+ *   exitCode: number | null, // Exit code from command
+ *   isHistorical: boolean   // Flag to distinguish from current session
  * }
  */
 export function useCommandHistory() {
   const [history, setHistory] = useState(() => loadHistory());
+  const [hasLoadedHistorical, setHasLoadedHistorical] = useState(false);
 
-  // Save to localStorage whenever history changes
+  // Save to localStorage whenever history changes (only non-historical)
   useEffect(() => {
     saveHistory(history);
   }, [history]);
+
+  /**
+   * Load historical commands from log files
+   * @returns {Promise<void>}
+   */
+  const loadHistoricalCommands = useCallback(async () => {
+    if (hasLoadedHistorical) return; // Only load once
+    
+    try {
+      const response = await fetch('/api/console-logs');
+      const data = await response.json();
+      
+      if (data.success && data.logs && data.logs.length > 0) {
+        // Sort by timestamp descending, take last 10
+        const recentLogs = data.logs
+          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+          .slice(0, 10);
+        
+        // Convert log files to commandHistory format
+        const historicalCommands = recentLogs.map(log => ({
+          id: `historical-${log.filename}`,
+          command: log.command,
+          commandName: log.command,
+          args: [],
+          timestamp: new Date(log.timestamp).getTime(),
+          status: log.exitCode === 0 || log.exitCode === '0' ? 'success' : 'failed',
+          exitCode: parseInt(log.exitCode, 10) || 0,
+          logPath: log.path,
+          isHistorical: true
+        }));
+        
+        setHistory(prev => {
+          // Remove any existing historical items and add new ones
+          const sessionHistory = prev.filter(item => !item.isHistorical);
+          return [...sessionHistory, ...historicalCommands];
+        });
+        setHasLoadedHistorical(true);
+      }
+    } catch (error) {
+      console.error('Failed to load command history from logs:', error);
+    }
+  }, [hasLoadedHistorical]);
 
   /**
    * Add a new command to history
@@ -79,16 +123,25 @@ export function useCommandHistory() {
       timestamp: Date.now(),
       status: 'running',
       logPath: null,
-      exitCode: null
+      exitCode: null,
+      isHistorical: false
     };
 
     setHistory(prev => {
-      const updated = [newItem, ...prev];
-      // Keep only the most recent items
-      if (updated.length > MAX_HISTORY_ITEMS) {
-        return updated.slice(0, MAX_HISTORY_ITEMS);
-      }
-      return updated;
+      // Separate session and historical items
+      const sessionItems = prev.filter(item => !item.isHistorical);
+      const historicalItems = prev.filter(item => item.isHistorical);
+      
+      // Add new item to session history
+      const updatedSession = [newItem, ...sessionItems];
+      
+      // Keep only the most recent session items
+      const trimmedSession = updatedSession.length > MAX_HISTORY_ITEMS 
+        ? updatedSession.slice(0, MAX_HISTORY_ITEMS)
+        : updatedSession;
+      
+      // Return session items first, then historical
+      return [...trimmedSession, ...historicalItems];
     });
 
     return id;
@@ -120,10 +173,10 @@ export function useCommandHistory() {
   }, []);
 
   /**
-   * Clear all history
+   * Clear session history (keeps historical items)
    */
   const clearHistory = useCallback(() => {
-    setHistory([]);
+    setHistory(prev => prev.filter(item => item.isHistorical));
   }, []);
 
   /**
@@ -141,6 +194,7 @@ export function useCommandHistory() {
     updateStatus,
     removeFromHistory,
     clearHistory,
-    getHistoryItem
+    getHistoryItem,
+    loadHistoricalCommands
   };
 }

@@ -98,8 +98,14 @@ export default function StravaConsole() {
     history,
     addToHistory,
     updateStatus,
-    clearHistory
+    clearHistory,
+    loadHistoricalCommands
   } = useCommandHistory();
+
+  // Load historical commands on mount
+  useEffect(() => {
+    loadHistoricalCommands();
+  }, [loadHistoricalCommands]);
 
   // Handle terminal ready
   const handleTerminalReady = useCallback(() => {
