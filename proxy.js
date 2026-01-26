@@ -16,6 +16,7 @@ const publicPaths = [
   '/api/runtime-config',
   '/api/sports-list',
   '/api/file-content',
+  '/api/strava-console', // Health check endpoint for SFS Console runner status
   '/favicon.ico',
 ];
 

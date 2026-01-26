@@ -16,7 +16,7 @@ export function useRunnerHealth() {
     setStatus('checking');
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout (API has 5s timeout)
 
       const response = await fetch('/api/strava-console', {
         signal: controller.signal
