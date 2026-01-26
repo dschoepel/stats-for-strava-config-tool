@@ -32,7 +32,8 @@ export function useStravaConsole() {
   const elapsedIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
 
-  // Auto-scroll support
+  // Auto-scroll support (state + ref for reactive updates + internal use)
+  const [autoScroll, setAutoScrollState] = useState(true);
   const autoScrollRef = useRef(true);
 
   // Discovery state
@@ -70,10 +71,11 @@ export function useStravaConsole() {
   }, []);
 
   /**
-   * Set auto-scroll state
+   * Set auto-scroll state (updates both ref and state for reactivity)
    */
   const setAutoScroll = useCallback((val) => {
     autoScrollRef.current = val;
+    setAutoScrollState(val);
   }, []);
 
   /**
@@ -237,6 +239,29 @@ export function useStravaConsole() {
   }, []);
 
   /**
+   * Write mutex error message to terminal (used when command is already running)
+   */
+  const writeMutexErrorMessage = useCallback(() => {
+    writeToTerminal('', 'stdout');
+    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+    writeToTerminal('⚠ COMMAND ALREADY RUNNING', 'error');
+    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+    writeToTerminal('', 'stdout');
+    writeToTerminal('This command uses a mutex lock to prevent concurrent execution.', 'info');
+    writeToTerminal('The same command is currently running in another process.', 'info');
+    writeToTerminal('', 'stdout');
+    writeToTerminal('Possible causes:', 'info');
+    writeToTerminal('  • The command is still running from a previous execution', 'info');
+    writeToTerminal('  • You navigated away while the command was running', 'info');
+    writeToTerminal('  • The command is running in another terminal/session', 'info');
+    writeToTerminal('', 'stdout');
+    writeToTerminal('Please wait for the other instance to complete, or stop it manually.', 'info');
+    writeToTerminal('', 'stdout');
+    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
+    writeToTerminal('', 'stdout');
+  }, [writeToTerminal]);
+
+  /**
    * Run the selected command via the Strava Runner sidecar
    * @param {Array} args - Command arguments array
    * @param {Function} onComplete - Callback when command completes
@@ -329,26 +354,10 @@ export function useStravaConsole() {
                     setConnectionState('streaming');
                   }
                   // Check for mutex lock error pattern
-                  if (!mutexErrorDetected.current && 
+                  if (!mutexErrorDetected.current &&
                       (data.data.includes('Lock "') && data.data.includes('is already acquired by'))) {
                     mutexErrorDetected.current = true;
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
-                    writeToTerminal('⚠ COMMAND ALREADY RUNNING', 'error');
-                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('This command uses a mutex lock to prevent concurrent execution.', 'info');
-                    writeToTerminal('The same command is currently running in another process.', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('Possible causes:', 'info');
-                    writeToTerminal('  • The command is still running from a previous execution', 'info');
-                    writeToTerminal('  • You navigated away while the command was running', 'info');
-                    writeToTerminal('  • The command is running in another terminal/session', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('Please wait for the other instance to complete, or stop it manually.', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
-                    writeToTerminal('', 'stdout');
+                    writeMutexErrorMessage();
                   }
                   writeToTerminal(data.data, 'stdout');
                   break;
@@ -358,26 +367,10 @@ export function useStravaConsole() {
                     setConnectionState('streaming');
                   }
                   // Check for mutex lock error pattern in stderr too
-                  if (!mutexErrorDetected.current && 
+                  if (!mutexErrorDetected.current &&
                       (data.data.includes('Lock "') && data.data.includes('is already acquired by'))) {
                     mutexErrorDetected.current = true;
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
-                    writeToTerminal('⚠ COMMAND ALREADY RUNNING', 'error');
-                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('This command uses a mutex lock to prevent concurrent execution.', 'info');
-                    writeToTerminal('The same command is currently running in another process.', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('Possible causes:', 'info');
-                    writeToTerminal('  • The command is still running from a previous execution', 'info');
-                    writeToTerminal('  • You navigated away while the command was running', 'info');
-                    writeToTerminal('  • The command is running in another terminal/session', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('Please wait for the other instance to complete, or stop it manually.', 'info');
-                    writeToTerminal('', 'stdout');
-                    writeToTerminal('═══════════════════════════════════════════════════════════', 'info');
-                    writeToTerminal('', 'stdout');
+                    writeMutexErrorMessage();
                   }
                   writeToTerminal(data.data, 'stderr');
                   break;
@@ -562,8 +555,8 @@ export function useStravaConsole() {
     // Elapsed time
     elapsedMs,
 
-    // Auto-scroll
-    autoScrollRef,
+    // Auto-scroll (state for reactivity, setter for updates)
+    autoScroll,
     setAutoScroll,
 
     // Discovery state
