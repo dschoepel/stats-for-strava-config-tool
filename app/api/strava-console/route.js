@@ -22,10 +22,11 @@ export async function GET() {
 
     if (response.ok) {
       const data = await response.json();
+      // Runner returns { status: 'ok', commandCount, helperUrl, uptime }
       return NextResponse.json({
         success: true,
         status: 'online',
-        ...data
+        runner: data
       });
     }
 
