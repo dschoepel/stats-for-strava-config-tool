@@ -73,6 +73,17 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
     }
   }, [isOpen, fileContent, isNewFile]);
 
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsDirty(false);
+      setError(null);
+      setValidationError(null);
+      setShowOverwriteDialog(false);
+      setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+    }
+  }, [isOpen]);
+
   // Warn before closing with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -124,14 +135,15 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
       return;
     }
 
-    // Validate filename convention (must be config.yaml or config-*.yaml)
+    // Validate filename convention (must be config.yaml, gear-maintenance.yaml, or config-*.yaml)
     // Skip validation if skipValidation prop is true (e.g., when editing in YAML Viewer)
     if (fileName && !skipValidation) {
       const isValidName = fileName === 'config.yaml' || 
+                         fileName === 'gear-maintenance.yaml' ||
                          (fileName.startsWith('config-') && fileName.endsWith('.yaml'));
       
       if (!isValidName) {
-        setError('Invalid filename. Must be "config.yaml" or start with "config-" and end with ".yaml"');
+        setError('Invalid filename. Must be "config.yaml", "gear-maintenance.yaml", or start with "config-" and end with ".yaml"');
         return;
       }
     }
@@ -187,8 +199,9 @@ const YamlEditorModal = ({ isOpen, onClose, fileName, fileContent, filePath, onS
         title: 'Unsaved Changes',
         message: 'You have unsaved changes. Are you sure you want to close?',
         onConfirm: () => {
-          onClose();
+          setIsDirty(false); // Reset before closing
           setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
+          onClose();
         }
       });
     } else {
