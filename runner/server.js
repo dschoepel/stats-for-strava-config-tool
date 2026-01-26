@@ -429,6 +429,64 @@ async function handleDiscover(req, res) {
 }
 
 /**
+ * Handle POST /stop - proxy stop request to helper
+ */
+async function handleStop(req, res) {
+  let body;
+  try {
+    body = await parseJsonBody(req);
+  } catch (err) {
+    sendJson(res, 400, { success: false, error: err.message });
+    return;
+  }
+
+  const { sessionId } = body;
+
+  if (!sessionId || typeof sessionId !== 'string') {
+    sendJson(res, 400, { success: false, error: 'Missing or invalid sessionId field' });
+    return;
+  }
+
+  log({ event: 'stop_request', sessionId });
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+    const helperRes = await fetch(`${HELPER_URL}/stop`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    const data = await helperRes.json();
+
+    log({
+      event: 'stop_response',
+      sessionId,
+      success: data.success,
+      helperStatus: helperRes.status
+    });
+
+    sendJson(res, helperRes.status, data);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      log({ event: 'stop_timeout', sessionId });
+      sendJson(res, 504, { success: false, error: 'Stop request timed out' });
+      return;
+    }
+    log({ event: 'stop_error', sessionId, error: err.message });
+    sendJson(res, 503, {
+      success: false,
+      error: `Helper unavailable: ${err.message}`
+    });
+  }
+}
+
+/**
  * Handle GET /commands - list allowed commands
  */
 function handleCommands(req, res) {
@@ -488,13 +546,18 @@ function handleRequest(req, res) {
     return;
   }
 
+  if (url.pathname === '/stop' && req.method === 'POST') {
+    handleStop(req, res);
+    return;
+  }
+
   if (url.pathname === '/discover' && req.method === 'GET') {
     handleDiscover(req, res);
     return;
   }
 
   // 404 for everything else
-  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'GET /commands', 'POST /run', 'GET /discover'] });
+  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'GET /commands', 'POST /run', 'POST /stop', 'GET /discover'] });
 }
 
 // Initialize

@@ -45,6 +45,7 @@ export function useStravaConsole() {
   const terminalRef = useRef(null);
   const hasReceivedData = useRef(false);
   const mutexErrorDetected = useRef(false);
+  const sessionIdRef = useRef(null); // Track current session for stop functionality
 
   // Check if the SFS Console feature is enabled
   const isFeatureEnabled = settings?.features?.enableSfsConsole ?? false;
@@ -347,6 +348,10 @@ export function useStravaConsole() {
               switch (data.type) {
                 case 'start':
                   setConnectionState('running');
+                  // Capture session ID for stop functionality
+                  if (data.data?.sessionId) {
+                    sessionIdRef.current = data.data.sessionId;
+                  }
                   break;
                 case 'stdout':
                   if (!hasReceivedData.current) {
@@ -433,11 +438,13 @@ export function useStravaConsole() {
 
       stopTimer();
       setIsRunning(false);
+      sessionIdRef.current = null; // Clear session on completion
       onComplete?.(result);
       return result;
 
     } catch (err) {
       stopTimer();
+      sessionIdRef.current = null; // Clear session on error
 
       if (err.name === 'AbortError') {
         writeToTerminal('', 'stdout');
@@ -460,13 +467,42 @@ export function useStravaConsole() {
 
   /**
    * Stop the currently running command
+   * Calls the stop API to kill the process in the container, then aborts the SSE stream
    */
-  const stopCommand = useCallback(() => {
+  const stopCommand = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+
+    // If we have a session ID, call the stop API to kill the process
+    if (sessionId) {
+      try {
+        const response = await fetch('/api/strava-console/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            writeToTerminal('', 'stdout');
+            writeToTerminal('Process terminated by user', 'info');
+          }
+        }
+      } catch (err) {
+        console.error('Stop API error:', err);
+        // Continue with abort even if stop API fails
+      }
+    }
+
+    // Always abort the fetch to disconnect the SSE stream
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-  }, []);
+
+    // Clear session ID
+    sessionIdRef.current = null;
+  }, [writeToTerminal]);
 
   /**
    * Clear the terminal

@@ -18,6 +18,10 @@ const DISCOVER_TIMEOUT_MS = 30000;
 let allowedCommands = new Map();
 let lastYamlMtime = 0;
 
+// Track running processes for stop functionality
+// Map<sessionId, { child: ChildProcess, commandId: string, startTime: number }>
+const runningProcesses = new Map();
+
 /**
  * Structured JSON logging
  */
@@ -172,6 +176,9 @@ async function handleRun(req, res) {
   const execArgs = ['exec', TARGET_CONTAINER, ...cmdArray, ...args];
   const startTime = Date.now();
 
+  // Generate unique session ID for this execution
+  const sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+
   // Create command log file
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const argsSuffix = args.length > 0 ? `_${args[0].substring(0, 20).replace(/[^a-zA-Z0-9]/g, '_')}` : '';
@@ -204,6 +211,7 @@ async function handleRun(req, res) {
 
   log({
     event: 'start',
+    sessionId,
     commandId,
     args,
     targetContainer: TARGET_CONTAINER,
@@ -228,7 +236,7 @@ async function handleRun(req, res) {
     }
   };
 
-  sendEvent('start', { commandId, command: cmdArray, targetContainer: TARGET_CONTAINER });
+  sendEvent('start', { sessionId, commandId, command: cmdArray, targetContainer: TARGET_CONTAINER });
 
   // Keep-alive ping interval - prevents proxy/browser timeouts on long-running commands
   const pingInterval = setInterval(() => {
@@ -239,12 +247,13 @@ async function handleRun(req, res) {
     }
   }, PING_INTERVAL_MS);
 
-  // Cleanup function to ensure ping interval is always cleared
+  // Cleanup function to ensure ping interval is always cleared and process is untracked
   let cleaned = false;
   const cleanup = () => {
     if (!cleaned) {
       cleaned = true;
       clearInterval(pingInterval);
+      runningProcesses.delete(sessionId);
     }
   };
 
@@ -253,6 +262,9 @@ async function handleRun(req, res) {
     shell: false,
     stdio: ['pipe', 'pipe', 'pipe']
   });
+
+  // Track the running process for stop functionality
+  runningProcesses.set(sessionId, { child, commandId, startTime });
 
   child.stdout.on('data', (data) => {
     const text = data.toString();
@@ -469,12 +481,111 @@ function handleDiscover(req, res) {
 }
 
 /**
+ * Handle POST /stop - stop a running command by session ID
+ */
+async function handleStop(req, res) {
+  let body;
+  try {
+    body = await parseJsonBody(req);
+  } catch (err) {
+    sendJson(res, 400, { success: false, error: err.message });
+    return;
+  }
+
+  const { sessionId } = body;
+
+  if (!sessionId || typeof sessionId !== 'string') {
+    sendJson(res, 400, { success: false, error: 'Missing or invalid sessionId field' });
+    return;
+  }
+
+  const processInfo = runningProcesses.get(sessionId);
+  if (!processInfo) {
+    sendJson(res, 404, {
+      success: false,
+      error: 'No running process found for this session',
+      sessionId
+    });
+    return;
+  }
+
+  const { child, commandId, startTime } = processInfo;
+  const durationMs = Date.now() - startTime;
+
+  log({
+    event: 'stop_requested',
+    sessionId,
+    commandId,
+    durationMs
+  });
+
+  try {
+    // First, kill the docker exec process
+    if (!child.killed) {
+      child.kill('SIGTERM');
+    }
+
+    // Then, kill the PHP process inside the container
+    // Use pkill to find and kill the process by command pattern
+    const killChild = spawn('docker', [
+      'exec',
+      TARGET_CONTAINER,
+      'pkill',
+      '-f',
+      commandId
+    ], { shell: false });
+
+    killChild.on('close', (code) => {
+      log({
+        event: 'stop_complete',
+        sessionId,
+        commandId,
+        pkillExitCode: code,
+        durationMs
+      });
+    });
+
+    killChild.on('error', (err) => {
+      log({
+        event: 'stop_pkill_error',
+        sessionId,
+        commandId,
+        error: err.message
+      });
+    });
+
+    // Clean up the tracked process
+    runningProcesses.delete(sessionId);
+
+    sendJson(res, 200, {
+      success: true,
+      message: 'Stop signal sent',
+      sessionId,
+      commandId,
+      durationMs
+    });
+  } catch (err) {
+    log({
+      event: 'stop_error',
+      sessionId,
+      commandId,
+      error: err.message
+    });
+    sendJson(res, 500, {
+      success: false,
+      error: `Failed to stop process: ${err.message}`
+    });
+  }
+}
+
+/**
  * Handle GET /health
  */
 function handleHealth(req, res) {
   sendJson(res, 200, {
     status: 'ok',
     commandCount: allowedCommands.size,
+    runningProcessCount: runningProcesses.size,
     targetContainer: TARGET_CONTAINER,
     uptime: process.uptime()
   });
@@ -496,12 +607,17 @@ function handleRequest(req, res) {
     return;
   }
 
+  if (url.pathname === '/stop' && req.method === 'POST') {
+    handleStop(req, res);
+    return;
+  }
+
   if (url.pathname === '/discover' && req.method === 'GET') {
     handleDiscover(req, res);
     return;
   }
 
-  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'POST /run', 'GET /discover'] });
+  sendJson(res, 404, { error: 'Not found', availableEndpoints: ['GET /health', 'POST /run', 'POST /stop', 'GET /discover'] });
 }
 
 // Initialize
