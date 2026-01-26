@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
-const STORAGE_KEY = 'strava-console-history';
 const MAX_HISTORY_ITEMS = 50;
 
 /**
@@ -11,38 +10,10 @@ const MAX_HISTORY_ITEMS = 50;
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 /**
- * Load history from localStorage
- * Only loads if SFS Console feature is enabled
- */
-const loadHistory = (featureEnabled = false) => {
-  if (typeof window === 'undefined') return [];
-  if (!featureEnabled) return []; // Don't load localStorage if feature is disabled
-
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return [];
-    return JSON.parse(stored);
-  } catch (error) {
-    console.error('Failed to load command history:', error);
-    return [];
-  }
-};
-
-/**
- * Save history to localStorage
- */
-const saveHistory = (history) => {
-  if (typeof window === 'undefined') return;
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-  } catch (error) {
-    console.error('Failed to save command history:', error);
-  }
-};
-
-/**
  * Custom hook for managing command history
+ * 
+ * History is built from log files only (single source of truth).
+ * Session commands are tracked in-memory until they complete and appear in logs.
  *
  * History item structure:
  * {
@@ -60,19 +31,11 @@ const saveHistory = (history) => {
  * @param {boolean} featureEnabled - Whether SFS Console feature is enabled
  */
 export function useCommandHistory(featureEnabled = true) {
-  const [history, setHistory] = useState(() => loadHistory(featureEnabled));
+  const [history, setHistory] = useState([]);
   const [hasLoadedHistorical, setHasLoadedHistorical] = useState(false);
 
-  // Save to localStorage whenever history changes (only non-historical and only if feature enabled)
-  useEffect(() => {
-    if (featureEnabled) {
-      saveHistory(history);
-    }
-  }, [history, featureEnabled]);
-
   /**
-   * Load historical commands from log files
-   * Only loads items that actually have log files (filters out localStorage-only "ghost" entries)
+   * Load historical commands from log files (single source of truth)
    * @returns {Promise<void>}
    */
   const loadHistoricalCommands = useCallback(async () => {
@@ -83,10 +46,10 @@ export function useCommandHistory(featureEnabled = true) {
       const data = await response.json();
       
       if (data.success && data.logs && data.logs.length > 0) {
-        // Sort by timestamp descending, take last 10
+        // Sort by timestamp descending, take last 50
         const recentLogs = data.logs
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-          .slice(0, 10);
+          .slice(0, 50);
         
         // Convert log files to commandHistory format
         const historicalCommands = recentLogs.map(log => {
@@ -117,20 +80,10 @@ export function useCommandHistory(featureEnabled = true) {
           };
         });
         
-        // Create a Set of valid log filenames for quick lookup
-        const validLogPaths = new Set(recentLogs.map(log => log.path));
-        
         setHistory(prev => {
-          // Filter session history to remove items without log files
-          // (these are localStorage "ghost" entries from when runner wasn't running)
-          const sessionHistory = prev.filter(item => 
-            !item.isHistorical && (
-              !item.logPath || // Running or not yet finished
-              validLogPaths.has(item.logPath) // Has valid log file
-            )
-          );
-          
-          return [...sessionHistory, ...historicalCommands];
+          // Keep only running session commands (not yet finished)
+          const runningCommands = prev.filter(item => !item.isHistorical && item.status === 'running');
+          return [...runningCommands, ...historicalCommands];
         });
         setHasLoadedHistorical(true);
       }
@@ -206,7 +159,7 @@ export function useCommandHistory(featureEnabled = true) {
   }, []);
 
   /**
-   * Clear session history (keeps historical items)
+   * Clear running session commands (historical log-based items remain)
    */
   const clearHistory = useCallback(() => {
     setHistory(prev => prev.filter(item => item.isHistorical));
