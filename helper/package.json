@@ -1,6 +1,6 @@
 {
   "name": "stats-cmd-helper",
-  "version": "0.10.0",
+  "version": "1.2.0",
   "description": "Privileged helper container that executes validated commands inside the statistics-for-strava container",
   "type": "module",
   "main": "server.js",
