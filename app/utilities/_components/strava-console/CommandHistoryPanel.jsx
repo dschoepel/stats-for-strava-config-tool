@@ -275,7 +275,7 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
  * Command History Panel
  * Displays a list of previously run commands with their status
  */
-export default function CommandHistoryPanel({ history, onRerun, onClear, onReload }) {
+export default function CommandHistoryPanel({ history, onRerun, onReload }) {
   const [showLogManager, setShowLogManager] = useState(false);
 
   if (history.length === 0) {
@@ -343,30 +343,16 @@ export default function CommandHistoryPanel({ history, onRerun, onClear, onReloa
             {history.length}
           </Badge>
         </HStack>
-        <HStack gap={2} w={{ base: "100%", sm: "auto" }}>
-          <Button
-            size="xs"
-            variant="outline"
-            onClick={() => setShowLogManager(true)}
-            color="text"
-            borderColor="border"
-            w={{ base: "50%", sm: "auto" }}
-          >
-            <Icon as={MdFolder} />
-            <Text display={{ base: "none", sm: "inline" }} ml={1}>Manage Logs</Text>
-          </Button>
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={onClear}
-            color="text"
-            w={{ base: "50%", sm: "auto" }}
-            title="Clear running commands from current session"
-          >
-            <Icon as={MdDelete} />
-            <Text display={{ base: "none", sm: "inline" }} ml={1}>Clear Session</Text>
-          </Button>
-        </HStack>
+        <Button
+          size="xs"
+          variant="outline"
+          onClick={() => setShowLogManager(true)}
+          color="text"
+          borderColor="border"
+        >
+          <Icon as={MdFolder} />
+          <Text display={{ base: "none", sm: "inline" }} ml={1}>Manage Logs</Text>
+        </Button>
       </Flex>
 
       {/* History List */}

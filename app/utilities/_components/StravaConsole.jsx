@@ -63,7 +63,6 @@ export default function StravaConsole() {
     history,
     addToHistory,
     updateStatus,
-    clearHistory,
     loadHistoricalCommands,
     reloadHistory
   } = useCommandHistory(settings.features?.enableSfsConsole || false);
@@ -287,7 +286,6 @@ export default function StravaConsole() {
             <CommandHistoryPanel
               history={history}
               onRerun={handleRerun}
-              onClear={clearHistory}
               onReload={reloadHistory}
             />
           </Collapsible.Content>
