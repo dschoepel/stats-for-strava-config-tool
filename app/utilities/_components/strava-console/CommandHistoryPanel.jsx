@@ -268,7 +268,7 @@ function HistoryItem({ item, index, totalItems, onRerun }) {
  * Command History Panel
  * Displays a list of previously run commands with their status
  */
-export default function CommandHistoryPanel({ history, onRerun, onClear }) {
+export default function CommandHistoryPanel({ history, onRerun, onClear, onReload }) {
   const [showLogManager, setShowLogManager] = useState(false);
 
   if (history.length === 0) {
@@ -381,6 +381,7 @@ export default function CommandHistoryPanel({ history, onRerun, onClear }) {
       <LogManagementDialog
         isOpen={showLogManager}
         onClose={() => setShowLogManager(false)}
+        onLogsChanged={onReload}
       />
     </Box>
   );

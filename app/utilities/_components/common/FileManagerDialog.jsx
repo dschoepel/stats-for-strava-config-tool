@@ -48,7 +48,8 @@ export default function FileManagerDialog({
   canView = false,
   downloadUrlGenerator,
   onView = null,
-  onFilesLoaded = null
+  onFilesLoaded = null,
+  onFilesChanged = null
 }) {
   const [files, setFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -123,6 +124,11 @@ export default function FileManagerDialog({
         });
         setSelectedFiles(new Set());
         await loadFiles();
+        
+        // Notify parent that files have changed
+        if (onFilesChanged) {
+          onFilesChanged();
+        }
         
         setTimeout(() => setDeleteResult(null), 3000);
       } else {

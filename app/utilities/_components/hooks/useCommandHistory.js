@@ -36,10 +36,11 @@ export function useCommandHistory(featureEnabled = true) {
 
   /**
    * Load historical commands from log files (single source of truth)
+   * @param {boolean} forceReload - Force reload even if already loaded
    * @returns {Promise<void>}
    */
-  const loadHistoricalCommands = useCallback(async () => {
-    if (hasLoadedHistorical || !featureEnabled) return; // Only load once and if feature enabled
+  const loadHistoricalCommands = useCallback(async (forceReload = false) => {
+    if (!forceReload && (hasLoadedHistorical || !featureEnabled)) return; // Only load once unless forced
     
     try {
       const response = await fetch('/api/console-logs');
@@ -85,7 +86,9 @@ export function useCommandHistory(featureEnabled = true) {
           const runningCommands = prev.filter(item => !item.isHistorical && item.status === 'running');
           return [...runningCommands, ...historicalCommands];
         });
-        setHasLoadedHistorical(true);
+        if (!hasLoadedHistorical) {
+          setHasLoadedHistorical(true);
+        }
       }
     } catch (error) {
       console.error('Failed to load command history from logs:', error);
@@ -166,6 +169,13 @@ export function useCommandHistory(featureEnabled = true) {
   }, []);
 
   /**
+   * Force reload history from log files (e.g., after log deletion)
+   */
+  const reloadHistory = useCallback(async () => {
+    await loadHistoricalCommands(true);
+  }, [loadHistoricalCommands]);
+
+  /**
    * Get a specific history item
    * @param {string} id - History item ID
    * @returns {Object|undefined} The history item
@@ -181,6 +191,7 @@ export function useCommandHistory(featureEnabled = true) {
     removeFromHistory,
     clearHistory,
     getHistoryItem,
-    loadHistoricalCommands
+    loadHistoricalCommands,
+    reloadHistory
   };
 }
