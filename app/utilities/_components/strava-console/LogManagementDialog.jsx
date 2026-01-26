@@ -6,9 +6,16 @@ import { MdCheckCircle, MdError, MdClose } from 'react-icons/md';
 import FileManagerDialog from '../common/FileManagerDialog';
 import { formatBytes } from './utils/formatters';
 
-export default function LogManagementDialog({ isOpen, onClose }) {
+export default function LogManagementDialog({ isOpen, onClose, onLogsChanged }) {
   const [logCount, setLogCount] = useState(0);
   const [viewingLog, setViewingLog] = useState(null);
+
+  const handleLogsChanged = () => {
+    // Notify parent that logs have changed (deleted/modified)
+    if (onLogsChanged) {
+      onLogsChanged();
+    }
+  };
 
   const handleViewLog = async (log) => {
     try {
@@ -106,6 +113,7 @@ export default function LogManagementDialog({ isOpen, onClose }) {
         canView={true}
         onView={handleViewLog}
         onFilesLoaded={(files) => setLogCount(files.length)}
+        onFilesChanged={handleLogsChanged}
         downloadUrlGenerator={(log) => 
           `/api/download-log?path=${encodeURIComponent(log.path)}`
         }
