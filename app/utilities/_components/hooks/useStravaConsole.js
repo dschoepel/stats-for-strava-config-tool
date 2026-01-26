@@ -451,7 +451,9 @@ export function useStravaConsole() {
         writeToTerminal('Command cancelled by user', 'info');
         setIsRunning(false);
         setConnectionState('idle');
-        return { success: false, logPath: null, exitCode: null, cancelled: true };
+        const stoppedResult = { success: false, logPath: null, exitCode: null, stopped: true };
+        onComplete?.(stoppedResult);
+        return stoppedResult;
       }
 
       console.error('Command execution error:', err);

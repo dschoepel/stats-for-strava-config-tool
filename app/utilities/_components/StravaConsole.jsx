@@ -110,9 +110,17 @@ export default function StravaConsole() {
     const historyId = addToHistory(selectedCommand.command, selectedCommand.name, argsArray);
 
     const result = await runCommand(argsArray, (res) => {
+      // Determine status: stopped takes precedence, then success/failed
+      let status = 'failed';
+      if (res.stopped) {
+        status = 'stopped';
+      } else if (res.success) {
+        status = 'success';
+      }
+
       updateStatus(
         historyId,
-        res.success ? 'success' : 'failed',
+        status,
         res.logPath,
         res.exitCode
       );

@@ -22,7 +22,7 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9
  *   commandName: string,    // Display name of the command
  *   args: array,            // Command arguments
  *   timestamp: number,      // When the command was started
- *   status: 'running' | 'success' | 'failed',
+ *   status: 'running' | 'success' | 'failed' | 'stopped',
  *   logPath: string | null, // Path to log file if available
  *   exitCode: number | null, // Exit code from command
  *   isHistorical: boolean   // Flag to distinguish from current session

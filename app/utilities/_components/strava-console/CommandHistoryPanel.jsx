@@ -25,7 +25,8 @@ import {
   MdExpandLess,
   MdVisibility,
   MdFolder,
-  MdWarning
+  MdWarning,
+  MdCancel
 } from 'react-icons/md';
 import LogManagementDialog from './LogManagementDialog';
 import { formatRelativeTime } from './utils/formatters';
@@ -52,6 +53,12 @@ function getStatusBadge(status) {
         colorPalette: 'yellow',
         icon: MdSync,
         label: 'Running'
+      };
+    case 'stopped':
+      return {
+        colorPalette: 'orange',
+        icon: MdCancel,
+        label: 'Stopped'
       };
     default:
       return {
