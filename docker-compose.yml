@@ -102,6 +102,7 @@ services:
   #     - TZ=${TZ}
   #     - PORT=${STATS_CMD_HELPER_PORT:-8081}
   #     - TARGET_CONTAINER=statistics-for-strava
+  #     - COMMAND_LOGS_DIR=/var/log/stats-cmd/command-logs  # Must match volume mount path
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
