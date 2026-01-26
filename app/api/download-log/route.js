@@ -5,7 +5,7 @@ import path from 'path';
 export const runtime = 'nodejs';
 
 // Directory for storing command logs (Docker volume mount)
-const LOG_DIR = '/var/log/strava-helper/command-logs';
+const LOG_DIR = '/var/log/stats-cmd/command-logs';
 
 /**
  * GET - Download or view a log file
