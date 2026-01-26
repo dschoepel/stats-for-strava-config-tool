@@ -12,6 +12,7 @@ import ErrorAlert from './strava-console/ErrorAlert';
 import ConsoleHeader from './strava-console/ConsoleHeader';
 import CommandSelectionCard from './strava-console/CommandSelectionCard';
 import TerminalPanel from './strava-console/TerminalPanel';
+import ConsoleErrorBoundary from './strava-console/ConsoleErrorBoundary';
 import { useStravaConsole } from './hooks/useStravaConsole';
 import { useCommandHistory } from './hooks/useCommandHistory';
 import { useSettings } from '../../../src/state/SettingsProvider';
@@ -110,9 +111,17 @@ export default function StravaConsole() {
     const historyId = addToHistory(selectedCommand.command, selectedCommand.name, argsArray);
 
     const result = await runCommand(argsArray, (res) => {
+      // Determine status: stopped takes precedence, then success/failed
+      let status = 'failed';
+      if (res.stopped) {
+        status = 'stopped';
+      } else if (res.success) {
+        status = 'success';
+      }
+
       updateStatus(
         historyId,
-        res.success ? 'success' : 'failed',
+        status,
         res.logPath,
         res.exitCode
       );
@@ -257,18 +266,20 @@ export default function StravaConsole() {
         />
 
         {/* Terminal */}
-        <TerminalPanel
-          ref={terminalRef}
-          connectionState={connectionState}
-          isRunning={isRunning}
-          elapsedMs={elapsedMs}
-          autoScroll={autoScroll}
-          lastLogPath={lastLogPath}
-          onAutoScrollToggle={handleAutoScrollToggle}
-          onDownload={handleDownload}
-          onClear={clearTerminal}
-          onTerminalReady={handleTerminalReady}
-        />
+        <ConsoleErrorBoundary>
+          <TerminalPanel
+            ref={terminalRef}
+            connectionState={connectionState}
+            isRunning={isRunning}
+            elapsedMs={elapsedMs}
+            autoScroll={autoScroll}
+            lastLogPath={lastLogPath}
+            onAutoScrollToggle={handleAutoScrollToggle}
+            onDownload={handleDownload}
+            onClear={clearTerminal}
+            onTerminalReady={handleTerminalReady}
+          />
+        </ConsoleErrorBoundary>
 
         {/* Command History Panel */}
         <Collapsible.Root open={showHistory}>
