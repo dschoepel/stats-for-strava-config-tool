@@ -24,7 +24,7 @@ The application is built with Next.js 16 and React 19, using a modern component-
 
 The configuration tool can optionally integrate with two companion containers for the **SFS Console** feature:
 
-**Container Names (v0.9.0+):**
+**Container Names (v1.1.0+):**
 - `stats-cmd-runner` - Command validator and request handler
 - `stats-cmd-helper` - Command executor with Docker socket access
 
@@ -43,8 +43,89 @@ The configuration tool can optionally integrate with two companion containers fo
 
 **Log Directories:**
 - `/stats-cmd-logs/` - Command execution logs (helper writes, config-tool reads)
-- `/statistics-for-strava/stats-cmd-runner-logs/` - Runner service logs
-- `/config/config-tool-logs/` - Config tool application logs
+
+### SFS Console Architecture
+
+The SFS Console feature uses a modular component and hook architecture:
+
+**Component Structure** (`app/utilities/_components/strava-console/`):
+
+| Component | Purpose |
+|-----------|---------|
+| `StravaConsole.jsx` | Main orchestrator component |
+| `CommandHistoryPanel.jsx` | Past command executions with status |
+| `CommandSelectionCard.jsx` | Command dropdown and run controls |
+| `ConnectionStateBadge.jsx` | SSE connection status indicator |
+| `ConsoleDisabledView.jsx` | Shown when feature is disabled |
+| `ConsoleErrorBoundary.jsx` | Error boundary for graceful recovery |
+| `ConsoleHeader.jsx` | Header with runner status |
+| `DiscoverCommandsDialog.jsx` | Auto-discover available commands |
+| `ErrorAlert.jsx` | Error message display |
+| `LogManagementDialog.jsx` | View/download/delete logs |
+| `RunnerOfflineAlert.jsx` | Warning when runner unavailable |
+| `RunnerStatusBadge.jsx` | Runner health status indicator |
+| `StravaConsoleTerminal.jsx` | xterm.js terminal component |
+| `TerminalPanel.jsx` | Terminal wrapper with controls |
+| `WarningBanner.jsx` | Navigation warning during execution |
+
+**Custom Hooks** (`app/utilities/_components/hooks/`):
+
+| Hook | Purpose |
+|------|---------|
+| `useStravaConsole.js` | Main orchestrator - combines all hooks |
+| `useCommandHistory.js` | Session + log-based history tracking |
+| `useConsoleCommands.js` | Load command definitions |
+| `useConsoleRunner.js` | Execute commands via SSE |
+| `useRunnerHealth.js` | Health check polling |
+
+**Data Flow:**
+
+```
+User clicks Run
+    │
+    ▼
+useConsoleRunner.runCommand()
+    │
+    ▼
+POST /api/strava-console (config-tool API)
+    │
+    ▼
+POST /run (stats-cmd-runner)
+    │
+    ▼
+POST /run (stats-cmd-helper)
+    │
+    ▼
+docker exec → PHP process
+    │
+    ▼
+SSE stream back through chain
+    │
+    ▼
+Terminal displays output in real-time
+```
+
+**Console API Routes:**
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/strava-console` | GET | Proxy health check to runner |
+| `/api/strava-console` | POST | Proxy command execution |
+| `/api/strava-console/discover` | GET | Discover available commands |
+| `/api/strava-console/stop` | POST | Stop running command |
+| `/api/console-commands` | GET/POST | Manage command definitions |
+| `/api/console-logs` | GET | List execution logs |
+| `/api/download-log` | GET | Download/view log content |
+
+**SSE Event Types:**
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `start` | `{ sessionId }` | Command started |
+| `stdout` | `{ data }` | Standard output line |
+| `stderr` | `{ data }` | Error output line |
+| `end` | `{ exitCode, logPath }` | Command completed |
+| `error` | `{ message }` | Error occurred |
 
 ### Project Structure
 

@@ -65,7 +65,7 @@ SESSION_SECRET=F1B452F4F5A9A9BCBDFCBF9BB4BB0A4BB76C64CF9CC38672CFBF0A2F205DCDF8
 
 When you first access the Config Tool, you'll be directed to the registration page:
 
-1. Navigate to `http://localhost:3000` (or your configured URL)
+1. Navigate to `http://localhost:8092` (or your configured URL)
 2. You'll be redirected to the **Register** page
 3. Enter a strong password (minimum 8 characters)
 4. Confirm your password
@@ -134,6 +134,8 @@ To change your password while logged in:
 
 **After Changing:** You'll be automatically logged out and redirected to the login page. Log in again with your new password.
 
+**Security Note (v1.1.0+):** When you change your password, the session secret is automatically regenerated. This invalidates ALL existing sessions across all devices and browsers, ensuring any potentially compromised sessions are terminated.
+
 **Important:** Your current password is required to change your password. This prevents unauthorized password changes if someone gains access to your active session.
 
 ---
@@ -156,7 +158,7 @@ If you forget your password, you can reset it using a reset token:
 
 ### Generate a Reset Token
 
-1. Navigate to `http://localhost:3000/reset-password`
+1. Navigate to `http://localhost:8092/reset-password`
 2. Click **Generate Reset Token**
 3. Copy the generated token (it will also be displayed on screen)
 4. **Important:** The token is also saved to your `.env` file
