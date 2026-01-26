@@ -1,22 +1,32 @@
-# strava-runner
+# stats-cmd-runner
 
-A lightweight sidecar container for executing Symfony console commands with real-time streaming output. Designed to work alongside the Statistics for Strava application.
+A lightweight sidecar container for validating and proxying Symfony console command execution requests. Designed to work alongside the Statistics for Strava application with the stats-cmd-helper service.
 
 ## Features
 
 - HTTP API server on port 8080
 - Command validation against YAML allowlist
+- Proxies requests to stats-cmd-helper for execution
 - Real-time stdout/stderr streaming via Server-Sent Events (SSE)
 - Structured JSON logging to file
 - Automatic YAML config reload (every 5 seconds)
-- Security: No shell execution, command allowlist only
-- Docker health checks
+- Security: No Docker socket access, validation-only role
+- Health check endpoint
+
+## Architecture
+
+```
+Config Tool → stats-cmd-runner → stats-cmd-helper → Docker exec
+              (validates)         (executes)
+```
+
+The runner validates commands against the allowlist but has no execution privileges. It forwards validated requests to the helper service which has Docker socket access.
 
 ## API Endpoints
 
 ### POST /run
 
-Execute an allowed command with real-time output streaming.
+Validate and proxy command execution with real-time output streaming.
 
 **Request:**
 ```json
@@ -25,9 +35,9 @@ Execute an allowed command with real-time output streaming.
 }
 ```
 
-**Response:** Server-Sent Events stream
+**Response:** Server-Sent Events stream (proxied from helper)
 ```
-data: {"type":"start","data":{"command":"build-files","fullCommand":"php bin/console build-files"}}
+data: {"type":"start","data":{"command":"build-files","fullCommand":"php bin/console app:strava:build-files"}}
 
 data: {"type":"stdout","data":"Building files..."}
 
@@ -43,9 +53,38 @@ data: {"type":"exit","data":{"code":0,"durationMs":1234}}
 - `exit` - Command completed with exit code and duration
 - `error` - Execution error occurred
 
+### POST /stop
+
+Stop a running command by session ID.
+
+**Request:**
+```json
+{
+  "sessionId": "abc123"
+}
+```
+
+### GET /discover
+
+Discover available commands from the target container.
+
+**Response:**
+```json
+{
+  "success": true,
+  "commands": {
+    "build-files": {
+      "name": "Build Files",
+      "description": "Build Strava data files",
+      "command": ["php", "bin/console", "app:strava:build-files"]
+    }
+  }
+}
+```
+
 ### GET /commands
 
-List all allowed commands.
+List all allowed commands from the local configuration.
 
 **Response:**
 ```json
@@ -62,7 +101,7 @@ List all allowed commands.
 }
 ```
 
-### GET /health
+### GET / or GET /health
 
 Health check endpoint.
 
@@ -81,29 +120,27 @@ Add this service to your `docker-compose.yml`:
 
 ```yaml
 services:
-  strava-runner:
-    image: ghcr.io/your-username/strava-runner:latest
-    container_name: strava-runner
+  stats-cmd-runner:
+    image: ghcr.io/dschoepel/stats-cmd-runner:latest
+    container_name: stats-cmd-runner
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - TZ=${TZ}
-      - USERMAP_UID=${USERMAP_UID}
-      - USERMAP_GID=${USERMAP_GID}
+      - HELPER_URL=http://stats-cmd-helper:${STATS_CMD_HELPER_PORT:-8081}
     volumes:
-      # Mount the same volumes as Statistics for Strava
-      - ./config:/var/www/config/app
-      - ./build:/var/www/build
-      - ./storage/database:/var/www/storage/database
-      - ./storage/files:/var/www/storage/files
-      - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
       # Mount the commands config (read-only)
-      - ./commands.yaml:/var/www/commands.yaml:ro
-      # Mount runner logs
-      - ./runner-logs:/var/log/strava-runner
+      - ./config/settings/console-commands.yaml:/app/commands.yaml:ro
     ports:
-      - "8080:8080"
+      - "8093:8080"
     networks:
       - statistics-for-strava-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
   statistics-for-strava-network:
@@ -114,48 +151,41 @@ networks:
 
 | Host Path | Container Path | Purpose |
 |-----------|----------------|---------|
-| `./config` | `/var/www/config/app` | Application configuration |
-| `./build` | `/var/www/build` | Build output files |
-| `./storage/database` | `/var/www/storage/database` | Database files |
-| `./storage/files` | `/var/www/storage/files` | User files |
-| `./storage/gear-maintenance` | `/var/www/storage/gear-maintenance` | Gear maintenance data |
-| `./commands.yaml` | `/var/www/commands.yaml:ro` | Allowed commands (read-only) |
-| `./runner-logs` | `/var/log/strava-runner` | Runner logs |
+| `./config/settings/console-commands.yaml` | `/app/commands.yaml:ro` | Allowed commands (read-only) |
 
 ## Commands Configuration
 
-Edit `commands.yaml` to add or remove allowed commands:
+Edit `console-commands.yaml` to add or remove allowed commands:
 
 ```yaml
 commands:
-  - id: "build-files"
+  build-files:
     name: "Build Files (Updates Dashboard)"
-    command: "build-files"
     description: "Build Strava files and update the dashboard"
+    command: ["php", "bin/console", "app:strava:build-files"]
 
-  - id: "import-data"
+  import-data:
     name: "Import Data"
-    command: "import-data"
     description: "Import new activities from Strava API"
+    command: ["php", "bin/console", "app:strava:import-data"]
 
-  - id: "my-custom-command"
-    name: "My Custom Command"
-    command: "app:my-custom-command"
-    description: "Description of what it does"
+  webhooks-unsubscribe:
+    name: "Webhooks Unsubscribe"
+    description: "Delete a Strava webhook subscription"
+    command: ["php", "bin/console", "app:strava:webhooks-unsubscribe"]
+    acceptsArgs: true
+    argsDescription: "Subscription ID to unsubscribe"
+    argsPlaceholder: "Enter subscription ID"
 ```
 
 The runner automatically reloads this file every 5 seconds, so changes take effect without restarting the container.
 
-## Log Format
+## Logs
 
-Logs are written to `/var/log/strava-runner/runner.log` in JSON format (one entry per line):
+Logs are available via Docker container logs:
 
-```json
-{"timestamp":"2026-01-21T10:30:00.000Z","event":"server_start","port":8080,"workingDir":"/var/www","commandsFile":"/var/www/commands.yaml"}
-{"timestamp":"2026-01-21T10:30:01.000Z","event":"config_reload","commandCount":5,"commands":["build-files","import-data","webhooks-create","webhooks-unsubscribe","webhooks-view"]}
-{"timestamp":"2026-01-21T10:30:05.000Z","event":"start","command":"build-files","fullCommand":"php bin/console build-files"}
-{"timestamp":"2026-01-21T10:30:05.100Z","event":"stdout","command":"build-files","chunk":"Building files..."}
-{"timestamp":"2026-01-21T10:30:10.000Z","event":"exit","command":"build-files","fullCommand":"php bin/console build-files","exitCode":0,"durationMs":5000}
+```bash
+docker compose logs -f stats-cmd-runner
 ```
 
 **Event Types:**
@@ -175,33 +205,33 @@ Logs are written to `/var/log/strava-runner/runner.log` in JSON format (one entr
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `8080` | HTTP server port |
-| `COMMANDS_FILE` | `/var/www/commands.yaml` | Path to commands YAML file |
-| `LOG_FILE` | `/var/log/strava-runner/runner.log` | Path to log file |
-| `WORKING_DIR` | `/var/www` | Working directory for command execution |
+| `HELPER_URL` | `http://stats-cmd-helper:8081` | URL to helper service |
+| `COMMANDS_FILE` | `/app/commands.yaml` | Path to commands YAML file |
 | `TZ` | (none) | Timezone (e.g., `America/New_York`) |
 | `USERMAP_UID` | `1000` | UID to run as |
 | `USERMAP_GID` | `1000` | GID to run as |
 
 ## Security
 
-- **Command Allowlist**: Only commands explicitly listed in `commands.yaml` can be executed
-- **No Shell Execution**: Commands are spawned directly without a shell (`shell: false`)
-- **Input Validation**: Command names are validated against a strict regex pattern
-- **Read-Only Config**: Mount `commands.yaml` as read-only (`:ro`)
+- **Command Allowlist**: Only commands explicitly listed in configuration can be executed
 - **No Docker Access**: Container has no access to Docker socket
+- **Validation Only**: Runner validates and proxies, helper executes
+- **Input Validation**: Command names and arguments validated against strict patterns
+- **Argument Safety**: No shell metacharacters, no flags, length limits enforced
+- **Read-Only Config**: Mount `commands.yaml` as read-only (`:ro`)
 - **Non-Root Execution**: Runs as configurable non-root user
 
 ## Building Locally
 
 ```bash
 # Build the image
-docker build -t strava-runner .
+docker build -t stats-cmd-runner .
 
 # Run locally for testing
 docker run -p 8080:8080 \
-  -v $(pwd)/commands.yaml:/var/www/commands.yaml:ro \
-  -v $(pwd)/runner-logs:/var/log/strava-runner \
-  strava-runner
+  -v $(pwd)/commands.yaml:/app/commands.yaml:ro \
+  -e HELPER_URL=http://host.docker.internal:8081 \
+  stats-cmd-runner
 ```
 
 ## License

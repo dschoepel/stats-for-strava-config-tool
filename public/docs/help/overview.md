@@ -85,6 +85,19 @@ Add the generated string to your `.env` file as `SESSION_SECRET`.
 
 ---
 
+## SFS Console (Optional)
+
+The SFS Console allows you to execute Statistics for Strava Symfony console commands directly from the web interface:
+
+- **Terminal-like UI** - Real-time command output streaming
+- **Command allowlist** - Only pre-approved safe commands can be executed
+- **Command history** - Track past executions with logs
+- **Two-container security** - Separate validation and execution for safety
+
+**Learn More:** See **Documentation → SFS Console** for setup instructions and usage.
+
+---
+
 ## YAML Utility
 
 The YAML Utility provides advanced configuration file management:

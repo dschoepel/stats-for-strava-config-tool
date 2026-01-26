@@ -4,12 +4,12 @@ The **SFS Console** is an optional feature that allows the Stats for Strava Conf
 
 This feature uses a two-container architecture for security:
 
-- **strava-runner** - Validates commands and proxies requests (no Docker socket access)
-- **strava-command-helper** - Executes validated commands inside the target container via `docker exec`
+- **stats-cmd-runner** - Validates commands and proxies requests (no Docker socket access)
+- **stats-cmd-helper** - Executes validated commands inside the target container via `docker exec`
 
 This feature is disabled by default and can be enabled at any time.
 
-**Recent Updates (v1.1.0-rc4):**
+**Recent Updates (v1.1.0-rc10):**
 - ✨ Command discovery: Automatically discover available `app:strava:*` commands from the container
 - 📝 Individual log file capture: Each command execution is saved to a timestamped file
 - ⏱️ Elapsed time tracking: Real-time timer shows command duration
@@ -36,7 +36,7 @@ Config Tool UI
            │ POST /run { command: "webhooks-view" }
            ▼
 ┌─────────────────────────┐
-│  strava-runner           │
+│  stats-cmd-runner       │
 │  (Node.js, port 8080)   │
 │  - Validates commandId  │
 │  - No Docker socket     │
@@ -45,7 +45,7 @@ Config Tool UI
            │ POST /run { commandId: "webhooks-view" }
            ▼
 ┌─────────────────────────┐
-│  strava-command-helper   │
+│  stats-cmd-helper       │
 │  (Node.js, port 8081)   │
 │  - Docker socket mounted│
 │  - Resolves command array│
@@ -69,38 +69,40 @@ The runner and helper are included as commented-out optional services.
 To enable them, open your `docker-compose.yml` and **uncomment both service blocks**:
 
 ```yaml
-strava-runner:
-  image: ghcr.io/dschoepel/strava-runner:latest
-  container_name: strava-runner
+stats-cmd-runner:
+  image: ghcr.io/dschoepel/stats-cmd-runner:latest
+  container_name: stats-cmd-runner
   restart: unless-stopped
-  working_dir: /var/www
-  command: ["node", "server.js"]
+  env_file:
+    - .env
   environment:
-    - TZ=${TZ}
-    - USERMAP_UID=${USERMAP_UID}
-    - USERMAP_GID=${USERMAP_GID}
-    - HELPER_URL=http://strava-command-helper:8081
+    - HELPER_URL=http://stats-cmd-helper:${STATS_CMD_HELPER_PORT:-8081}
   volumes:
-    - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
-    - ./statistics-for-strava/runner-logs:/var/log/strava-runner
+    - ./config/settings/console-commands.yaml:/app/commands.yaml:ro
   networks:
     - statistics-for-strava-network
   ports:
     - "8093:8080"
+  healthcheck:
+    test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 10s
 
-strava-command-helper:
-  image: ghcr.io/dschoepel/strava-command-helper:latest
-  container_name: strava-command-helper
+stats-cmd-helper:
+  image: ghcr.io/dschoepel/stats-cmd-helper:latest
+  container_name: stats-cmd-helper
   restart: unless-stopped
-  working_dir: /var/www
-  command: ["node", "server.js"]
+  env_file:
+    - .env
   environment:
-    - TZ=${TZ}
-    - TARGET_CONTAINER=statistics-for-strava
+    - CONTAINER_NAME=statistics-for-strava
+    - LOG_DIR=/logs
+    - PORT=${STATS_CMD_HELPER_PORT:-8081}
   volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-    - ./statistics-for-strava/config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
-    - ./strava-sh-logs:/var/log/strava-helper/command-logs  # Command execution logs
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - ./stats-cmd-logs:/logs
   networks:
     - statistics-for-strava-network
 ```
@@ -108,8 +110,7 @@ strava-command-helper:
 Then create the required directories and restart your stack:
 
 ```bash
-mkdir -p ./statistics-for-strava/runner-logs
-mkdir -p ./strava-sh-logs
+mkdir -p ./stats-cmd-logs
 docker compose up -d
 ```
 
@@ -122,9 +123,9 @@ Both the runner and helper read their allowed commands from `console-commands.ya
 If it doesn't exist yet, create it manually:
 
 ```bash
-mkdir -p ./statistics-for-strava/config/settings
+mkdir -p ./config/settings
 
-cat > ./statistics-for-strava/config/settings/console-commands.yaml << 'EOF'
+cat > ./config/settings/console-commands.yaml << 'EOF'
 commands:
   build-files:
     name: "Build Files (Updates Dashboard)"
@@ -186,7 +187,7 @@ When disabled:
 The Console page performs a health check against the runner:
 
 ```
-GET http://strava-runner:8080/health
+GET http://stats-cmd-runner:8080/health
 ```
 
 If the runner is online, you'll see:
@@ -203,11 +204,11 @@ If offline:
 You can also verify manually:
 
 ```bash
-# Check runner health
+# Check runner health (external port)
 curl http://localhost:8093/health
 
 # Check helper can reach Docker socket
-docker compose exec strava-command-helper docker ps
+docker compose exec stats-cmd-helper docker ps
 ```
 
 ---
@@ -239,13 +240,12 @@ Once enabled, open the **SFS Console** from the sidebar (under Utilities).
 
 4. **Log Files** - Each command execution is automatically saved to:
    - Format: `YYYY-MM-DD_HH-MM-SS_command-id_exitcode.log`
-   - Location: `./strava-sh-logs/` on host
+   - Location: `./stats-cmd-logs/` on host
    - Accessible via **View Log** or **Download Log** buttons
    - Includes full stdout/stderr, timestamps, and exit code
 
 - Live streamed output in the terminal
 - A final success/failure message with exit code
-- Logs written to `runner-logs/runner.log`
 
 ---
 
@@ -369,9 +369,9 @@ Each command execution creates a detailed log file:
 - Exit code and duration
 
 **Location:**
-- Helper writes: `/var/log/strava-helper/command-logs/`
-- Config-tool reads: Same directory (shared Docker volume)
-- Host machine: `./strava-sh-logs/`
+- Helper writes: `/logs/` (inside container)
+- Config-tool reads: `/var/log/stats-cmd/command-logs/` (shared Docker volume)
+- Host machine: `./stats-cmd-logs/`
 
 ---
 
@@ -381,26 +381,23 @@ Each command execution creates a detailed log file:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STRAVA_RUNNER_URL` | `http://strava-runner:8080` | URL to the Strava Runner service |
+| `STATS_CMD_RUNNER_URL` | `http://stats-cmd-runner:8080` | URL to the Command Runner service |
 
 ### Runner
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HELPER_URL` | `http://strava-command-helper:8081` | URL to the Command Helper service |
-| `COMMANDS_FILE` | `/var/www/console-commands.yaml` | Path to the commands allowlist |
+| `HELPER_URL` | `http://stats-cmd-helper:8081` | URL to the Command Helper service |
+| `COMMANDS_FILE` | `/app/commands.yaml` | Path to the commands allowlist |
 | `PORT` | `8080` | HTTP listen port |
-| `LOG_FILE` | `/var/log/strava-runner/runner.log` | Structured log file path |
 
 ### Command Helper
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TARGET_CONTAINER` | `statistics-for-strava` | Container to exec commands into |
-| `COMMANDS_FILE` | `/var/www/console-commands.yaml` | Path to the commands allowlist |
+| `CONTAINER_NAME` | `statistics-for-strava` | Container to exec commands into |
+| `LOG_DIR` | `/logs` | Directory for command execution logs |
 | `PORT` | `8081` | HTTP listen port |
-| `LOG_FILE` | `/var/log/strava-helper/helper.log` | Structured log file path |
-| `COMMAND_LOGS_DIR` | `/var/log/strava-helper/command-logs` | Directory for command execution logs |
 
 ---
 
@@ -428,8 +425,8 @@ Each command execution creates a detailed log file:
 ### Runner shows "Offline" but container is running
 
 1. Check that all containers are on the same Docker network (`statistics-for-strava-network`)
-2. Verify the runner container is healthy: `docker compose logs strava-runner`
-3. Test the health endpoint: `docker compose exec config-manager wget -qO- http://strava-runner:8080/health`
+2. Verify the runner container is healthy: `docker compose logs stats-cmd-runner`
+3. Test the health endpoint: `docker compose exec config-manager wget -qO- http://stats-cmd-runner:8080/health`
 
 ### Commands fail with "Command not in allowed list"
 
@@ -439,22 +436,22 @@ Each command execution creates a detailed log file:
 
 ### Helper reports "docker exec" errors
 
-1. Check the helper can access the Docker socket: `docker compose exec strava-command-helper docker ps`
+1. Check the helper can access the Docker socket: `docker compose exec stats-cmd-helper docker ps`
 2. Verify the target container name matches `TARGET_CONTAINER` env var
-3. Check helper logs: `docker compose logs strava-command-helper`
+3. Check helper logs: `docker compose logs stats-cmd-helper`
 
 ### No output appears in terminal
 
 1. Check the browser's Network tab for SSE connection
-2. Verify the runner can reach the helper: `docker compose exec strava-runner wget -qO- http://strava-command-helper:8081/health`
-3. Check `runner-logs/runner.log` for errors
+2. Verify the runner can reach the helper: `docker compose exec stats-cmd-runner wget -qO- http://stats-cmd-helper:8081/health`
+3. Check runner container logs: `docker compose logs stats-cmd-runner`
 
 ### "No log file available" message
 
-1. Ensure the shared log volume is mounted: `./strava-sh-logs:/var/log/strava-helper/command-logs`
-2. Check if the directory exists: `ls -la ./strava-sh-logs/`
-3. Verify helper has write permissions: `docker compose exec strava-command-helper ls -la /var/log/strava-helper/command-logs`
-4. Check helper logs for file creation errors: `docker compose logs strava-command-helper | grep log_file`
+1. Ensure the shared log volume is mounted: `./stats-cmd-logs:/logs`
+2. Check if the directory exists: `ls -la ./stats-cmd-logs/`
+3. Verify helper has write permissions: `docker compose exec stats-cmd-helper ls -la /logs`
+4. Check helper logs for file creation errors: `docker compose logs stats-cmd-helper | grep log`
 
 ### Command execution times out
 
@@ -473,25 +470,25 @@ If commands still timeout:
 Discovery has a 30-second timeout (helper) + 5-second buffer (runner/frontend):
 1. Ensure Statistics for Strava container is running and healthy
 2. Test manually: `docker exec statistics-for-strava php bin/console list --format=json`
-3. Check helper logs: `docker compose logs strava-command-helper | grep discover`
+3. Check helper logs: `docker compose logs stats-cmd-helper | grep discover`
 
 ---
 
 ## **11. Viewing Logs**
 
-### Structured Server Logs
+### Container Logs
 
-Runner and helper write structured JSON logs:
+View runner and helper logs via Docker:
 
 ```bash
 # Real-time runner logs
-tail -f ./statistics-for-strava/runner-logs/runner.log | jq
+docker compose logs -f stats-cmd-runner
 
-# Real-time helper logs (if mounted separately)
-docker compose logs -f strava-command-helper | jq
+# Real-time helper logs
+docker compose logs -f stats-cmd-helper
 
-# Last 50 entries
-tail -50 ./statistics-for-strava/runner-logs/runner.log | jq
+# Last 50 entries from runner
+docker compose logs --tail 50 stats-cmd-runner
 ```
 
 ### Command Execution Logs
@@ -500,19 +497,19 @@ Individual command output is saved to timestamped files:
 
 ```bash
 # List all command logs
-ls -lh ./strava-sh-logs/
+ls -lh ./stats-cmd-logs/
 
 # View a specific log
-cat ./strava-sh-logs/2026-01-23_14-30-45_build-files_0.log
+cat ./stats-cmd-logs/2026-01-23_14-30-45_build-files_0.log
 
 # View most recent log
-ls -t ./strava-sh-logs/*.log | head -1 | xargs cat
+ls -t ./stats-cmd-logs/*.log | head -1 | xargs cat
 
 # Find failed commands (non-zero exit codes)
-ls ./strava-sh-logs/*_[^0].log
+ls ./stats-cmd-logs/*_[^0].log
 
 # Search logs for errors
-grep -i error ./strava-sh-logs/*.log
+grep -i error ./stats-cmd-logs/*.log
 ```
 
 You can also view logs from the UI:
@@ -522,8 +519,8 @@ You can also view logs from the UI:
 Container logs are available via:
 
 ```bash
-docker compose logs -f strava-runner
-docker compose logs -f strava-command-helper
+docker compose logs -f stats-cmd-runner
+docker compose logs -f stats-cmd-helper
 ```
 
 ---
@@ -538,8 +535,7 @@ docker compose logs -f strava-command-helper
 | Console page | Functional | Shows disabled message |
 | Health check | Active (every 30s) | Not performed |
 | Command execution | Allowed | Blocked |
-| Server logs | Written to `runner-logs/` | No logs |
-| Command logs | Written to `strava-sh-logs/` | No logs |
+| Command logs | Written to `stats-cmd-logs/` | No logs |
 | Command discovery | Available | Not available |
 | Real-time streaming | Active with keep-alive | Not available |
 | Execution history | Tracked with log links | Not tracked |

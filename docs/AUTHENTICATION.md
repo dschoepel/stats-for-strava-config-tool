@@ -95,39 +95,38 @@ Copy the generated string to your `.env` file as `SESSION_SECRET`.
 
 ### Step 1: Configure Environment
 
-1. Open your `.env` file
+1. Copy `.env.config-tool.example` to `.env.config-tool`
 2. Set `ADMIN_USERNAME` to your desired username (e.g., `dave`)
 3. **Generate a strong `SESSION_SECRET`** (see above)
 4. Leave `ADMIN_PASSWORD_HASH` empty
 5. Save the file
 
-### Step 2: Install Dependencies
+### Step 2: Start the Application
 
-```powershell
-npm install
+**Docker (Recommended):**
+
+```bash
+docker compose up -d config-manager
 ```
 
-This installs:
+**Standalone (Node.js):**
 
-- `bcryptjs` - Password hashing
-- `jsonwebtoken` - Session token signing/verification
-- `cookie` - Cookie serialization
-
-### Step 3: Start the Application
-
-```powershell
+```bash
+npm install
 npm run dev
 ```
 
-### Step 4: Register
+### Step 3: Register
 
-1. Navigate to `http://localhost:3000`
+1. Navigate to your Config Tool URL:
+   - Docker: `http://localhost:8092`
+   - Standalone: `http://localhost:3000`
 2. You'll be redirected to `/register`
 3. Enter your password (minimum 8 characters)
 4. Confirm your password
 5. Click **Register**
 
-Your password will be hashed and stored in `.env` as `ADMIN_PASSWORD_HASH`. You'll be automatically logged in.
+Your password will be hashed and stored in `.env.config-tool` as `ADMIN_PASSWORD_HASH`. You'll be automatically logged in.
 
 ---
 
@@ -135,7 +134,9 @@ Your password will be hashed and stored in `.env` as `ADMIN_PASSWORD_HASH`. You'
 
 ### Login
 
-1. Navigate to `http://localhost:3000/login`
+1. Navigate to your Config Tool login URL:
+   - Docker: `http://localhost:8092/login`
+   - Standalone: `http://localhost:3000/login`
 2. Enter your username and password
 3. Click **Sign In**
 
@@ -160,7 +161,9 @@ window.location.href = '/login';
 
 If you forget your password:
 
-1. Navigate to `http://localhost:3000/reset-password`
+1. Navigate to your reset password URL:
+   - Docker: `http://localhost:8092/reset-password`
+   - Standalone: `http://localhost:3000/reset-password`
 2. Click **Generate Reset Token**
 3. Copy the generated token (also saved to `.env` as `PASSWORD_RESET_TOKEN`)
 4. Paste the token into the form
@@ -306,7 +309,16 @@ Change the user's password (requires current password verification).
 - Validates current password using bcrypt
 - Hashes new password with bcrypt (salt rounds: 10)
 - Updates `ADMIN_PASSWORD_HASH` in `.env` file
+- **Regenerates `SESSION_SECRET`** to invalidate all existing sessions (v1.1.0+)
 - Clears session cookie (forces re-login)
+
+**Security Note (v1.1.0+):**
+
+When you change your password, the `SESSION_SECRET` is automatically regenerated. This invalidates **all** existing session tokens across all devices/browsers, not just the current session. This is a security feature that ensures:
+
+- Compromised sessions from the old password are invalidated
+- Any tokens an attacker may have captured become useless
+- A clean security slate with the new password
 
 ---
 
@@ -452,6 +464,97 @@ Clear the session cookie.
 
 ---
 
+### `POST /api/auth/refresh`
+
+Refresh the session token to extend the session duration. Useful for long-running operations like console commands.
+
+**Authentication:** Required (protected by session cookie)
+
+**Request:** No body required
+
+**Response (success):**
+
+```json
+{
+  "success": true,
+  "message": "Token refreshed successfully"
+}
+```
+
+**Response (error - not authenticated):**
+
+```json
+{
+  "success": false,
+  "error": "Not authenticated",
+  "code": "NOT_AUTHENTICATED"
+}
+```
+
+**Response (error - token expired):**
+
+```json
+{
+  "success": false,
+  "error": "Session expired",
+  "code": "TOKEN_EXPIRED"
+}
+```
+
+**Response (error - token invalid):**
+
+```json
+{
+  "success": false,
+  "error": "Invalid token",
+  "code": "TOKEN_INVALID"
+}
+```
+
+**Behavior:**
+
+- Verifies the current session token
+- Issues a new token with a fresh expiration time
+- Sets a new `sfs_session` cookie
+- Session duration resets to `SESSION_MAX_AGE` from current time
+
+**Use Cases:**
+
+- Extend sessions during long-running operations (console commands)
+- Keep sessions alive for active users
+- Prevent session timeout during data entry
+
+---
+
+## Token Error Codes
+
+The authentication system distinguishes between different error conditions with specific error codes:
+
+| Code | Description | User Action |
+|------|-------------|-------------|
+| `NOT_AUTHENTICATED` | No session cookie present | Redirect to login |
+| `TOKEN_EXPIRED` | Token was valid but has expired | Redirect to login |
+| `TOKEN_INVALID` | Token signature invalid or malformed | Redirect to login |
+| `SESSION_SECRET_CHANGED` | Session secret was regenerated | Redirect to login |
+
+These codes help client-side code determine the appropriate response:
+
+```javascript
+// Example client-side handling
+const response = await fetch('/api/some-protected-route');
+const data = await response.json();
+
+if (!data.success && data.code === 'TOKEN_EXPIRED') {
+  // Session expired - redirect to login
+  window.location.href = '/login?reason=expired';
+} else if (!data.success && data.code === 'TOKEN_INVALID') {
+  // Token corrupted - clear and redirect
+  window.location.href = '/login?reason=invalid';
+}
+```
+
+---
+
 ## Middleware & Route Protection
 
 The application uses `proxy.js` (Next.js 16 middleware) to protect routes from unauthorized access.
@@ -501,9 +604,9 @@ All routes are protected by default and require authentication **except**:
 
 - **Duration:** 7 days by default (configurable via `SESSION_MAX_AGE`)
 - **Type:** HTTP-only, signed JWT cookie
-- **Renewal:** Sessions do NOT auto-renew (use-it-or-lose-it model)
-- **Expiration:** After 7 days of inactivity, user must login again
-- **Security:** Cookie is cleared on logout and password change
+- **Renewal:** Sessions can be explicitly refreshed via `/api/auth/refresh` (v1.1.0+)
+- **Expiration:** After `SESSION_MAX_AGE` seconds from last login/refresh, user must login again
+- **Security:** Cookie is cleared on logout; all sessions invalidated on password change
 
 ---
 
@@ -671,6 +774,7 @@ app/
         ├── request-reset/route.js  # Reset token generator
         ├── reset-password/route.js # Password reset handler
         ├── change-password/route.js # Change password handler
+        ├── refresh/route.js        # Token refresh handler (v1.1.0+)
         ├── user/route.js           # Get current user info
         └── logout/route.js         # Logout handler
 
