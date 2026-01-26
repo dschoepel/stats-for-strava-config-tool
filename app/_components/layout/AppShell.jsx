@@ -178,7 +178,8 @@ export default function AppShell({ section = 'config', children }) {
       'Widget Definitions Help': '/docs/widget-definitions',
       'Settings Management Help': '/docs/settings-management',
       'Configuration Examples Help': '/docs/configuration-examples',
-      'Authentication Help': '/docs/authentication'
+      'Authentication Help': '/docs/authentication',
+      'SFS Console Help': '/docs/sfs-console'
     };
 
     const route = pageToRoute[page];
