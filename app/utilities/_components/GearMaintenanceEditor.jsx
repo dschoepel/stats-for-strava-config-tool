@@ -25,6 +25,9 @@ import { useToast } from '../../../src/hooks/useToast';
 import { getSetting } from '../../../src/utils/settingsManager';
 import { gearMaintenanceSchema, validateGearMaintenanceConfig } from '../../../src/schemas/gearMaintenanceSchema';
 import { loadGearMaintenance, saveGearMaintenance } from '../../../src/services';
+import { centsToDecimal, decimalToCents, validatePriceCurrency } from '../../../src/utils/currencyUtils';
+import { CurrencyInput } from '../../../src/components/ui/CurrencyInput';
+import { CurrencySelect } from '../../../src/components/ui/CurrencySelect';
 const ImagePicker = lazy(() => import('./gear-maintenance/ImagePicker'));
 import ImageThumbnail from './gear-maintenance/ImageThumbnail';
 import { Tooltip } from '../../_components/ui/Tooltip';
@@ -50,11 +53,13 @@ const intervalUnitCollection = createListCollection({
 
 const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
   const [config, setConfig] = useState(null);
+  const [originalConfig, setOriginalConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [imagePickerOpen, setImagePickerOpen] = useState(false);
   const [imagePickerTarget, setImagePickerTarget] = useState(null);
+  const [priceErrors, setPriceErrors] = useState({}); // Track validation errors for prices
   const [expandedComponents, setExpandedComponents] = useState({});
   const [expandedMaintenanceTasks, setExpandedMaintenanceTasks] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, type: null, data: null });
@@ -93,6 +98,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
         };
 
         setConfig(normalizedConfig);
+        setOriginalConfig(JSON.parse(JSON.stringify(normalizedConfig))); // Deep clone
       } else {
         throw new Error(data.error || 'Failed to load configuration');
       }
@@ -117,6 +123,21 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
       return;
     }
 
+    // Validate purchase price/currency pairing for all components
+    const priceValidationErrors = [];
+    config.components.forEach((component, index) => {
+      const priceValue = component.purchasePrice?.amountInCents ? centsToDecimal(component.purchasePrice.amountInCents) : '';
+      const validation = validatePriceCurrency(priceValue, component.purchasePrice?.currency);
+      if (!validation.isValid) {
+        priceValidationErrors.push(`Component ${index + 1} (${component.label || 'Unnamed'}): ${validation.error}`);
+      }
+    });
+    
+    if (priceValidationErrors.length > 0) {
+      showError(`Price validation errors:\n${priceValidationErrors.join('\n')}`);
+      return;
+    }
+
     // Validate schema
     const validation = validateGearMaintenanceConfig(config);
     if (!validation.valid) {
@@ -135,6 +156,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
       if (data.success) {
         showSuccess('Gear maintenance configuration saved successfully');
         setIsDirty(false);
+        setOriginalConfig(JSON.parse(JSON.stringify(config))); // Update original after save
 
         // Reload config from file to ensure we have the saved version
         await loadConfig();
@@ -185,7 +207,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
     const newGear = { gearId: '', imgSrc: '' };
     setConfig(prev => ({
       ...prev,
-      gears: [...prev.gears, newGear]
+      gears: [newGear, ...prev.gears]
     }));
     setIsDirty(true);
   }, []);
@@ -206,11 +228,18 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
 
   const handleConfirmDeleteGear = () => {
     const { gearIndex } = confirmDialog.data;
-    setConfig(prev => ({
-      ...prev,
-      gears: prev.gears.filter((_, i) => i !== gearIndex)
-    }));
-    setIsDirty(true);
+    setConfig(prev => {
+      const newConfig = {
+        ...prev,
+        gears: prev.gears.filter((_, i) => i !== gearIndex)
+      };
+      
+      // Check if config matches original after deletion
+      const isClean = JSON.stringify(newConfig) === JSON.stringify(originalConfig);
+      setIsDirty(!isClean);
+      
+      return newConfig;
+    });
     setConfirmDialog({ isOpen: false, type: null, data: null });
   };
 
@@ -624,6 +653,8 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
                                   ...prev,
                                   [globalIndex]: !prev[globalIndex]
                                 }))}
+                                priceErrors={priceErrors}
+                                setPriceErrors={setPriceErrors}
                               />
                             ))}
                           </VStack>
@@ -723,7 +754,9 @@ const ComponentEditor = memo(({
   expanded,
   onToggleExpand,
   maintenanceTasksExpanded,
-  onToggleMaintenanceTasks
+  onToggleMaintenanceTasks,
+  priceErrors,
+  setPriceErrors
 }) => {
   return (
     <Box borderWidth={1} borderColor="border" borderRadius="md" overflow="hidden">
@@ -852,32 +885,72 @@ const ComponentEditor = memo(({
               <Text fontWeight="medium" mb={2}>
                 Purchase Price (Optional)
               </Text>
-              <Grid templateColumns="2fr 1fr" gap={3}>
-                <Field.Root>
-                  <Field.Label>Amount (cents)</Field.Label>
-                  <Input
-                    type="number"
-                    value={component.purchasePrice?.amountInCents || ''}
-                    onChange={(e) => onUpdate(componentIndex, 'purchasePrice', {
-                      ...component.purchasePrice,
-                      amountInCents: parseInt(e.target.value) || 0
-                    })}
-                    placeholder="69000"
+              <Flex gap={3} align="start">
+                <Box flex="2">
+                  <CurrencyInput
+                    label="Amount"
+                    value={centsToDecimal(component.purchasePrice?.amountInCents) || ''}
+                    currency={component.purchasePrice?.currency}
+                    onChange={(newValue) => {
+                      onUpdate(componentIndex, 'purchasePrice', {
+                        ...component.purchasePrice,
+                        amountInCents: decimalToCents(newValue)
+                      });
+                    }}
+                    onBlur={() => {
+                      // Validate on blur
+                      const validation = validatePriceCurrency(
+                        component.purchasePrice?.amountInCents ? centsToDecimal(component.purchasePrice.amountInCents) : '',
+                        component.purchasePrice?.currency
+                      );
+                      if (!validation.isValid) {
+                        setPriceErrors(prev => ({
+                          ...prev,
+                          [`component-${componentIndex}`]: validation.error
+                        }));
+                      } else {
+                        setPriceErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[`component-${componentIndex}`];
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    error={priceErrors[`component-${componentIndex}`]}
                   />
-                </Field.Root>
-                <Field.Root>
-                  <Field.Label>Currency</Field.Label>
-                  <Input
-                    value={component.purchasePrice?.currency || 'USD'}
-                    onChange={(e) => onUpdate(componentIndex, 'purchasePrice', {
-                      ...component.purchasePrice,
-                      currency: e.target.value.toUpperCase()
-                    })}
-                    placeholder="USD"
-                    maxLength={3}
+                </Box>
+                <Box flex="1">
+                  <CurrencySelect
+                    label="Currency"
+                    value={component.purchasePrice?.currency || ''}
+                    onChange={(newCurrency) => {
+                      onUpdate(componentIndex, 'purchasePrice', {
+                        ...component.purchasePrice,
+                        currency: newCurrency || undefined
+                      });
+                      
+                      // Validate immediately when currency changes
+                      const validation = validatePriceCurrency(
+                        component.purchasePrice?.amountInCents ? centsToDecimal(component.purchasePrice.amountInCents) : '',
+                        newCurrency
+                      );
+                      if (!validation.isValid) {
+                        setPriceErrors(prev => ({
+                          ...prev,
+                          [`component-${componentIndex}`]: validation.error
+                        }));
+                      } else {
+                        setPriceErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[`component-${componentIndex}`];
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    placeholder="Select currency"
                   />
-                </Field.Root>
-              </Grid>
+                </Box>
+              </Flex>
             </Box>
 
             {/* Maintenance Tasks */}
