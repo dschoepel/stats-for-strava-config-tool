@@ -53,6 +53,7 @@ const intervalUnitCollection = createListCollection({
 
 const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
   const [config, setConfig] = useState(null);
+  const [originalConfig, setOriginalConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -97,6 +98,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
         };
 
         setConfig(normalizedConfig);
+        setOriginalConfig(JSON.parse(JSON.stringify(normalizedConfig))); // Deep clone
       } else {
         throw new Error(data.error || 'Failed to load configuration');
       }
@@ -154,6 +156,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
       if (data.success) {
         showSuccess('Gear maintenance configuration saved successfully');
         setIsDirty(false);
+        setOriginalConfig(JSON.parse(JSON.stringify(config))); // Update original after save
 
         // Reload config from file to ensure we have the saved version
         await loadConfig();
@@ -204,7 +207,7 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
     const newGear = { gearId: '', imgSrc: '' };
     setConfig(prev => ({
       ...prev,
-      gears: [...prev.gears, newGear]
+      gears: [newGear, ...prev.gears]
     }));
     setIsDirty(true);
   }, []);
@@ -225,11 +228,18 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
 
   const handleConfirmDeleteGear = () => {
     const { gearIndex } = confirmDialog.data;
-    setConfig(prev => ({
-      ...prev,
-      gears: prev.gears.filter((_, i) => i !== gearIndex)
-    }));
-    setIsDirty(true);
+    setConfig(prev => {
+      const newConfig = {
+        ...prev,
+        gears: prev.gears.filter((_, i) => i !== gearIndex)
+      };
+      
+      // Check if config matches original after deletion
+      const isClean = JSON.stringify(newConfig) === JSON.stringify(originalConfig);
+      setIsDirty(!isClean);
+      
+      return newConfig;
+    });
     setConfirmDialog({ isOpen: false, type: null, data: null });
   };
 
@@ -875,12 +885,12 @@ const ComponentEditor = memo(({
               <Text fontWeight="medium" mb={2}>
                 Purchase Price (Optional)
               </Text>
-              <Grid templateColumns="2fr 1fr" gap={3}>
-                <Box>
+              <Flex gap={3} align="start">
+                <Box flex="2">
                   <CurrencyInput
                     label="Amount"
-                    value={centsToDecimal(component.purchasePrice?.amountInCents)}
-                    currency={component.purchasePrice?.currency || 'USD'}
+                    value={centsToDecimal(component.purchasePrice?.amountInCents) || ''}
+                    currency={component.purchasePrice?.currency}
                     onChange={(newValue) => {
                       onUpdate(componentIndex, 'purchasePrice', {
                         ...component.purchasePrice,
@@ -909,19 +919,38 @@ const ComponentEditor = memo(({
                     error={priceErrors[`component-${componentIndex}`]}
                   />
                 </Box>
-                <Box>
+                <Box flex="1">
                   <CurrencySelect
+                    label="Currency"
                     value={component.purchasePrice?.currency || ''}
                     onChange={(newCurrency) => {
                       onUpdate(componentIndex, 'purchasePrice', {
                         ...component.purchasePrice,
                         currency: newCurrency || undefined
                       });
+                      
+                      // Validate immediately when currency changes
+                      const validation = validatePriceCurrency(
+                        component.purchasePrice?.amountInCents ? centsToDecimal(component.purchasePrice.amountInCents) : '',
+                        newCurrency
+                      );
+                      if (!validation.isValid) {
+                        setPriceErrors(prev => ({
+                          ...prev,
+                          [`component-${componentIndex}`]: validation.error
+                        }));
+                      } else {
+                        setPriceErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[`component-${componentIndex}`];
+                          return newErrors;
+                        });
+                      }
                     }}
-                    placeholder="Currency"
+                    placeholder="Select currency"
                   />
                 </Box>
-              </Grid>
+              </Flex>
             </Box>
 
             {/* Maintenance Tasks */}

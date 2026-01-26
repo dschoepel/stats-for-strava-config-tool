@@ -1,18 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { NumberInput, Text } from '@chakra-ui/react';
+import { useState } from 'react';
+import { Input, Field } from '@chakra-ui/react';
 
 /**
- * Parse currency input - remove all non-numeric characters except decimal point and minus
- */
-const parseCurrency = (value) => value.replace(/[^0-9.-]+/g, '');
-
-/**
- * CurrencyInput - Formatted currency input using Intl.NumberFormat
+ * CurrencyInput - Simple currency input field (stores as decimal string)
  * @param {Object} props
  * @param {string} props.value - Decimal value as string (e.g., "99.99")
- * @param {string} props.currency - ISO 4217 currency code (e.g., "USD")
+ * @param {string} props.currency - ISO 4217 currency code (e.g., "USD") - for display only
  * @param {Function} props.onChange - Callback when value changes (value: string) => void
  * @param {string} props.label - Label text
  * @param {boolean} props.isRequired - Whether field is required
@@ -22,86 +17,87 @@ const parseCurrency = (value) => value.replace(/[^0-9.-]+/g, '');
  */
 export function CurrencyInput({
   value = '',
-  currency = 'USD',
+  currency = null,
   onChange,
-  label = 'Price',
+  label = 'Amount',
   isRequired = false,
   error = null,
   isDisabled = false,
   onBlur = null
 }) {
-  const [internalValue, setInternalValue] = useState(value);
+  // Keep local state for typing without formatting interference
+  const [localValue, setLocalValue] = useState(value);
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Update internal value when external value changes
-  useEffect(() => {
-    setInternalValue(value);
-  }, [value]);
-
-  // Get browser locale for formatting
-  const locale = useMemo(() => {
-    if (typeof navigator !== 'undefined') {
-      return navigator.language || 'en-US';
-    }
-    return 'en-US';
-  }, []);
-
-  // Create formatter based on currency and locale
-  const formatter = useMemo(() => {
+  // Format value with currency symbol when not focused
+  const formatValue = (val) => {
+    if (!val || !currency || isFocused) return val;
+    
     try {
-      return new Intl.NumberFormat(locale, {
+      const numValue = parseFloat(val);
+      if (isNaN(numValue)) return val;
+      
+      return new Intl.NumberFormat(undefined, {
         style: 'currency',
-        currency: currency || 'USD',
+        currency: currency,
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
-      });
+      }).format(numValue);
     } catch {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
+      return val;
     }
-  }, [currency, locale]);
+  };
 
-  const handleValueChange = (details) => {
-    const newValue = details.value;
-    setInternalValue(newValue);
-    onChange(newValue);
+  const handleChange = (e) => {
+    let newValue = e.target.value;
+    
+    // Remove currency symbols and formatting
+    newValue = newValue.replace(/[^0-9.]/g, '');
+    
+    // Allow empty, numbers, and one decimal point with up to 2 decimal places
+    if (newValue === '' || /^\d*\.?\d{0,2}$/.test(newValue)) {
+      setLocalValue(newValue);
+      onChange(newValue);
+    }
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    setLocalValue(value); // Set to raw value when focusing
   };
 
   const handleBlur = () => {
+    setIsFocused(false);
+    setLocalValue(value);
     if (onBlur) {
       onBlur();
     }
   };
 
-  return (
-    <>
-      <NumberInput.Root
-        value={internalValue}
-        onValueChange={handleValueChange}
-        format={(val) => formatter.format(Number(val) || 0)}
-        parse={parseCurrency}
-        min={0}
-        step={1}
-        invalid={!!error}
-        disabled={isDisabled}
-      >
-        {label && <NumberInput.Label>{label}{isRequired && ' *'}</NumberInput.Label>}
-        <NumberInput.Control>
-          <NumberInput.Input onBlur={handleBlur} />
-          <NumberInput.IncrementTrigger />
-          <NumberInput.DecrementTrigger />
-        </NumberInput.Control>
-      </NumberInput.Root>
+  const displayValue = isFocused ? localValue : formatValue(localValue || value);
 
-      {error && (
-        <Text color="red.500" fontSize="sm" mt={1}>
-          {error}
-        </Text>
+  return (
+    <Field.Root invalid={!!error}>
+      {label && (
+        <Field.Label>
+          {label}{isRequired && ' *'}
+        </Field.Label>
       )}
-    </>
+      <Input
+        type="text"
+        value={displayValue || ''}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        disabled={isDisabled}
+        placeholder="0.00"
+        autoComplete="off"
+      />
+      {error && (
+        <Field.ErrorText>
+          {error}
+        </Field.ErrorText>
+      )}
+    </Field.Root>
   );
 }

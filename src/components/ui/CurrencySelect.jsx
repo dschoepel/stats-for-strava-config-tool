@@ -8,6 +8,7 @@ import { COMMON_CURRENCIES, OTHER_CURRENCIES } from '../../utils/currencyData';
  * @param {Object} props
  * @param {string} props.value - Selected currency code (e.g., "USD")
  * @param {Function} props.onChange - Callback when currency changes (code) => void
+ * @param {string} props.label - Label text
  * @param {boolean} props.isRequired - Whether currency is required
  * @param {string} props.error - Error message to display
  * @param {boolean} props.isDisabled - Whether select is disabled
@@ -16,6 +17,7 @@ import { COMMON_CURRENCIES, OTHER_CURRENCIES } from '../../utils/currencyData';
 export function CurrencySelect({
   value,
   onChange,
+  label = null,
   isRequired = false,
   error = null,
   isDisabled = false,
@@ -23,13 +25,18 @@ export function CurrencySelect({
 }) {
   return (
     <>
+      {label && (
+        <Text fontWeight="medium" mb={1}>
+          {label}{isRequired && ' *'}
+        </Text>
+      )}
       <NativeSelect.Root
-        value={value || ''}
-        onValueChange={(details) => onChange(details.value || null)}
         invalid={!!error}
         disabled={isDisabled}
       >
         <NativeSelect.Field
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value || null)}
           placeholder={placeholder}
           required={isRequired}
         >
