@@ -400,8 +400,8 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
   }
 
   return (
-    <Box p={4}>
-      <VStack gap={6} align="stretch">
+    <Box p={{ base: 2, sm: 3, md: 4 }}>
+      <VStack gap={{ base: 4, sm: 5, md: 6 }} align="stretch">
         {/* Header */}
         <Flex justify="space-between" align={{ base: "stretch", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={{ base: 3, sm: 0 }}>
           <Box>
@@ -633,7 +633,6 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
                                 key={`${globalIndex}-${(component.attachedTo || []).join(',')}`}
                                 component={component}
                                 componentIndex={globalIndex}
-                                allComponents={config.components}
                                 hashtagPrefix={config.hashtagPrefix}
                                 gearMaintenancePath={gearMaintenancePath}
                                 availableGears={config.gears}
@@ -741,7 +740,6 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
 const ComponentEditor = memo(({
   component,
   componentIndex,
-  allComponents,
   hashtagPrefix,
   gearMaintenancePath,
   availableGears,
@@ -882,11 +880,11 @@ const ComponentEditor = memo(({
 
             {/* Purchase Price */}
             <Box>
-              <Text fontWeight="medium" mb={2}>
+              <Text fontWeight="medium" mb={2} fontSize={{ base: "sm", sm: "md" }}>
                 Purchase Price (Optional)
               </Text>
-              <Flex gap={3} align="start">
-                <Box flex="2">
+              <Flex gap={3} align="start" direction={{ base: "column", sm: "row" }}>
+                <Box flex={{ base: "auto", sm: "2" }} w={{ base: "full", sm: "auto" }}>
                   <CurrencyInput
                     label="Amount"
                     value={centsToDecimal(component.purchasePrice?.amountInCents) || ''}
@@ -919,7 +917,7 @@ const ComponentEditor = memo(({
                     error={priceErrors[`component-${componentIndex}`]}
                   />
                 </Box>
-                <Box flex="1">
+                <Box flex={{ base: "auto", sm: "1" }} w={{ base: "full", sm: "auto" }}>
                   <CurrencySelect
                     label="Currency"
                     value={component.purchasePrice?.currency || ''}
@@ -959,6 +957,8 @@ const ComponentEditor = memo(({
                 justify="space-between"
                 align="center"
                 mb={2}
+                gap={2}
+                direction={{ base: "column", sm: "row" }}
               >
                 <HStack
                   flex={1}
@@ -967,9 +967,10 @@ const ComponentEditor = memo(({
                   p={2}
                   borderRadius="md"
                   _hover={{ bg: 'bg.muted' }}
+                  w={{ base: "full", sm: "auto" }}
                 >
                   <Box as={maintenanceTasksExpanded ? MdExpandMore : MdChevronRight} />
-                  <Text fontWeight="medium">
+                  <Text fontWeight="medium" fontSize={{ base: "sm", sm: "md" }}>
                     Maintenance Tasks ({component.maintenance?.length || 0})
                   </Text>
                 </HStack>
@@ -977,9 +978,11 @@ const ComponentEditor = memo(({
                   size="xs"
                   colorPalette="blue"
                   onClick={() => onAddTask(componentIndex)}
+                  w={{ base: "full", sm: "auto" }}
                 >
                   <MdAdd />
-                  Add Task
+                  <Text display={{ base: "inline", sm: "none" }} ml={1}>Add Task</Text>
+                  <Text display={{ base: "none", sm: "inline" }} ml={1}>Add Task</Text>
                 </Button>
               </Flex>
 
@@ -993,8 +996,8 @@ const ComponentEditor = memo(({
                     <VStack gap={2} align="stretch">
                   {component.maintenance.map((task, taskIndex) => (
                     <Box key={taskIndex} p={3} borderWidth={1} borderColor="border" borderRadius="md">
-                      <Flex justify="space-between" align="start" mb={2}>
-                        <Text fontSize="sm" fontWeight="medium">
+                      <Flex justify="space-between" align="start" mb={2} gap={2}>
+                        <Text fontSize="sm" fontWeight="medium" flex={1}>
                           Task {taskIndex + 1}{task.label ? ` - ${task.label}` : ''}
                         </Text>
                         <IconButton
@@ -1003,12 +1006,13 @@ const ComponentEditor = memo(({
                           colorPalette="red"
                           variant="ghost"
                           onClick={() => onDeleteTask(componentIndex, taskIndex)}
+                          flexShrink={0}
                         >
                           <MdClose />
                         </IconButton>
                       </Flex>
 
-                      <Grid templateColumns="1fr 1fr" gap={2}>
+                      <Grid templateColumns={{ base: "1fr", sm: "1fr 1fr" }} gap={2}>
                         <Field.Root>
                           <Field.Label fontSize="xs">Tag</Field.Label>
                           <Input
