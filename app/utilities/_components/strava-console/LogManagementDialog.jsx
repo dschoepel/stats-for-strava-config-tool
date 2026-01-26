@@ -4,14 +4,7 @@ import { useState } from 'react';
 import { Badge, Icon, Text, Table, HStack, Box, Dialog, Portal, Button, VStack } from '@chakra-ui/react';
 import { MdCheckCircle, MdError, MdClose } from 'react-icons/md';
 import FileManagerDialog from '../common/FileManagerDialog';
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}
+import { formatBytes } from './utils/formatters';
 
 export default function LogManagementDialog({ isOpen, onClose }) {
   const [logCount, setLogCount] = useState(0);
