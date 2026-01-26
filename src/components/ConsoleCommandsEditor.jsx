@@ -22,8 +22,7 @@ import {
   MdEdit,
   MdDelete,
   MdClose,
-  MdCheck,
-  MdDragIndicator
+  MdCheck
 } from 'react-icons/md';
 import { ConfirmDialog } from '../../app/_components/ui/ConfirmDialog';
 import { initialConsoleCommands } from '../utils/consoleCommandsManager';
@@ -464,9 +463,7 @@ export default function ConsoleCommandsEditor({ settings, onDirtyChange }) {
                   ) : (
                     // View mode
                     <Flex justify="space-between" align="flex-start" gap={4}>
-                      <HStack gap={3} align="flex-start">
-                        <Icon as={MdDragIndicator} color="textMuted" cursor="grab" mt={1} />
-                        <VStack align="flex-start" gap={1}>
+                      <VStack align="flex-start" gap={1} flex={1}>
                           <HStack gap={2}>
                             <Text fontWeight="medium" color="text">
                               {cmd.name}
@@ -479,7 +476,6 @@ export default function ConsoleCommandsEditor({ settings, onDirtyChange }) {
                             {cmd.description || 'No description'}
                           </Text>
                         </VStack>
-                      </HStack>
                       <HStack gap={1} flexShrink={0}>
                         <Button
                           size="xs"
