@@ -643,6 +643,8 @@ const GearMaintenanceEditor = ({ onDirtyChange } = {}) => {
                                   ...prev,
                                   [globalIndex]: !prev[globalIndex]
                                 }))}
+                                priceErrors={priceErrors}
+                                setPriceErrors={setPriceErrors}
                               />
                             ))}
                           </VStack>
@@ -742,7 +744,9 @@ const ComponentEditor = memo(({
   expanded,
   onToggleExpand,
   maintenanceTasksExpanded,
-  onToggleMaintenanceTasks
+  onToggleMaintenanceTasks,
+  priceErrors,
+  setPriceErrors
 }) => {
   return (
     <Box borderWidth={1} borderColor="border" borderRadius="md" overflow="hidden">
