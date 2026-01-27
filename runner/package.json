@@ -1,6 +1,6 @@
 {
   "name": "stats-cmd-runner",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Sidecar container for running Symfony console commands with real-time streaming",
   "type": "module",
   "main": "server.js",
