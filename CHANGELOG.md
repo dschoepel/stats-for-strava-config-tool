@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] — 2026-01-27
+
+### Fixed
+- Resolved React Fast Refresh warnings by extracting ConfigContext and useConfig hook to separate file
+- Updated 11 imports across pages and components to use new useConfig.js export
+- Removed unused handleOpenCronDialog and handleCloseCronDialog functions in DaemonConfigEditor
+- Fixed cronJobs memoization with proper dependencies [formData, getNestedValue]
+- Fixed handleRemoveCronJob to use functional setState, removed expandedJobs dependency
+- Fixed handleSaveCronExpression dependencies (removed cronDialogState.jobIndex)
+- Added console.error logging in widgetDefinitionsFileExists catch block
+- Enhanced AppShell error suppression for react-js-cron prop warnings
+
+### Added
+- Added daemon container restart notice to DaemonConfigEditor info banner
+- Added athleteProfile widget definition to widgetDefinitionsManager
+
+---
+
 ## [1.2.0] — 2026-01-26
 
 ### Documentation
