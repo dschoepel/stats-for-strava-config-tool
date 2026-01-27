@@ -150,15 +150,6 @@ const DaemonConfigEditor = ({
     items: CRON_ACTIONS,
   }), []);
 
-  // Memoize modal handlers
-  const handleOpenCronDialog = useCallback((jobIndex, currentExpression) => {
-    setCronDialogState({ isOpen: true, jobIndex, currentExpression });
-  }, []);
-
-  const handleCloseCronDialog = useCallback(() => {
-    setCronDialogState({ isOpen: false, jobIndex: null, currentExpression: '' });
-  }, []);
-
   return (
     <>
     <BaseConfigEditor
@@ -171,7 +162,8 @@ const DaemonConfigEditor = ({
       customValidation={validateDaemonFields}
     >
       {({ formData, handleFieldChange, getNestedValue, errors }) => {
-        const cronJobs = getNestedValue(formData, 'cron') || [];
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const cronJobs = useMemo(() => getNestedValue(formData, 'cron') || [], [formData, getNestedValue]);
 
         // Memoize list of used and available actions
         // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -207,10 +199,12 @@ const DaemonConfigEditor = ({
           const updated = cronJobs.filter((_, i) => i !== index);
           handleFieldChange('cron', updated);
           
-          const newExpanded = { ...expandedJobs };
-          delete newExpanded[index];
-          setExpandedJobs(newExpanded);
-        }, [cronJobs, handleFieldChange, expandedJobs]);
+          setExpandedJobs(prev => {
+            const newExpanded = { ...prev };
+            delete newExpanded[index];
+            return newExpanded;
+          });
+        }, [cronJobs, handleFieldChange]);
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const handleMoveCronJob = useCallback((index, direction) => {
@@ -234,7 +228,7 @@ const DaemonConfigEditor = ({
           if (cronDialogState.jobIndex !== null) {
             handleUpdateCronJob(cronDialogState.jobIndex, 'expression', newExpression);
           }
-        }, [cronDialogState.jobIndex, handleUpdateCronJob]);
+        }, [handleUpdateCronJob]);
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const toggleExpanded = useCallback((index) => {
@@ -268,17 +262,20 @@ const DaemonConfigEditor = ({
                   <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" color="text">
                     Docker Container Required
                   </Text>
-                  <Text fontSize={{ base: "xs", sm: "sm" }} color="text" opacity={0.9}>
-                    This configuration only applies if you have set up the daemon container. See{' '}
-                    <Link 
-                      href="https://statistics-for-strava-docs.robiningelbrecht.be/#/getting-started/installation?id=docker-composeyml" 
-                      isExternal
-                      color="blue.500"
-                      textDecoration="underline"
-                    >
-                      installation docs <Box as={MdOpenInNew} display="inline" boxSize="12px" />
-                    </Link>
-                  </Text>
+                  <Box as="ul" listStyleType="disc" listStylePosition="inside" fontSize={{ base: "xs", sm: "sm" }} color="text" opacity={0.9} sx={{ "& li": { marginBottom: "4px" } }} >
+                    <li>
+                      Be sure to restart the daemon container after making schedule changes.
+                    </li>
+
+                    <li>
+                      This configuration only applies if you have set up the daemon
+                      container. See{" "}
+                      <Link href="https://statistics-for-strava-docs.robiningelbrecht.be/#/getting-started/installation?id=docker-composeyml" isExternal color="blue.500" textDecoration="underline" >
+                        installation docs{" "}
+                        <Box as={MdOpenInNew} display="inline" boxSize="12px" />
+                      </Link>
+                    </li>
+                 </Box>
                 </VStack>
               </HStack>
             </Box>

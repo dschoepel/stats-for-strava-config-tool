@@ -426,6 +426,13 @@ metricsDisplayOrder: ['distance', 'movingTime', 'elevation']`,
     allowMultiple: false,
     hasConfig: false
   },
+    'athleteProfile': {
+    name: 'athleteProfile',
+    displayName: 'Athlete Profile',
+    description: 'This widget summarizes how you train. Each axis reflects a different normalized training habit, so higher values mean stronger emphasis.',
+    allowMultiple: false,
+    hasConfig: false
+  },
   'streaks': {
     name: "streaks",
     displayName: "Current streaks",

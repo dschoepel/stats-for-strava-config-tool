@@ -3,7 +3,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, VStack, Spinner, Text } from '@chakra-ui/react'
-import { useConfig } from '../../../src/state/ConfigProvider'
+import { useConfig } from '../../../src/state/useConfig'
 import { useDirtyState } from '../../../src/state/DirtyStateProvider'
 
 // Lazy-load the editor

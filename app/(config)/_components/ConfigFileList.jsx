@@ -17,7 +17,7 @@ import {
   readFile
 } from '../../../src/services';
 import { useSettings } from '../../../src/state/SettingsProvider';
-import { useConfig } from '../../../src/state/ConfigProvider';
+import { useConfig } from '../../../src/state/useConfig';
 
 const ConfigFileList = forwardRef((props, ref) => {
   // Use contexts
