@@ -1,22 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { ConfigContext } from './useConfig';
 import { useConfigData } from '../hooks/useConfigData';
 import { useToast } from '../contexts/ToastContext';
 import { useNavigation } from './NavigationProvider';
 import { useDirtyState } from './DirtyStateProvider';
 import { initializeWidgetDefinitions } from '../utils/widgetDefinitionsInitializer';
 import { initializeSportsList } from '../utils/sportsListInitializer';
-
-const ConfigContext = createContext();
-
-export const useConfig = () => {
-  const context = useContext(ConfigContext);
-  if (!context) {
-    throw new Error('useConfig must be used within a ConfigProvider');
-  }
-  return context;
-};
 
 export const ConfigProvider = ({ children }) => {
   const { showError, showSuccess } = useToast();

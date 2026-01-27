@@ -32,6 +32,7 @@ async function widgetDefinitionsFileExists() {
     const result = await readFile(filePath);
     return result.success;
   } catch (error) {
+    console.error('Error checking widget definitions file:', error);
     return false;
   }
 }

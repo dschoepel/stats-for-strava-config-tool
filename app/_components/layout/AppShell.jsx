@@ -17,7 +17,7 @@ import { useSettings } from '../../../src/state/SettingsProvider'
 import { useDialog } from '../../../src/state/DialogProvider'
 import { useDirtyState } from '../../../src/state/DirtyStateProvider'
 import { useNavigation } from '../../../src/state/NavigationProvider'
-import { useConfig } from '../../../src/state/ConfigProvider'
+import { useConfig } from '../../../src/state/useConfig'
 import { scanConfigFiles, parseSections as parseSectionsService, validateSections as validateSectionsService } from '../../../src/services'
 
 export default function AppShell({ section = 'config', children }) {
@@ -42,6 +42,7 @@ export default function AppShell({ section = 'config', children }) {
       if (
         message.includes('dropdownAlign') ||
         message.includes('popupClassName') ||
+        message.includes('does not recognize the') || // Catches "React does not recognize the `X` prop"
         // Suppress React 19 DevTools hydration instrumentation errors
         message.includes('React instrumentation encountered an error') ||
         message.includes('Offscreen Fiber child in a hydrated Suspense boundary')
