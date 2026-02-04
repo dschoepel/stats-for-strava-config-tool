@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stats for Strava – Screenshots</title>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #eee;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-weight: 500;
+    }
+
+    .slider {
+      position: relative;
+      max-width: 900px;   /* adjust if you want larger/smaller */
+      margin: 0 auto;
+    }
+
+    .slide {
+      display: none;
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    .slide img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    }
+
+    .caption {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #ccc;
+      background: rgba(0,0,0,0.4);
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin: 0 6px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #333;
+      color: #eee;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Stats for Strava – Screenshots</h1>
+
+  <div class="slider">
+
+    <!-- Slide 1 -->
+    <div class="slide active">
+      <img src="img/Dashboard Screenshot v1.2.1.png" alt="Dashboard view">
+      <div class="caption">Dashboard Overview</div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="slide">
+      <img src="img/Config - Appearance Editor Screenshot v1.2.1.png" alt="Config tool - Appearance Editor">
+      <div class="caption">Config tool - Appearance Editor</div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="slide">
+      <img src="img/Config - Scheduling Daemon Editor Screenshot v1.2.1.png" alt="Config tool - Scheduling Daemon Editor">
+      <div class="caption">Config tool - Scheduling Daemon Editor</div>
+    </div>
+
+        <!-- Slide 4 -->
+    <div class="slide active">
+      <img src="img/Gear Maintenance Screenshot v1.2.1.png" alt="Gear Maintenance">
+      <div class="caption">Gear Maintenance</div>
+    </div>
+
+    <!-- Slide 5 -->
+    <div class="slide">
+      <img src="img/YAML Utility Screenshot v1.2.1.png" alt="YAML Utiltity - File Editor">
+      <div class="caption">YAML Utility - File Editor</div>
+    </div>
+
+    <!-- Slide 6 -->
+    <div class="slide">
+      <img src="img/SFS Console Screenshot v1.2.1.png" alt="Statistics for Strava Command Console">
+      <div class="caption">Statistics for Strava Command Console</div>
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <button id="prev">Prev</button>
+    <button id="next">Next</button>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    let index = 0;
+
+    function show(i) {
+      slides[index].classList.remove('active');
+      index = (i + slides.length) % slides.length;
+      slides[index].classList.add('active');
+    }
+
+    document.getElementById('prev').onclick = () => show(index - 1);
+    document.getElementById('next').onclick = () => show(index + 1);
+  </script>
+
+</body>
+</html>
