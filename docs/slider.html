@@ -1,139 +1,796 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>Stats for Strava – Screenshots</title>
+    <meta charset="UTF-8" />
+    <title>Stats for Strava – Screenshots</title>
 
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #111;
-      color: #eee;
-      text-align: center;
-      margin: 0;
-      padding: 20px;
-    }
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #111;
+            --fg: #eee;
+            --card-bg: #1b1b1b;
+            --accent: #4ea1ff;
+            --accent-soft: #333;
+            --shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            --button-bg: #333;
+            --button-bg-hover: #555;
+            --dot-bg: #555;
+            --dot-active-bg: #fff;
+            --thumb-border: #555;
+            --thumb-active-border: #4ea1ff;
+        }
 
-    h1 {
-      margin-bottom: 30px;
-      font-weight: 500;
-    }
+        [data-theme="light"] {
+            --bg: #f5f5f5;
+            --fg: #111;
+            --card-bg: #ffffff;
+            --accent: #1f6feb;
+            --accent-soft: #e5e5e5;
+            --shadow: 0 0 16px rgba(0, 0, 0, 0.15);
+            --button-bg: #e0e0e0;
+            --button-bg-hover: #d0d0d0;
+            --dot-bg: #bbb;
+            --dot-active-bg: #111;
+            --thumb-border: #ccc;
+            --thumb-active-border: #1f6feb;
+        }
 
-    .slider {
-      position: relative;
-      max-width: 900px;   /* adjust if you want larger/smaller */
-      margin: 0 auto;
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    .slide {
-      display: none;
-    }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            transition: background 0.25s ease, color 0.25s ease;
+        }
 
-    .slide.active {
-      display: block;
-    }
+        h1 {
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
 
-    .slide img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
-    }
+        .subtitle {
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            opacity: 0.8;
+        }
 
-    .caption {
-      margin-top: 10px;
-      font-size: 1rem;
-      color: #ccc;
-      background: rgba(0,0,0,0.4);
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 4px;
-    }
+        .top-bar {
+            max-width: 900px;
+            margin: 0 auto 10px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
 
-    .controls {
-      margin-top: 20px;
-    }
+        .counter {
+            opacity: 0.8;
+        }
 
-    button {
-      padding: 8px 16px;
-      margin: 0 6px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background: #333;
-      color: #eee;
-      transition: background 0.2s;
-    }
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+        }
 
-    button:hover {
-      background: #555;
-    }
-  </style>
+        .theme-toggle button {
+            border: none;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1rem;
+        }
+
+        .slider-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .slider {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .track {
+            display: flex;
+            transition: transform 0.5s ease;
+            will-change: transform;
+            touch-action: pan-y;
+        }
+
+        .slide {
+            min-width: 100%;
+            padding: 16px;
+        }
+
+        .slide-inner {
+            position: relative;
+        }
+
+        .slide img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            cursor: zoom-in;
+            display: block;
+        }
+
+        .caption {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: var(--fg);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        [data-theme="light"] .caption {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .controls {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button.nav-btn {
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: var(--button-bg);
+            color: var(--fg);
+            transition: background 0.2s;
+        }
+
+        button.nav-btn:hover {
+            background: var(--button-bg-hover);
+        }
+
+        .dots {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--dot-bg);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .dot.active {
+            background: var(--dot-active-bg);
+            transform: scale(1.1);
+        }
+
+        .thumb-strip {
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: thin;
+        }
+
+        .thumb-strip::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .thumb-strip::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .thumb-strip::-webkit-scrollbar-thumb {
+            background: var(--accent-soft);
+            border-radius: 999px;
+        }
+
+        .thumb {
+            flex: 0 0 auto;
+            width: 110px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid var(--thumb-border);
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .thumb img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .thumb.active {
+            border-color: var(--thumb-active-border);
+            transform: translateY(-1px);
+        }
+
+        .help-hint {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: zoom-out;
+        }
+
+        .lightbox.open {
+            display: flex;
+        }
+
+        .lightbox-inner {
+            max-width: 95vw;
+            max-height: 95vh;
+            position: relative;
+        }
+
+        .lightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            cursor: default;
+        }
+
+        .lightbox-caption {
+            margin-top: 10px;
+            text-align: center;
+            color: #f5f5f5;
+            font-size: 0.95rem;
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .lightbox-btn {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: #fff;
+            font-size: 1.4rem;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .lightbox-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        /* Keyboard help overlay */
+        .help-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        .help-overlay.open {
+            display: flex;
+        }
+
+        .help-card {
+            background: #1e1e1e;
+            color: #f5f5f5;
+            padding: 20px 24px;
+            border-radius: 8px;
+            max-width: 360px;
+            text-align: left;
+            font-size: 0.9rem;
+            box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .help-card h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .help-card ul {
+            padding-left: 18px;
+            margin: 0 0 10px 0;
+        }
+
+        .help-card li {
+            margin-bottom: 4px;
+        }
+
+        .help-card-footer {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-align: right;
+        }
+
+        @media (max-width: 600px) {
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .theme-toggle {
+                align-self: flex-end;
+            }
+        }
+    </style>
 </head>
 
 <body>
+    <div class="slider-wrapper" data-theme="">
+        <div style="margin-bottom: 20px; text-align: left;">
+            <a href="../README.md" style="color: var(--accent); text-decoration: none; font-size: 0.9rem;">
+                ← Back to README
+            </a>
+        </div>
 
-  <h1>Stats for Strava – Screenshots</h1>
+        <h1>Stats for Strava – Screenshots</h1>
+        <div class="subtitle">Use arrows, swipe, dots, thumbnails, or click to view fullscreen.</div>
 
-  <div class="slider">
+        <div class="top-bar">
+            <div class="counter" id="slide-counter">Slide 1 of 6</div>
+            <div class="theme-toggle" id="theme-toggle">
+                <span id="theme-label">Auto</span>
+                <button type="button" aria-label="Toggle theme">🌓</button>
+            </div>
+        </div>
 
-    <!-- Slide 1 -->
-    <div class="slide active">
-      <img src="img/Dashboard Screenshot v1.2.1.png" alt="Dashboard view">
-      <div class="caption">Dashboard Overview</div>
+        <div class="slider" id="slider">
+            <div class="track">
+
+                <div class="slide">
+                    <div class="slide-inner">
+                        <img src="img/Dashboard Screenshot v1.2.1.png" alt="Dashboard view" loading="eager"
+                            data-full="img/Dashboard Screenshot v1.2.1.png">
+                        <div class="caption">Dashboard Overview</div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide-inner">
+                        <img src="img/Config - Appearance Editor Screenshot v1.2.1.png"
+                            alt="Config tool - Appearance Editor" loading="lazy"
+                            data-full="img/Config - Appearance Editor Screenshot v1.2.1.png">
+                        <div class="caption">Config tool – Appearance Editor</div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide-inner">
+                        <img src="img/Config - Scheduling Daemon Editor Screenshot v1.2.1.png"
+                            alt="Config tool - Scheduling Daemon Editor" loading="lazy"
+                            data-full="img/Config - Scheduling Daemon Editor Screenshot v1.2.1.png">
+                        <div class="caption">Config tool – Scheduling Daemon Editor</div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide-inner">
+                        <img src="img/Gear Maintenance Screenshot v1.2.1.png" alt="Gear Maintenance" loading="lazy"
+                            data-full="img/Gear Maintenance Screenshot v1.2.1.png">
+                        <div class="caption">Gear Maintenance</div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide-inner">
+                        <img src="img/YAML Utility Screenshot v1.2.1.png" alt="YAML Utility - File Editor"
+                            loading="lazy" data-full="img/YAML Utility Screenshot v1.2.1.png">
+                        <div class="caption">YAML Utility – File Editor</div>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide-inner">
+                        <img src="img/SFS Console Screenshot v1.2.1.png" alt="Statistics for Strava Command Console"
+                            loading="lazy" data-full="img/SFS Console Screenshot v1.2.1.png">
+                        <div class="caption">Statistics for Strava Command Console</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="nav-btn" id="prev">← Prev</button>
+            <button class="nav-btn" id="next">Next →</button>
+        </div>
+
+        <div class="dots" id="dots"></div>
+
+        <div class="thumb-strip" id="thumb-strip">
+            <div class="thumb">
+                <img src="img/Dashboard Screenshot v1.2.1.png" alt="Dashboard Overview thumbnail" loading="lazy">
+            </div>
+            <div class="thumb">
+                <img src="img/Config - Appearance Editor Screenshot v1.2.1.png"
+                    alt="Config tool - Appearance Editor thumbnail" loading="lazy">
+            </div>
+            <div class="thumb">
+                <img src="img/Config - Scheduling Daemon Editor Screenshot v1.2.1.png"
+                    alt="Config tool - Scheduling Daemon Editor thumbnail" loading="lazy">
+            </div>
+            <div class="thumb">
+                <img src="img/Gear Maintenance Screenshot v1.2.1.png" alt="Gear Maintenance thumbnail" loading="lazy">
+            </div>
+            <div class="thumb">
+                <img src="img/YAML Utility Screenshot v1.2.1.png" alt="YAML Utility - File Editor thumbnail"
+                    loading="lazy">
+            </div>
+            <div class="thumb">
+                <img src="img/SFS Console Screenshot v1.2.1.png" alt="Statistics for Strava Command Console thumbnail"
+                    loading="lazy">
+            </div>
+        </div>
+
+        <div class="help-hint">Press <strong>?</strong> for keyboard shortcuts.</div>
     </div>
 
-    <!-- Slide 2 -->
-    <div class="slide">
-      <img src="img/Config - Appearance Editor Screenshot v1.2.1.png" alt="Config tool - Appearance Editor">
-      <div class="caption">Config tool - Appearance Editor</div>
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <div class="lightbox-inner">
+            <div class="lightbox-close" id="lightbox-close">Esc or click to close</div>
+            <img id="lightbox-img" src="" alt="">
+            <div class="lightbox-caption" id="lightbox-caption"></div>
+            <div class="lightbox-nav">
+                <button class="lightbox-btn" id="lightbox-prev">‹</button>
+                <button class="lightbox-btn" id="lightbox-next">›</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Slide 3 -->
-    <div class="slide">
-      <img src="img/Config - Scheduling Daemon Editor Screenshot v1.2.1.png" alt="Config tool - Scheduling Daemon Editor">
-      <div class="caption">Config tool - Scheduling Daemon Editor</div>
+    <!-- Help overlay -->
+    <div class="help-overlay" id="help-overlay">
+        <div class="help-card">
+            <h2>Keyboard & Navigation</h2>
+            <ul>
+                <li><strong>← / →</strong> – Previous / next slide</li>
+                <li><strong>Space</strong> – Pause / resume auto‑play</li>
+                <li><strong>Enter</strong> – Open fullscreen (when focused on slider)</li>
+                <li><strong>Esc</strong> – Close fullscreen / help</li>
+                <li><strong>?</strong> – Toggle this help</li>
+            </ul>
+            <div class="help-card-footer">Click anywhere outside this card or press Esc to close.</div>
+        </div>
     </div>
 
-        <!-- Slide 4 -->
-    <div class="slide active">
-      <img src="img/Gear Maintenance Screenshot v1.2.1.png" alt="Gear Maintenance">
-      <div class="caption">Gear Maintenance</div>
-    </div>
+    <script>
+        (function () {
+            const wrapper = document.querySelector('.slider-wrapper');
+            const slider = document.getElementById('slider');
+            const track = slider.querySelector('.track');
+            const slides = Array.from(slider.querySelectorAll('.slide'));
+            const dotsContainer = document.getElementById('dots');
+            const thumbs = Array.from(document.querySelectorAll('.thumb'));
+            const counterEl = document.getElementById('slide-counter');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeLabel = document.getElementById('theme-label');
 
-    <!-- Slide 5 -->
-    <div class="slide">
-      <img src="img/YAML Utility Screenshot v1.2.1.png" alt="YAML Utiltity - File Editor">
-      <div class="caption">YAML Utility - File Editor</div>
-    </div>
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxCaption = document.getElementById('lightbox-caption');
+            const lightboxClose = document.getElementById('lightbox-close');
+            const lightboxPrev = document.getElementById('lightbox-prev');
+            const lightboxNext = document.getElementById('lightbox-next');
 
-    <!-- Slide 6 -->
-    <div class="slide">
-      <img src="img/SFS Console Screenshot v1.2.1.png" alt="Statistics for Strava Command Console">
-      <div class="caption">Statistics for Strava Command Console</div>
-    </div>
+            const helpOverlay = document.getElementById('help-overlay');
 
-  </div>
+            let index = 0;
+            let autoPlayInterval = null;
+            let isAutoPlaying = true;
+            let isUserPaused = false;
 
-  <div class="controls">
-    <button id="prev">Prev</button>
-    <button id="next">Next</button>
-  </div>
+            // Theme handling
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const storedTheme = localStorage.getItem('sfs-slider-theme') || 'auto';
 
-  <script>
-    const slides = Array.from(document.querySelectorAll('.slide'));
-    let index = 0;
+            function applyTheme(mode) {
+                if (mode === 'auto') {
+                    wrapper.dataset.theme = prefersDark ? 'dark' : 'light';
+                    themeLabel.textContent = 'Auto';
+                } else {
+                    wrapper.dataset.theme = mode;
+                    themeLabel.textContent = mode === 'dark' ? 'Dark' : 'Light';
+                }
+            }
 
-    function show(i) {
-      slides[index].classList.remove('active');
-      index = (i + slides.length) % slides.length;
-      slides[index].classList.add('active');
-    }
+            function getCurrentTheme() {
+                return wrapper.dataset.theme || (prefersDark ? 'dark' : 'light');
+            }
 
-    document.getElementById('prev').onclick = () => show(index - 1);
-    document.getElementById('next').onclick = () => show(index + 1);
-  </script>
+            function cycleTheme() {
+                const current = localStorage.getItem('sfs-slider-theme') || 'auto';
+                const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+                localStorage.setItem('sfs-slider-theme', next);
+                applyTheme(next);
+            }
 
+            applyTheme(storedTheme);
+            themeToggle.addEventListener('click', cycleTheme);
+
+            // Dots
+            slides.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.addEventListener('click', () => goTo(i));
+                dotsContainer.appendChild(dot);
+            });
+            const dots = Array.from(document.querySelectorAll('.dot'));
+
+            function updateCounter() {
+                counterEl.textContent = 'Slide ' + (index + 1) + ' of ' + slides.length;
+            }
+
+            function updateUI() {
+                track.style.transform = 'translateX(-' + (index * 100) + '%)';
+                dots.forEach((d, i) => d.classList.toggle('active', i === index));
+                thumbs.forEach((t, i) => t.classList.toggle('active', i === index));
+                updateCounter();
+            }
+
+            function goTo(i) {
+                index = (i + slides.length) % slides.length;
+                updateUI();
+            }
+
+            document.getElementById('prev').onclick = () => {
+                goTo(index - 1);
+                userInteracted();
+            };
+            document.getElementById('next').onclick = () => {
+                goTo(index + 1);
+                userInteracted();
+            };
+
+            thumbs.forEach((thumb, i) => {
+                thumb.addEventListener('click', () => {
+                    goTo(i);
+                    userInteracted();
+                });
+            });
+
+            // Auto-play
+            function startAutoPlay() {
+                if (autoPlayInterval || !isAutoPlaying) return;
+                autoPlayInterval = setInterval(() => {
+                    goTo(index + 1);
+                }, 4000);
+            }
+
+            function stopAutoPlay() {
+                if (autoPlayInterval) {
+                    clearInterval(autoPlayInterval);
+                    autoPlayInterval = null;
+                }
+            }
+
+            function userInteracted() {
+                if (!isUserPaused) {
+                    stopAutoPlay();
+                    setTimeout(() => {
+                        if (!isUserPaused) startAutoPlay();
+                    }, 8000);
+                }
+            }
+
+            slider.addEventListener('mouseenter', () => {
+                stopAutoPlay();
+            });
+            slider.addEventListener('mouseleave', () => {
+                if (!isUserPaused) startAutoPlay();
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    stopAutoPlay();
+                } else if (!isUserPaused) {
+                    startAutoPlay();
+                }
+            });
+
+            startAutoPlay();
+
+            // Swipe / momentum-ish
+            let startX = 0;
+            let currentX = 0;
+            let isSwiping = false;
+            let hasMoved = false;
+            let startTime = 0;
+
+            slider.addEventListener('touchstart', e => {
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                currentX = startX;
+                isSwiping = true;
+                hasMoved = false;
+                startTime = Date.now();
+                stopAutoPlay();
+            }, { passive: true });
+
+            slider.addEventListener('touchmove', e => {
+                if (!isSwiping) return;
+                currentX = e.touches[0].clientX;
+                const dx = currentX - startX;
+                if (Math.abs(dx) > 10) hasMoved = true;
+                const offset = -index * slider.clientWidth + dx;
+                track.style.transition = 'none';
+                track.style.transform = 'translateX(' + offset + 'px)';
+            }, { passive: true });
+
+            slider.addEventListener('touchend', e => {
+                if (!isSwiping) return;
+                isSwiping = false;
+                track.style.transition = 'transform 0.5s ease';
+
+                const dx = currentX - startX;
+                const dt = Date.now() - startTime;
+                const velocity = dx / dt;
+
+                if (Math.abs(dx) > 50 || Math.abs(velocity) > 0.4) {
+                    if (dx > 0) index--;
+                    else index++;
+                }
+                goTo(index);
+                if (!isUserPaused) startAutoPlay();
+            });
+
+            // Lightbox
+            function openLightbox(i) {
+                const imgEl = slides[i].querySelector('img');
+                const fullSrc = imgEl.dataset.full || imgEl.src;
+                lightboxImg.src = fullSrc;
+                lightboxImg.alt = imgEl.alt || '';
+                const cap = slides[i].querySelector('.caption');
+                lightboxCaption.textContent = cap ? cap.textContent : '';
+                lightbox.classList.add('open');
+            }
+
+            function closeLightbox() {
+                lightbox.classList.remove('open');
+            }
+
+            slides.forEach((slide, i) => {
+                const img = slide.querySelector('img');
+                img.addEventListener('click', e => {
+                    e.stopPropagation();
+                    openLightbox(i);
+                });
+            });
+
+            lightbox.addEventListener('click', e => {
+                if (e.target === lightbox || e.target === lightboxClose) {
+                    closeLightbox();
+                }
+            });
+
+            lightboxPrev.addEventListener('click', e => {
+                e.stopPropagation();
+                goTo(index - 1);
+                openLightbox(index);
+            });
+
+            lightboxNext.addEventListener('click', e => {
+                e.stopPropagation();
+                goTo(index + 1);
+                openLightbox(index);
+            });
+
+            // Keyboard + help overlay
+            function toggleHelp() {
+                helpOverlay.classList.toggle('open');
+            }
+
+            helpOverlay.addEventListener('click', e => {
+                if (e.target === helpOverlay) {
+                    helpOverlay.classList.remove('open');
+                }
+            });
+
+            document.addEventListener('keydown', e => {
+                if (helpOverlay.classList.contains('open')) {
+                    if (e.key === 'Escape') helpOverlay.classList.remove('open');
+                    return;
+                }
+
+                if (lightbox.classList.contains('open')) {
+                    if (e.key === 'Escape') closeLightbox();
+                    else if (e.key === 'ArrowLeft') {
+                        goTo(index - 1);
+                        openLightbox(index);
+                    } else if (e.key === 'ArrowRight') {
+                        goTo(index + 1);
+                        openLightbox(index);
+                    }
+                    return;
+                }
+
+                if (e.key === 'ArrowLeft') {
+                    goTo(index - 1);
+                    userInteracted();
+                } else if (e.key === 'ArrowRight') {
+                    goTo(index + 1);
+                    userInteracted();
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    isUserPaused = !isUserPaused;
+                    if (isUserPaused) {
+                        stopAutoPlay();
+                    } else {
+                        startAutoPlay();
+                    }
+                } else if (e.key === 'Enter') {
+                    openLightbox(index);
+                } else if (e.key === '?') {
+                    toggleHelp();
+                } else if (e.key === 'Escape') {
+                    // handled above for overlays
+                }
+            });
+
+            // Initial UI sync
+            updateUI();
+        })();
+    </script>
 </body>
+
 </html>

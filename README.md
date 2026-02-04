@@ -19,6 +19,9 @@ This is a **web-based configuration editor** for Statistics for Strava. Instead 
 
 **Screenshot:** The dashboard view showing multi-file configuration mode, section mapping, and YAML utilities.
 
+## Additional Screenshots
+[Interactive slider](https://dschoepel.github.io/stats-for-strava-config-tool/slider.html)
+
 ## Do I Need This?
 
 **No, it's completely optional!** Statistics for Strava works fine with manual YAML editing. Use this tool if you:
