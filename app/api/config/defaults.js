@@ -48,16 +48,16 @@ export const INITIAL_SPORTS_LIST = {
     'InlineSkate', 'RollerSki', 'Skateboard'
   ],
   'Racquet & Paddle Sports': [
-    'Badminton', 'Pickleball', 'Racquetball', 'Squash', 'TableTennis', 'Tennis'
+    'Badminton', 'Pickleball', 'Racquetball', 'Squash', 'TableTennis', 'Tennis', 'Padel'
   ],
   Fitness: [
-    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining'
+    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining', 'Basketball', 'Volleyball'
   ],
   'Mind & Body Sports': [
-    'Pilates', 'Yoga'
+    'Pilates', 'Yoga', 'Dance'
   ],
   'Outdoor Sports': [
-    'Golf', 'RockClimbing', 'Sail', 'Soccer'
+    'Golf', 'RockClimbing', 'Sail', 'Soccer', 'Cricket'
   ],
   'Adaptive & Inclusive Sports': [
     'Handcycle', 'Wheelchair'
