@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+---
+
+## [1.2.2] — 2026-02-22
+
+### Security
+- Upgraded `next` to `16.1.6` to address security advisories affecting earlier versions.
+
+### Changed
+- Replaced direct `localStorage` access with centralized `src/utils/browserStorage.js` helpers to ensure SSR safety.
+- Marked client-only components with the `"use client"` directive where required.
+
+### Added
+- Added default sports to `INITIAL_SPORTS_LIST`: `Basketball`, `Volleyball`, `Cricket`, `Dance`, `Padel`.
+
+### Fixed
+- Resolved server-side ReferenceError caused by `localStorage` usage during build; project builds successfully.
+
+### Misc
+- Ran `npm audit fix` (non-breaking) and applied dependency updates; remaining advisories are in devDependencies.
+
+---
+
 ## [1.2.1] — 2026-01-27
 
 ### Fixed
