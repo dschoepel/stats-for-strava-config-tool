@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.3] — 2026-03-01
+
+### Added
+- Added optional **Use API Key** checkbox to the AI Provider Configuration section.
+  - When unchecked, the API key field is hidden and the key is saved as blank in YAML (`key: `).
+  - When checked, the API key field is shown and validated as non-empty before saving.
+  - On load, the checkbox auto-checks if an existing key value is present in YAML, and remains unchecked if the key is blank.
+  - The internal `useApiKey` flag is stripped from the output so it never appears in the saved YAML.
+
+---
+
 ## [1.2.2] — 2026-02-22
 
 ### Security
