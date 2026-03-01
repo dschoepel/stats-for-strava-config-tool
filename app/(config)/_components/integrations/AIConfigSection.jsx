@@ -45,6 +45,17 @@ const AIConfigSection = ({ config = {}, onChange, errors = {} }) => {
     });
   };
 
+  const handleToggleApiKey = (useKey) => {
+    onChange({
+      ...config,
+      configuration: {
+        ...config.configuration,
+        useApiKey: useKey,
+        key: useKey ? (config.configuration?.key || '') : ''
+      }
+    });
+  };
+
   return (
     <Box 
       p={4} 
@@ -169,37 +180,58 @@ const AIConfigSection = ({ config = {}, onChange, errors = {} }) => {
                   Provider Configuration
                 </Text>
 
-                {/* API Key */}
-                <Field.Root invalid={!!errors['ai.configuration.key']}>
-                  <Field.Label fontSize={{ base: "xs", sm: "sm" }}>API Key</Field.Label>
-                  <HStack gap={2}>
-                    <Input
-                      type={showApiKey ? "text" : "password"}
-                      value={config.configuration?.key || ''}
-                      onChange={(e) => handleUpdateConfig('key', e.target.value)}
-                      placeholder="YOUR-API-KEY"
-                      bg="inputBg"
-                      size={{ base: "sm", sm: "md" }}
-                      flex={1}
-                    />
-                    <IconButton
-                      aria-label={showApiKey ? "Hide API key" : "Show API key"}
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      size={{ base: "sm", sm: "md" }}
-                      variant="ghost"
-                    >
-                      {showApiKey ? <MdVisibilityOff /> : <MdVisibility />}
-                    </IconButton>
-                  </HStack>
-                  {errors['ai.configuration.key'] && (
-                    <Field.ErrorText fontSize={{ base: "xs", sm: "sm" }}>
-                      {errors['ai.configuration.key']}
-                    </Field.ErrorText>
-                  )}
+                {/* Use API Key */}
+                <Field.Root>
+                  <Checkbox.Root
+                    checked={!!config.configuration?.useApiKey}
+                    onCheckedChange={(e) => handleToggleApiKey(e.checked)}
+                    colorPalette="blue"
+                    size={{ base: "sm", sm: "md" }}
+                  >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control>
+                      <Checkbox.Indicator />
+                    </Checkbox.Control>
+                    <Checkbox.Label fontSize={{ base: "xs", sm: "sm" }}>Use API Key</Checkbox.Label>
+                  </Checkbox.Root>
                   <Field.HelperText fontSize={{ base: "xs", sm: "sm" }}>
-                    Your API key for the selected provider
+                    Enable to provide an API key for authentication with the selected provider
                   </Field.HelperText>
                 </Field.Root>
+
+                {/* API Key */}
+                {config.configuration?.useApiKey && (
+                  <Field.Root invalid={!!errors['ai.configuration.key']}>
+                    <Field.Label fontSize={{ base: "xs", sm: "sm" }}>API Key</Field.Label>
+                    <HStack gap={2}>
+                      <Input
+                        type={showApiKey ? "text" : "password"}
+                        value={config.configuration?.key || ''}
+                        onChange={(e) => handleUpdateConfig('key', e.target.value)}
+                        placeholder="YOUR-API-KEY"
+                        bg="inputBg"
+                        size={{ base: "sm", sm: "md" }}
+                        flex={1}
+                      />
+                      <IconButton
+                        aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        size={{ base: "sm", sm: "md" }}
+                        variant="ghost"
+                      >
+                        {showApiKey ? <MdVisibilityOff /> : <MdVisibility />}
+                      </IconButton>
+                    </HStack>
+                    {errors['ai.configuration.key'] && (
+                      <Field.ErrorText fontSize={{ base: "xs", sm: "sm" }}>
+                        {errors['ai.configuration.key']}
+                      </Field.ErrorText>
+                    )}
+                    <Field.HelperText fontSize={{ base: "xs", sm: "sm" }}>
+                      Your API key for the selected provider
+                    </Field.HelperText>
+                  </Field.Root>
+                )}
 
                 {/* Model */}
                 <Field.Root invalid={!!errors['ai.configuration.model']}>
@@ -259,7 +291,8 @@ AIConfigSection.propTypes = {
     configuration: PropTypes.shape({
       key: PropTypes.string,
       model: PropTypes.string,
-      url: PropTypes.string
+      url: PropTypes.string,
+      useApiKey: PropTypes.bool
     })
   }),
   onChange: PropTypes.func.isRequired,
