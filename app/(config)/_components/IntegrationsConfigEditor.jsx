@@ -16,10 +16,24 @@ const IntegrationsConfigEditor = ({
   isLoading,
   onDirtyChange
 }) => {
-  // Pass data as-is - let YAML serializer handle quoting naturally
+  // Strip internal UI flags before saving, then pass to onSave
   const handleSaveWithTransform = useCallback((formData) => {
-    onSave(formData);
+    const output = JSON.parse(JSON.stringify(formData));
+    if (output?.ai?.configuration) {
+      delete output.ai.configuration.useApiKey;
+    }
+    onSave(output);
   }, [onSave]);
+
+  // Inject useApiKey flag derived from whether a key value exists
+  const processedInitialData = useMemo(() => {
+    if (!initialData?.ai?.configuration) return initialData;
+    const data = JSON.parse(JSON.stringify(initialData));
+    if (data.ai.configuration.useApiKey === undefined) {
+      data.ai.configuration.useApiKey = !!data.ai.configuration.key;
+    }
+    return data;
+  }, [initialData]);
 
   // Custom validation for integrations fields
   const validateIntegrationsFields = useCallback((formData, getNestedValue) => {
@@ -47,8 +61,9 @@ const IntegrationsConfigEditor = ({
       }
       
       if (aiConfig.configuration) {
-        if (!aiConfig.configuration.key || aiConfig.configuration.key.trim() === '') {
-          errors['ai.configuration.key'] = 'API key is required';
+        if (aiConfig.configuration.useApiKey &&
+            (!aiConfig.configuration.key || aiConfig.configuration.key.trim() === '')) {
+          errors['ai.configuration.key'] = 'API key is required when "Use API Key" is enabled';
         }
         
         if (!aiConfig.configuration.model || aiConfig.configuration.model.trim() === '') {
@@ -92,7 +107,7 @@ const IntegrationsConfigEditor = ({
   return (
     <BaseConfigEditor
       sectionName="integrations"
-      initialData={initialData}
+      initialData={processedInitialData}
       onSave={handleSaveWithTransform}
       onCancel={onCancel}
       isLoading={isLoading}
