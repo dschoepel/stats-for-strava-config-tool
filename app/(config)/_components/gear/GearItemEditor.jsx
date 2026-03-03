@@ -34,6 +34,7 @@ const GearItemEditor = ({
   errors = {},
   defaultCurrency = 'USD',
   isCustomGear = false,
+  isRecordingDevice = false,
 }) => {
   const handleFieldUpdate = (field, value) => {
     onUpdate(index, { ...gear, [field]: value });
@@ -51,7 +52,7 @@ const GearItemEditor = ({
     handleFieldUpdate('retired', !gear.retired);
   };
 
-  const prefix = isCustomGear ? 'customGear.customGears' : 'stravaGear';
+  const prefix = isRecordingDevice ? 'recordingDevices.devices' : (isCustomGear ? 'customGear.customGears' : 'stravaGear');
   const gearError = errors[`${prefix}[${index}]`];
 
   return (
@@ -209,19 +210,21 @@ const GearItemEditor = ({
             </Box>
 
             {/* Retired Toggle */}
-            <HStack>
-              <Switch.Root
-                checked={gear.retired || false}
-                onCheckedChange={toggleRetired}
-                colorPalette="orange"
-              >
-                <Switch.HiddenInput />
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Label>Mark as Retired</Switch.Label>
-              </Switch.Root>
-            </HStack>
+            {!isRecordingDevice && (
+              <HStack>
+                <Switch.Root
+                  checked={gear.retired || false}
+                  onCheckedChange={toggleRetired}
+                  colorPalette="orange"
+                >
+                  <Switch.HiddenInput />
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Switch.Label>Mark as Retired</Switch.Label>
+                </Switch.Root>
+              </HStack>
+            )}
           </VStack>
         </Box>
       )}
@@ -241,7 +244,8 @@ GearItemEditor.propTypes = {
   canMoveUp: PropTypes.bool.isRequired,
   canMoveDown: PropTypes.bool.isRequired,
   error: PropTypes.object,
-  isCustomGear: PropTypes.bool
+  isCustomGear: PropTypes.bool,
+  isRecordingDevice: PropTypes.bool
 };
 
 export default GearItemEditor;

@@ -9,7 +9,7 @@ import {
   Flex,
   Checkbox,
 } from '@chakra-ui/react';
-import { MdInfo, MdDirectionsBike, MdWarning, MdBuild } from 'react-icons/md';
+import { MdInfo, MdDirectionsBike, MdWarning, MdBuild, MdDevices } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import GearList from './gear/GearList';
 import { useGearConfig } from './gear/useGearConfig';
@@ -74,6 +74,22 @@ const GearConfigEditor = ({
             hashtagPrefix: prefix
           });
         }, [handleFieldChange, customGearConfig]);
+
+        const recordingDevicesConfig = getNestedValue(formData, 'recordingDevices') || {
+          enabled: false,
+          devices: []
+        };
+        const recordingDevicesArray = recordingDevicesConfig.devices || [];
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleRecordingDevicesChange = useCallback((devices) => {
+          handleFieldChange('recordingDevices', { ...recordingDevicesConfig, devices });
+        }, [handleFieldChange, recordingDevicesConfig]);
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleToggleRecordingDevices = useCallback((checked) => {
+          handleFieldChange('recordingDevices', { ...recordingDevicesConfig, enabled: checked });
+        }, [handleFieldChange, recordingDevicesConfig]);
 
         return (
           <VStack align="stretch" gap={6}>
@@ -284,6 +300,94 @@ const GearConfigEditor = ({
                   >
                     <Text fontSize="sm" color="textMuted" mb={3}>
                       Custom gear is currently disabled. Enable it using the toggle above to start tracking custom gear with hashtags.
+                    </Text>
+                  </Box>
+                )}
+              </VStack>
+            </Box>
+
+            {/* Recording Devices Section */}
+            <Box
+              p={4}
+              bg="cardBg"
+              borderRadius="md"
+              border="1px solid"
+              borderColor="border"
+              boxShadow="sm"
+            >
+              <VStack align="stretch" gap={4}>
+                {/* Header with toggle */}
+                <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                  <Box flex="1" minW={{ base: "100%", sm: "auto" }}>
+                    <HStack gap={2}>
+                      <Box as={MdDevices} color="primary" boxSize="20px" />
+                      <Text fontSize={{ base: "md", sm: "lg" }} fontWeight="semibold" color="text">
+                        Recording Devices
+                      </Text>
+                    </HStack>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
+                      {recordingDevicesArray.length} {recordingDevicesArray.length === 1 ? 'item' : 'items'}
+                    </Text>
+                  </Box>
+                  <HStack gap={2} width={{ base: "100%", sm: "auto" }}>
+                    <Checkbox.Root
+                      checked={recordingDevicesConfig.enabled}
+                      onCheckedChange={(e) => handleToggleRecordingDevices(e.checked)}
+                      colorPalette="green"
+                      size={{ base: "sm", sm: "md" }}
+                    >
+                      <Checkbox.HiddenInput />
+                      <Checkbox.Control>
+                        <Checkbox.Indicator />
+                      </Checkbox.Control>
+                      <Checkbox.Label fontSize={{ base: "xs", sm: "sm" }}>
+                        Enable Recording Devices
+                      </Checkbox.Label>
+                    </Checkbox.Root>
+                  </HStack>
+                </Flex>
+
+                {/* Info Box */}
+                <Box
+                  p={3}
+                  bg="infoBg"
+                  borderRadius="md"
+                  border="1px solid"
+                  borderColor="border"
+                >
+                  <HStack gap={2} align="flex-start">
+                    <Box as={MdInfo} color="infoText" boxSize="16px" flexShrink={0} mt={0.5} />
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="text" opacity={0.9}>
+                      Track purchase prices for GPS watches, bike computers, and other recording devices
+                      to calculate relative cost per workout and hour. The device ID can be found by
+                      opening the device details popup (click the question-mark icon on the recording device page).
+                    </Text>
+                  </HStack>
+                </Box>
+
+                {/* Device List or Disabled Placeholder */}
+                {recordingDevicesConfig.enabled ? (
+                  <GearList
+                    gears={recordingDevicesArray}
+                    onChange={handleRecordingDevicesChange}
+                    errors={errors}
+                    defaultCurrency={defaultCurrency}
+                    isCustomGear={false}
+                    isRecordingDevice={true}
+                    title=""
+                  />
+                ) : (
+                  <Box
+                    p={8}
+                    textAlign="center"
+                    bg="panelBg"
+                    borderRadius="md"
+                    border="2px dashed"
+                    borderColor="border"
+                  >
+                    <Text fontSize="sm" color="textMuted">
+                      Recording devices tracking is currently disabled. Enable it using the toggle above
+                      to start tracking device purchase prices.
                     </Text>
                   </Box>
                 )}

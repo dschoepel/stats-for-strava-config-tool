@@ -134,6 +134,28 @@ export const useGearConfig = () => {
       }
     });
     
+    // Validate recording devices
+    const recordingDevicesConfig = getNestedValue(formData, 'recordingDevices') || {};
+    const recordingDevicesArray = recordingDevicesConfig.devices || [];
+
+    recordingDevicesArray.forEach((device, index) => {
+      if (!device.gearId || device.gearId.trim() === '') {
+        errors[`recordingDevices.devices[${index}].gearId`] = 'Device ID is required';
+      }
+      if (device.purchasePrice) {
+        if (device.purchasePrice.amountInCents === undefined || device.purchasePrice.amountInCents === null) {
+          errors[`recordingDevices.devices[${index}].purchasePrice.amountInCents`] = 'Amount is required when purchase price is specified';
+        } else if (device.purchasePrice.amountInCents < 0) {
+          errors[`recordingDevices.devices[${index}].purchasePrice.amountInCents`] = 'Amount must be positive';
+        }
+        if (!device.purchasePrice.currency || device.purchasePrice.currency.trim() === '') {
+          errors[`recordingDevices.devices[${index}].purchasePrice.currency`] = 'Currency is required when purchase price is specified';
+        } else if (!/^[A-Z]{3}$/.test(device.purchasePrice.currency)) {
+          errors[`recordingDevices.devices[${index}].purchasePrice.currency`] = 'Currency must be a 3-letter ISO code (e.g., USD, EUR, GBP)';
+        }
+      }
+    });
+
     return errors;
   };
 
