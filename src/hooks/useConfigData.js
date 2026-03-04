@@ -16,6 +16,91 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
   const [sectionData, setSectionData] = useState({});
   const [isLoadingSectionData, setIsLoadingSectionData] = useState(false);
 
+  const normalizeGearForEditor = useCallback((gearData = {}) => {
+    const recordingDevices = gearData.recordingDevices;
+    const customGear = gearData.customGear;
+
+    const normalizedCustomGear = Array.isArray(customGear)
+      ? customGear.map((item = {}) => {
+        const { retired, ...rest } = item;
+        return {
+          ...rest,
+          isRetired: item.isRetired ?? retired ?? false
+        };
+      })
+      : customGear;
+
+    if (Array.isArray(recordingDevices)) {
+      return {
+        ...gearData,
+        customGear: normalizedCustomGear,
+        recordingDevices: {
+          enabled: recordingDevices.length > 0,
+          devices: recordingDevices
+        }
+      };
+    }
+
+    if (recordingDevices && typeof recordingDevices === 'object') {
+      const devices = Array.isArray(recordingDevices.devices) ? recordingDevices.devices : [];
+      return {
+        ...gearData,
+        customGear: normalizedCustomGear,
+        recordingDevices: {
+          enabled: recordingDevices.enabled ?? devices.length > 0,
+          devices
+        }
+      };
+    }
+
+    return {
+      ...gearData,
+      customGear: normalizedCustomGear,
+      recordingDevices: {
+        enabled: false,
+        devices: []
+      }
+    };
+  }, []);
+
+  const serializeGearForSave = useCallback((gearData = {}) => {
+    const recordingDevices = gearData.recordingDevices;
+    const customGear = gearData.customGear;
+
+    const serializedCustomGear = Array.isArray(customGear)
+      ? customGear.map((item = {}) => {
+        const { retired, ...rest } = item;
+        return {
+          ...rest,
+          isRetired: item.isRetired ?? retired ?? false
+        };
+      })
+      : customGear;
+
+    if (Array.isArray(recordingDevices)) {
+      return {
+        ...gearData,
+        customGear: serializedCustomGear,
+        recordingDevices
+      };
+    }
+
+    if (recordingDevices && typeof recordingDevices === 'object') {
+      const devices = Array.isArray(recordingDevices.devices) ? recordingDevices.devices : [];
+      return {
+        ...gearData,
+        customGear: serializedCustomGear,
+        recordingDevices: recordingDevices.enabled === false ? [] : devices
+      };
+    }
+
+    return {
+      ...gearData,
+      customGear: serializedCustomGear,
+      recordingDevices: []
+    };
+  }, []);
+
   // Helper function to load a single section file
   const loadSectionFile = useCallback(async (sectionInfo, sectionKey) => {
     let filePath = null;
@@ -77,7 +162,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
 
     // Return the section data for simple keys
     return parsedData[sectionKey] || {};
-  }, [fileCache.directory]);
+  }, [fileCache.directory, serializeGearForSave]);
 
   // Load section data when navigating to a section page
   const loadSectionData = useCallback(async (sectionName) => {
@@ -187,9 +272,13 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
             sectionContent = parsedData[sectionKey] || {};
           }
 
+          const normalizedContent = sectionKey === 'gear'
+            ? normalizeGearForEditor(sectionContent)
+            : sectionContent;
+
           setSectionData(prev => ({
             ...prev,
-            [sectionKey]: sectionContent
+            [sectionKey]: normalizedContent
           }));
         } else {
           console.error('Failed to load file content:', result.error);
@@ -229,7 +318,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     } finally {
       setIsLoadingSectionData(false);
     }
-  }, [sectionToFileMap, fileCache.directory, showWarning, loadSectionFile]);
+  }, [sectionToFileMap, fileCache.directory, showWarning, loadSectionFile, normalizeGearForEditor]);
 
   // Helper function to save a single section to a file
   const saveSingleSection = useCallback(async (sectionInfo, sectionKey, data, isAthlete = false, preserveNestedKeys = []) => {
@@ -249,7 +338,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     }
 
     // Create backup before saving if autoBackup is enabled
-    const settings = loadSettings();
+    const settings = await loadSettings();
     if (settings.files?.autoBackup !== false) {
       try {
         // Use backupsDir setting for backup location
@@ -275,10 +364,12 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       }
     }
 
+    const payloadData = sectionKey === 'gear' ? serializeGearForSave(data) : data;
+
     const result = await updateSection({
       filePath,
       sectionName: sectionKey,
-      sectionData: data,
+      sectionData: payloadData,
       isAthlete,
       preserveNestedKeys
     });
@@ -412,10 +503,12 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
       const preserveNestedKeys = NESTED_KEYS_TO_PRESERVE[sectionKey] || [];
 
       if (filePath) {
+        const payloadData = sectionKey === 'gear' ? serializeGearForSave(data) : data;
+
         const result = await updateSection({
           filePath,
           sectionName: sectionName.toLowerCase(),
-          sectionData: data,
+          sectionData: payloadData,
           isAthlete: sectionName.toLowerCase() === 'athlete',
           preserveNestedKeys
         });
@@ -443,7 +536,7 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
     } finally {
       setIsLoadingSectionData(false);
     }
-  }, [sectionToFileMap, fileCache.directory, showError, showSuccess, setHasUnsavedChanges, saveSingleSection, loadSectionData]);
+  }, [sectionToFileMap, fileCache.directory, showError, showSuccess, setHasUnsavedChanges, saveSingleSection, loadSectionData, serializeGearForSave]);
 
   return {
     sectionData,

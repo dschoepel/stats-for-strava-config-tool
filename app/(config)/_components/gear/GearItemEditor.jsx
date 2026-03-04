@@ -34,6 +34,7 @@ const GearItemEditor = ({
   errors = {},
   defaultCurrency = 'USD',
   isCustomGear = false,
+  isRecordingDevice = false,
 }) => {
   const handleFieldUpdate = (field, value) => {
     onUpdate(index, { ...gear, [field]: value });
@@ -47,11 +48,24 @@ const GearItemEditor = ({
     });
   };
 
+  const retiredValue = isCustomGear
+    ? (gear.isRetired ?? gear.retired ?? false)
+    : (gear.retired ?? gear.isRetired ?? false);
+
   const toggleRetired = () => {
-    handleFieldUpdate('retired', !gear.retired);
+    if (isCustomGear) {
+      const updated = { ...gear, isRetired: !retiredValue };
+      if ('retired' in updated) {
+        delete updated.retired;
+      }
+      onUpdate(index, updated);
+      return;
+    }
+
+    handleFieldUpdate('retired', !retiredValue);
   };
 
-  const prefix = isCustomGear ? 'customGear.customGears' : 'stravaGear';
+  const prefix = isRecordingDevice ? 'recordingDevices.devices' : (isCustomGear ? 'customGear.customGears' : 'stravaGear');
   const gearError = errors[`${prefix}[${index}]`];
 
   return (
@@ -76,7 +90,7 @@ const GearItemEditor = ({
         <Text flex={1} fontWeight="500" fontSize={{ base: "xs", sm: "sm" }} noOfLines={1} overflow="hidden" textOverflow="ellipsis">
           {isCustomGear ? gear.label || gear.tag || `Gear ${index + 1}` : gear.gearId || `Gear ${index + 1}`}
         </Text>
-        {gear.retired && (
+        {retiredValue && (
           <Text fontSize="xs" color="textMuted" fontStyle="italic" flexShrink={0} display={{ base: "none", sm: "block" }}>
             Retired
           </Text>
@@ -209,19 +223,21 @@ const GearItemEditor = ({
             </Box>
 
             {/* Retired Toggle */}
-            <HStack>
-              <Switch.Root
-                checked={gear.retired || false}
-                onCheckedChange={toggleRetired}
-                colorPalette="orange"
-              >
-                <Switch.HiddenInput />
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Switch.Label>Mark as Retired</Switch.Label>
-              </Switch.Root>
-            </HStack>
+            {!isRecordingDevice && (
+              <HStack>
+                <Switch.Root
+                  checked={retiredValue}
+                  onCheckedChange={toggleRetired}
+                  colorPalette="orange"
+                >
+                  <Switch.HiddenInput />
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Switch.Label>Mark as Retired</Switch.Label>
+                </Switch.Root>
+              </HStack>
+            )}
           </VStack>
         </Box>
       )}
@@ -241,7 +257,8 @@ GearItemEditor.propTypes = {
   canMoveUp: PropTypes.bool.isRequired,
   canMoveDown: PropTypes.bool.isRequired,
   error: PropTypes.object,
-  isCustomGear: PropTypes.bool
+  isCustomGear: PropTypes.bool,
+  isRecordingDevice: PropTypes.bool
 };
 
 export default GearItemEditor;

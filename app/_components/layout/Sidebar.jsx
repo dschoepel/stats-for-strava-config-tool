@@ -1,17 +1,20 @@
-import { Box, VStack, HStack, Flex, Text, IconButton, Collapsible } from '@chakra-ui/react';
+import { Box, VStack, HStack, Flex, Text, IconButton, Collapsible, Circle } from '@chakra-ui/react';
 import { ChevronRightIcon, ChevronLeftIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import {
   MdBuild, MdPerson, MdPalette, MdFileDownload,
   MdBarChart, MdDirectionsBike, MdLink, MdSchedule,
-  MdDescription, MdHelp, MdConstruction, MdTerminal
+  MdDescription, MdHelp, MdConstruction, MdTerminal, MdArrowUpward
 } from 'react-icons/md';
 import { FcDataConfiguration } from 'react-icons/fc';
 import { SiYaml } from 'react-icons/si';
 import { TbBrandZwift } from 'react-icons/tb';
 import { PiGithubLogo } from 'react-icons/pi';
+import { useEffect } from 'react';
 import packageJson from '../../../package.json';
 import { pages, getChildren } from '../../_config/pages';
 import { useSettings } from '../../../src/state/SettingsProvider';
+import { useVersionCheck } from '../../../src/hooks/useVersionCheck';
+import { useNotifications } from '../../../src/hooks/useNotifications';
 
 // Icon map - string to component
 const iconMap = {
@@ -149,6 +152,14 @@ export default function Sidebar({
   handleNavClick
 }) {
   const { settings } = useSettings();
+  const { latestVersion, isUpdateAvailable, releaseUrl } = useVersionCheck();
+  const { addUpdateAvailableNotification } = useNotifications();
+
+  useEffect(() => {
+    if (isUpdateAvailable && latestVersion && releaseUrl) {
+      addUpdateAvailableNotification(latestVersion, releaseUrl);
+    }
+  }, [isUpdateAvailable, latestVersion, releaseUrl, addUpdateAvailableNotification]);
 
   // Get pages from config
   const configPage = pages['Configuration'];
@@ -361,11 +372,32 @@ export default function Sidebar({
               <Text fontSize="xs" color="fg.subtle" fontFamily="mono">
                 v{packageJson.version}
               </Text>
+              {isUpdateAvailable && (
+                <HStack gap={1}>
+                  <Box as={MdArrowUpward} fontSize="12px" color="orange.500" />
+                  <Text
+                    as="a"
+                    href={releaseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    fontSize="xs"
+                    color="orange.500"
+                    _hover={{ textDecoration: "underline" }}
+                  >
+                    v{latestVersion} available
+                  </Text>
+                </HStack>
+              )}
             </VStack>
           ) : (
-            <Text fontSize="xs" color="fg.muted" textAlign="center" title={`Version ${packageJson.version}`}>
-              v{packageJson.version}
-            </Text>
+            <Box position="relative" display="inline-block" title={isUpdateAvailable ? `New version v${latestVersion} available` : `Version ${packageJson.version}`}>
+              <Text fontSize="xs" color="fg.muted" textAlign="center">
+                v{packageJson.version}
+              </Text>
+              {isUpdateAvailable && (
+                <Circle size="8px" bg="orange.500" position="absolute" top="-2px" right="-4px" />
+              )}
+            </Box>
           )}
         </Box>
       </Box>

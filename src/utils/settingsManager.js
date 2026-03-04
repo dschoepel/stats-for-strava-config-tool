@@ -152,41 +152,50 @@ export const loadSettingsFromFile = async () => {
   await loadRuntimeConfig();
   
   try {
-    // First get the default path from localStorage or defaults
+    // Build candidate settings locations.
+    // Prefer runtime default path first (Docker env), then fallback to cached custom path.
     const currentSettings = await loadSettings();
-    const defaultPath = currentSettings.files?.defaultPath || DEFAULT_SETTINGS_PATH;
-    const filePath = getSettingsFilePath(defaultPath);
-    
-    const data = await readFile(filePath);
+    const cachedDefaultPath = currentSettings.files?.defaultPath;
+    const candidatePaths = [DEFAULT_SETTINGS_PATH];
 
-    if (!data.success) {
-      console.log('Settings file not found, using defaults');
-      return getDefaultSettings();
+    if (cachedDefaultPath && cachedDefaultPath !== DEFAULT_SETTINGS_PATH) {
+      candidatePaths.push(cachedDefaultPath);
     }
 
-    if (data.content) {
+    for (const basePath of candidatePaths) {
+      const filePath = getSettingsFilePath(basePath);
+      const data = await readFile(filePath);
+
+      if (!data.success || !data.content) {
+        continue;
+      }
+
+      console.log('Loaded settings file from:', filePath);
+
       // Parse YAML content
       const lines = data.content.split('\n');
       const settings = parseYamlSettings(lines);
-      
+
       // Merge with defaults and save to localStorage cache
       const mergedSettings = mergeSettings(getDefaultSettings(), settings);
-      
+
       // Check if version needs updating
       if (mergedSettings.version !== packageJson.version) {
         console.log(`Updating version from ${mergedSettings.version} to ${packageJson.version}`);
         mergedSettings.version = packageJson.version;
         mergedSettings.lastUpdated = new Date().toISOString();
-        
+
         // Save updated version back to file
         await saveSettings(mergedSettings);
       } else {
         // Just cache in localStorage
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(mergedSettings, null, 2));
       }
-      
+
       return mergedSettings;
     }
+
+    console.log('Settings file not found in any candidate path, using defaults');
   } catch (error) {
     console.error('Error loading settings from file:', error);
   }

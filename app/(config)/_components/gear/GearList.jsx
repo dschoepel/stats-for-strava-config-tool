@@ -13,29 +13,35 @@ const GearList = ({
   errors = {},
   defaultCurrency = 'USD',
   isCustomGear = false,
+  isRecordingDevice = false,
   title = 'Gear Items',
 }) => {
   const [expandedItems, setExpandedItems] = useState({});
 
   const handleAdd = () => {
-    const newGear = isCustomGear
-      ? {
-          tag: '',
-          label: '',
-          purchasePrice: {
-            amountInCents: 0,
-            currency: defaultCurrency,
-          },
-          retired: false,
-        }
-      : {
-          gearId: '',
-          purchasePrice: {
-            amountInCents: 0,
-            currency: defaultCurrency,
-          },
-          retired: false,
-        };
+    let newGear;
+    if (isRecordingDevice) {
+      newGear = { gearId: '', purchasePrice: { amountInCents: 0, currency: defaultCurrency } };
+    } else if (isCustomGear) {
+      newGear = {
+        tag: '',
+        label: '',
+        purchasePrice: {
+          amountInCents: 0,
+          currency: defaultCurrency,
+        },
+        isRetired: false,
+      };
+    } else {
+      newGear = {
+        gearId: '',
+        purchasePrice: {
+          amountInCents: 0,
+          currency: defaultCurrency,
+        },
+        retired: false,
+      };
+    }
 
     onChange([...gears, newGear]);
     setExpandedItems((prev) => ({ ...prev, [gears.length]: true }));
@@ -114,7 +120,7 @@ const GearList = ({
           textAlign="center"
         >
           <Text fontSize="sm" color="textMuted">
-            No gear items added yet. Click "Add {isCustomGear ? 'Custom' : 'Strava'} Gear" to get started.
+            No {isRecordingDevice ? 'recording devices' : 'gear items'} added yet. Click &quot;Add {isRecordingDevice ? 'Recording Device' : isCustomGear ? 'Custom' : 'Strava'} Gear&quot; to get started.
           </Text>
         </Box>
       ) : (
@@ -135,6 +141,7 @@ const GearList = ({
               errors={errors}
               defaultCurrency={defaultCurrency}
               isCustomGear={isCustomGear}
+              isRecordingDevice={isRecordingDevice}
             />
           ))}
         </VStack>
@@ -147,7 +154,7 @@ const GearList = ({
         mt={3}
         width="full"
       >
-        <MdAdd /> Add {isCustomGear ? 'Custom' : 'Strava'} Gear
+        <MdAdd /> Add {isRecordingDevice ? 'Recording Device' : isCustomGear ? 'Custom' : 'Strava'} Gear
       </Button>
     </Box>
   );
@@ -159,6 +166,7 @@ GearList.propTypes = {
   errors: PropTypes.object,
   defaultCurrency: PropTypes.string,
   isCustomGear: PropTypes.bool,
+  isRecordingDevice: PropTypes.bool,
   title: PropTypes.string
 };
 

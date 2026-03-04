@@ -127,6 +127,23 @@ Track equipment usage and service intervals:
 - **Service intervals** - Set reminders for maintenance
 - **Currency support** - Track gear costs with proper currency formatting (new in v1.1.0)
 
+### Custom Gear
+
+Configure custom equipment with purchase prices to calculate cost-per-workout:
+
+- Add bikes, shoes, and other gear linked to your Strava gear IDs
+- Set purchase price and currency
+- Mark gear as retired when no longer in use
+- Add tags and labels for easy identification
+
+### Recording Devices (new in v1.2.4)
+
+Track GPS watches, bike computers, and other recording devices:
+
+- Add devices linked to their Strava recording device IDs
+- Set purchase price and currency to calculate cost-per-workout
+- Device ID can be found via the question-mark icon on the recording device page in the app
+
 ---
 
 ## SFS Console (Optional)
@@ -206,6 +223,7 @@ Track resting heart rate history:
 - **Badge indicator** in navbar shows pending notifications
 - Notification preferences configurable in settings
 - Integration with third-party notification services via config
+- **New version available** notification fires once when a newer release is detected on GitHub, with a "View Release Notes" link (new in v1.2.4)
 
 ---
 
