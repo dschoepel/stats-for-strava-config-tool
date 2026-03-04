@@ -28,7 +28,7 @@ export const SettingsProvider = ({ children }) => {
     const initializeSettings = async () => {
       try {
         // Load settings - try from localStorage first (faster), then validate with file
-        let loadedSettings = loadSettings();
+        let loadedSettings = await loadSettings();
 
         // Try to load from file in background
         try {
@@ -56,7 +56,7 @@ export const SettingsProvider = ({ children }) => {
       } catch (error) {
         console.error('Error initializing settings:', error);
         // Fall back to defaults
-        const loadedSettings = loadSettings();
+        const loadedSettings = await loadSettings();
         setSettings(loadedSettings);
         if (loadedSettings.ui?.theme) {
           setTheme(loadedSettings.ui.theme);
@@ -89,8 +89,8 @@ export const SettingsProvider = ({ children }) => {
       handleSettingsChange(event.detail);
     };
 
-    const handleSettingsResetEvent = () => {
-      const defaultSettings = loadSettings();
+    const handleSettingsResetEvent = async () => {
+      const defaultSettings = await loadSettings();
       handleSettingsChange(defaultSettings);
     };
 
@@ -153,8 +153,8 @@ export const SettingsProvider = ({ children }) => {
     }
   }, [isSidebarCollapsed, settings, updateSettings]);
 
-  const resetSettings = useCallback(() => {
-    const defaultSettings = loadSettings();
+  const resetSettings = useCallback(async () => {
+    const defaultSettings = await loadSettings();
     handleSettingsChange(defaultSettings);
   }, [handleSettingsChange]);
 

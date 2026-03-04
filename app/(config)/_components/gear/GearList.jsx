@@ -30,7 +30,7 @@ const GearList = ({
           amountInCents: 0,
           currency: defaultCurrency,
         },
-        retired: false,
+        isRetired: false,
       };
     } else {
       newGear = {
