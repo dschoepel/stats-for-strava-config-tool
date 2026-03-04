@@ -9,6 +9,7 @@ const BUILD_FILES_NOTIFICATION_ID = 'build-files-reminder';
 const BUILD_FILES_FLAG_KEY = 'config-tool-save-notification-shown';
 const BACKUP_THRESHOLD_NOTIFICATION_ID = 'backup-threshold-reminder';
 const BACKUP_THRESHOLD_FLAG_KEY = 'config-tool-backup-threshold-shown';
+const UPDATE_AVAILABLE_FLAG_KEY = 'config-tool-update-notification-shown';
 const MAX_NOTIFICATIONS = 50;
 const MAX_AGE_DAYS = 7;
 const DEDUPE_WINDOW_MS = 5000;
@@ -251,6 +252,34 @@ export const NotificationProvider = ({ children }) => {
     saveBackupThresholdFlag(true);
   }, [hasShownBackupThreshold]);
 
+  // Add update-available notification (once per version)
+  const addUpdateAvailableNotification = useCallback((version, releaseUrl) => {
+    if (typeof window === 'undefined') return;
+    const shown = localStorage.getItem(UPDATE_AVAILABLE_FLAG_KEY);
+    if (shown === version) return;
+
+    const id = `update-available-${version}`;
+    setNotifications(prev => {
+      if (prev.some(n => n.id === id)) return prev;
+      const newNotification = {
+        id,
+        type: 'info',
+        message: `New version v${version} is available!`,
+        createdAt: Date.now(),
+        read: false,
+        action: {
+          label: 'View Release Notes',
+          type: 'open-release-url',
+          payload: { url: releaseUrl }
+        }
+      };
+      const updated = [newNotification, ...prev];
+      return updated.length > MAX_NOTIFICATIONS ? updated.slice(0, MAX_NOTIFICATIONS) : updated;
+    });
+
+    localStorage.setItem(UPDATE_AVAILABLE_FLAG_KEY, version);
+  }, []);
+
   // Listen for config save events and trigger notification
   useEffect(() => {
     const cleanup = onConfigSave(() => {
@@ -361,12 +390,13 @@ export const NotificationProvider = ({ children }) => {
       addNotification,
       addConfigSaveNotification,
       addBackupThresholdNotification,
+      addUpdateAvailableNotification,
       markAsRead,
       clearNotification,
       clearAll,
       clearAllRead
     }),
-    [sortedNotifications, unreadCount, addNotification, addConfigSaveNotification, addBackupThresholdNotification, markAsRead, clearNotification, clearAll, clearAllRead]
+    [sortedNotifications, unreadCount, addNotification, addConfigSaveNotification, addBackupThresholdNotification, addUpdateAvailableNotification, markAsRead, clearNotification, clearAll, clearAllRead]
   );
 
   return (

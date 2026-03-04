@@ -263,6 +263,9 @@ export default function UserMenu() {
                                       ? `/utilities/strava-console?command=${command}`
                                       : '/utilities/strava-console';
                                     router.push(url);
+                                  } else if (notification.action.type === 'open-release-url') {
+                                    const { url } = notification.action.payload || {};
+                                    if (url) window.open(url, '_blank', 'noopener,noreferrer');
                                   }
                                 }}
                                 mt={1}
