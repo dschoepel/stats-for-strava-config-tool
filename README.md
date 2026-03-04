@@ -130,7 +130,7 @@ Navigate to `http://localhost:8092`, register your admin password, and start con
 | **Appearance** | Locale, units, date/time formats |
 | **Import** | Activity import settings, webhooks |
 | **Metrics** | Eddington score, metric groupings |
-| **Gear** | Equipment tracking, maintenance |
+| **Gear** | Equipment tracking, recording devices, maintenance |
 | **Zwift** | Zwift level and racing score |
 | **Integrations** | Notifications, AI providers |
 | **Daemon** | Scheduled tasks |

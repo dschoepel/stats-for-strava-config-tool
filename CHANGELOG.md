@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.4] — 2026-03-04
+
+### Added
+
+- **Recording Devices** section in Gear Config — track GPS watches, bike computers, and other recording devices with purchase prices to calculate cost-per-workout. Device ID is found via the question-mark icon on the recording device page in the app.
+- **New version available indicator** — the sidebar footer now checks the GitHub Releases API (server-side, cached 1 hour) and surfaces update availability in two places:
+  - Expanded sidebar: orange "vX.X.X available" link below the current version
+  - Collapsed sidebar: orange dot badge on the version text
+  - Notification panel: one-time "New version vX.X.X is available!" notification with a "View Release Notes" action that opens the release in a new tab
+  - Deduplication via `localStorage` ensures the notification fires only once per new release version
+
+### Fixed
+
+- Normalized the `retired` field handling for gear items and fixed async settings loading in the gear configuration editor.
+
+### Chore
+
+- Enforced LF line endings project-wide via `.gitattributes`.
+- Added `docker-compose.override.yml` to `.gitignore` to prevent local Docker overrides from being committed.
+
+---
+
 ## [1.2.3] — 2026-03-01
 
 ### Added
