@@ -1,0 +1,15 @@
+.git
+.github
+.claude
+node_modules
+.next
+runner
+helper
+docs
+*.md
+*.log
+.env
+.env.*
+docker-compose*.yml
+.gitignore
+.gitattributes
