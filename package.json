@@ -1,7 +1,7 @@
 {
   "name": "stats-for-strava-config-tool",
   "private": true,
-  "version": "1.2.4",
+  "version": "1.2.5",
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -17,10 +17,10 @@
     "@monaco-editor/react": "^4.7.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "check-password-strength": "^3.0.0",
     "cookie": "^1.0.2",
-    "framer-motion": "^12.23.26",
+    "framer-motion": "^12.35.0",
     "js-yaml": "^4.1.1",
     "jsonwebtoken": "^9.0.2",
     "next": "^16.1.6",
@@ -36,6 +36,9 @@
     "remark-gfm": "^4.0.1",
     "shiki": "^3.20.0",
     "yaml": "^2.8.2"
+  },
+  "overrides": {
+    "dompurify": "^3.3.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

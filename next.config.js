@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   env: {
     SETTINGS_STORAGE_KEY: process.env.SETTINGS_STORAGE_KEY,
     APP_VERSION: process.env.APP_VERSION,

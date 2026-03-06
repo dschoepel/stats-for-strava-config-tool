@@ -16,16 +16,12 @@ RUN apk add --no-cache nginx supervisor tzdata su-exec shadow wget busybox-extra
 
 WORKDIR /app
 
-# Copy only necessary files from builder
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/.next ./.next
+# Standalone output includes a minimal traced node_modules + server.js
+COPY --from=builder /app/.next/standalone ./
+# Static client assets (JS chunks, CSS) must be copied separately
+COPY --from=builder /app/.next/static ./.next/static
+# Public assets served by nginx
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/app ./app
-COPY --from=builder /app/next.config.js ./
-
-# Install production dependencies only
-RUN npm ci --only=production
-RUN npm install -g npm@10
 
 # Set ownership for the app directory (node user needs to read files and write to specific dirs)
 RUN chown -R node:node /app

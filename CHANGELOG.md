@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.5] — 2026-03-06
+
+### Changed
+
+- **Docker image optimization** — enabled Next.js `output: 'standalone'` mode, reducing production image size by an estimated 400–700 MB (from ~2.05 GB). The runtime stage no longer runs `npm ci`; instead it copies only the traced `standalone` output, static assets, and public directory.
+- Updated `docker/supervisord.conf` to launch the Next.js server via `node server.js` instead of `npm start`, matching the standalone entrypoint.
+- Added root-level `.dockerignore` to exclude `.git`, `node_modules`, `runner/`, `helper/`, `docs/`, and other irrelevant files from the Docker build context.
+
+### Security
+
+- **dompurify** (GHSA-v2wj-7wpq-c8vv, CVSS 6.1) — forced resolution to `>=3.3.2` via `overrides` in `package.json`; the vulnerable transitive dependency pulled in by `monaco-editor` is now pinned to the patched version.
+- **bcryptjs** upgraded from `2.4.3` → `3.0.3` — a full rewrite with ESM support. API signatures (`hash`, `compare`) are unchanged; compatible with the existing ESM (`"type": "module"`) package configuration.
+- **framer-motion** updated to `12.35.0` (patch).
+
+---
+
 ## [1.2.4] — 2026-03-04
 
 ### Added
