@@ -172,10 +172,11 @@ The system includes these built-in widget definitions:
 | • Weekly Statistics*          | • Eddington Number         |
 | • Peak Power Outputs         | • Challenge Consistency*    |
 | • Heart Rate Zones           | • Most Recent Challenges*   |
-| • Activity Grid              | • FTP History              |
-| • Monthly Statistics*         | • Athlete Weight History   |
-| • Training Load              | • Weekday Statistics       |
-| • Day Time Statistics        | • Distance Breakdown       |
+| • Activity Grid              | • Most Recent Milestones*  |
+| • Monthly Statistics*         | • FTP History              |
+| • Training Load              | • Athlete Weight History   |
+| • Day Time Statistics        | • Weekday Statistics       |
+| • Distance Breakdown         | • Athlete Profile          |
 | • Current Streaks             |                           |
 
 ℹ️ Widgets with an asterisk * are configurable
@@ -185,6 +186,6 @@ The system includes these built-in widget definitions:
 
 When the app starts:
 
-- **File creation** - If the widget definitions file doesn't exist, it's created with 20+ default widgets
+- **File creation** - If the widget definitions file doesn't exist, it's created with 23 default widgets
 - **Config sync** - Widget default values are updated based on widgets in your dashboard configuration
 - **Validation** - All widget definitions are validated for correct structure

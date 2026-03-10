@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.6] — 2026-03-10
+
+### Added
+
+- **Most Recent Milestones widget** — added `mostRecentMilestones` to the default widget definitions. This widget displays a timeline view of your key achievements and milestones over time. Configurable via `numberOfMilestonesToDisplay` (default: 5). Added to the default dashboard layout at 33% width.
+
+### Documentation
+
+- Updated `widget-definitions.md` to include `Most Recent Milestones` and the previously undocumented `Athlete Profile` widget in the default widgets table. Updated default widget count to 23.
+
+---
+
 ## [1.2.5] — 2026-03-06
 
 ### Changed
