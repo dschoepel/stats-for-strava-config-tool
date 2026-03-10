@@ -441,6 +441,15 @@ metricsDisplayOrder: ['distance', 'movingTime', 'elevation']`,
     hasConfig: true,
     configTemplate: `sportTypesToInclude: []`,
     defaultConfig: {sportTypesToInclude: []}
+  },
+  'mostRecentMilestones': {
+    name: 'mostRecentMilestones',
+    displayName: 'Most Recent Milestones',
+    description: 'Displays a timeline view of your key achievements and milestones over time.',
+    allowMultiple: true,
+    hasConfig: true,
+    configTemplate: `numberOfMilestonesToDisplay: 5`,
+    defaultConfig: { numberOfMilestonesToDisplay: 5 }
   }
 };
 

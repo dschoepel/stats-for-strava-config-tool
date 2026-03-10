@@ -251,6 +251,11 @@ appearance:
         enabled: true
         config:
           numberOfChallengesToDisplay: 5
+      - widget: mostRecentMilestones
+        width: 33
+        enabled: true
+        config:
+          numberOfMilestonesToDisplay: 5
       - widget: ftpHistory
         width: 50
         enabled: true
