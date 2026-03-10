@@ -10,6 +10,7 @@ import { checkFileExists as checkFileExistsService, readFile } from '../../../..
 export const useYamlUtilityFiles = () => {
   const [selectedFiles, setSelectedFiles] = useState(() => {
     try {
+      if (typeof window === 'undefined') return [];
       const saved = localStorage.getItem('yaml-utility-files');
       if (saved) {
         const files = JSON.parse(saved);
@@ -28,6 +29,7 @@ export const useYamlUtilityFiles = () => {
 
   const [showViewer, setShowViewer] = useState(() => {
     try {
+      if (typeof window === 'undefined') return false;
       const saved = localStorage.getItem('yaml-utility-viewer-open');
       const savedFiles = localStorage.getItem('yaml-utility-files');
       return saved === 'true' && savedFiles && JSON.parse(savedFiles).length > 0;
