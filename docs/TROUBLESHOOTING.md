@@ -243,6 +243,24 @@ See [SFS Console Setup Guide](SFS-CONSOLE-SETUP.md#troubleshooting) for console-
 - Verify target container name is correct
 - Ensure Statistics for Strava container is running
 
+#### "Failed to create log directory: EACCES: permission denied"
+
+This appears in runner or helper container logs when `LOG_FILE` is not set and the server tries to create its default log directory (`/var/log/strava-runner/` or `/var/log/strava-helper/`) under `/var/log/`, which is owned by root.
+
+**Solution:** Add `LOG_FILE` to the `environment` section of each service, pointing to a path inside an already-mounted volume:
+
+```yaml
+stats-cmd-runner:
+  environment:
+    - LOG_FILE=/var/log/stats-cmd-runner/runner.log  # volume: ./stats-cmd-runner-logs
+
+stats-cmd-helper:
+  environment:
+    - LOG_FILE=/var/log/stats-cmd/helper.log  # volume: ./stats-cmd-logs (parent dir)
+```
+
+Command execution logs (per-run `.log` files) are unaffected — those use `COMMAND_LOGS_DIR` which is set correctly already.
+
 ---
 
 ## Getting Help

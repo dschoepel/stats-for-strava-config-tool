@@ -89,37 +89,39 @@ services:
     image: ghcr.io/dschoepel/stats-cmd-runner:latest
     container_name: stats-cmd-runner
     restart: unless-stopped
-    env_file:
-      - .env
+    working_dir: /var/www
+    command: ["node", "server.js"]
     environment:
+      - TZ=${TZ}
+      - USERMAP_UID=${USERMAP_UID}
+      - USERMAP_GID=${USERMAP_GID}
       - HELPER_URL=http://stats-cmd-helper:${STATS_CMD_HELPER_PORT:-8081}
+      - LOG_FILE=/var/log/stats-cmd-runner/runner.log
     volumes:
-      - ./config/settings/console-commands.yaml:/app/commands.yaml:ro
+      - ./config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+      - ./stats-cmd-runner-logs:/var/log/stats-cmd-runner
     ports:
-      - '8093:8080'
+      - "8093:8080"
     networks:
       - statistics-for-strava-network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
   # SFS Console - Command Helper (executes commands in SFS container)
   stats-cmd-helper:
     image: ghcr.io/dschoepel/stats-cmd-helper:latest
     container_name: stats-cmd-helper
     restart: unless-stopped
-    env_file:
-      - .env
+    working_dir: /var/www
+    command: ["node", "server.js"]
     environment:
-      - CONTAINER_NAME=statistics-for-strava
-      - LOG_DIR=/logs
+      - TZ=${TZ}
       - PORT=${STATS_CMD_HELPER_PORT:-8081}
+      - TARGET_CONTAINER=statistics-for-strava
+      - COMMAND_LOGS_DIR=/var/log/stats-cmd/command-logs
+      - LOG_FILE=/var/log/stats-cmd/helper.log
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./stats-cmd-logs:/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+      - ./stats-cmd-logs:/var/log/stats-cmd/command-logs:rw
     networks:
       - statistics-for-strava-network
 ```
@@ -144,15 +146,16 @@ All containers must use the same `USERMAP_UID` and `USERMAP_GID` values from you
 - Files can be read/written by all services
 - No permission errors occur
 
-### Step 5: Create Log Directory
+### Step 5: Create Log Directories
 
 ```bash
 # Linux/Mac
-mkdir -p ./stats-cmd-logs
-sudo chown 1000:1000 ./stats-cmd-logs
+mkdir -p ./stats-cmd-logs ./stats-cmd-runner-logs
+sudo chown 1000:1000 ./stats-cmd-logs ./stats-cmd-runner-logs
 
 # Windows (Docker Desktop)
 mkdir stats-cmd-logs
+mkdir stats-cmd-runner-logs
 ```
 
 ### Step 6: Restart Docker Stack
@@ -259,8 +262,18 @@ docker compose restart stats-cmd-runner
 ### Permission Errors
 
 - Verify UID/GID consistency across all containers
-- Check log directory ownership: `ls -la ./stats-cmd-logs`
+- Check log directory ownership: `ls -la ./stats-cmd-logs ./stats-cmd-runner-logs`
 - Ensure `.env` file has correct `USERMAP_UID` and `USERMAP_GID`
+
+### "Failed to create log directory: EACCES: permission denied" in container logs
+
+This means `LOG_FILE` is pointing to a path not covered by a mounted volume. The `node` user inside the container cannot create new directories under `/var/log/` (owned by root).
+
+**Solution:** Ensure both `LOG_FILE` env vars are set and match the mounted volume paths:
+- Runner: `LOG_FILE=/var/log/stats-cmd-runner/runner.log` (maps to `./stats-cmd-runner-logs`)
+- Helper: `LOG_FILE=/var/log/stats-cmd/helper.log` (maps to the parent of `./stats-cmd-logs`)
+
+If you omit `LOG_FILE`, the server defaults to `/var/log/strava-runner/` or `/var/log/strava-helper/`, which are not mounted and not writable.
 
 ### "Directory created instead of file" Error
 

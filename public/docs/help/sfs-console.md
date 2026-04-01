@@ -73,36 +73,38 @@ stats-cmd-runner:
   image: ghcr.io/dschoepel/stats-cmd-runner:latest
   container_name: stats-cmd-runner
   restart: unless-stopped
-  env_file:
-    - .env
+  working_dir: /var/www
+  command: ["node", "server.js"]
   environment:
+    - TZ=${TZ}
+    - USERMAP_UID=${USERMAP_UID}
+    - USERMAP_GID=${USERMAP_GID}
     - HELPER_URL=http://stats-cmd-helper:${STATS_CMD_HELPER_PORT:-8081}
+    - LOG_FILE=/var/log/stats-cmd-runner/runner.log
   volumes:
-    - ./config/settings/console-commands.yaml:/app/commands.yaml:ro
+    - ./config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+    - ./stats-cmd-runner-logs:/var/log/stats-cmd-runner
   networks:
     - statistics-for-strava-network
   ports:
     - "8093:8080"
-  healthcheck:
-    test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
-    interval: 30s
-    timeout: 10s
-    retries: 3
-    start_period: 10s
 
 stats-cmd-helper:
   image: ghcr.io/dschoepel/stats-cmd-helper:latest
   container_name: stats-cmd-helper
   restart: unless-stopped
-  env_file:
-    - .env
+  working_dir: /var/www
+  command: ["node", "server.js"]
   environment:
-    - CONTAINER_NAME=statistics-for-strava
-    - LOG_DIR=/logs
+    - TZ=${TZ}
     - PORT=${STATS_CMD_HELPER_PORT:-8081}
+    - TARGET_CONTAINER=statistics-for-strava
+    - COMMAND_LOGS_DIR=/var/log/stats-cmd/command-logs
+    - LOG_FILE=/var/log/stats-cmd/helper.log
   volumes:
-    - /var/run/docker.sock:/var/run/docker.sock:ro
-    - ./stats-cmd-logs:/logs
+    - /var/run/docker.sock:/var/run/docker.sock
+    - ./config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
+    - ./stats-cmd-logs:/var/log/stats-cmd/command-logs:rw
   networks:
     - statistics-for-strava-network
 ```
@@ -110,7 +112,7 @@ stats-cmd-helper:
 Then create the required directories and restart your stack:
 
 ```bash
-mkdir -p ./stats-cmd-logs
+mkdir -p ./stats-cmd-logs ./stats-cmd-runner-logs
 docker compose up -d
 ```
 
@@ -369,7 +371,7 @@ Each command execution creates a detailed log file:
 - Exit code and duration
 
 **Location:**
-- Helper writes: `/logs/` (inside container)
+- Helper writes: `/var/log/stats-cmd/command-logs/` (inside container, set via `COMMAND_LOGS_DIR`)
 - Config-tool reads: `/var/log/stats-cmd/command-logs/` (shared Docker volume)
 - Host machine: `./stats-cmd-logs/`
 
@@ -388,15 +390,17 @@ Each command execution creates a detailed log file:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HELPER_URL` | `http://stats-cmd-helper:8081` | URL to the Command Helper service |
-| `COMMANDS_FILE` | `/app/commands.yaml` | Path to the commands allowlist |
+| `COMMANDS_FILE` | `/var/www/console-commands.yaml` | Path to the commands allowlist |
+| `LOG_FILE` | `/var/log/strava-runner/runner.log` | App log file path — **must be under a mounted volume** |
 | `PORT` | `8080` | HTTP listen port |
 
 ### Command Helper
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CONTAINER_NAME` | `statistics-for-strava` | Container to exec commands into |
-| `LOG_DIR` | `/logs` | Directory for command execution logs |
+| `TARGET_CONTAINER` | `statistics-for-strava` | Container to exec commands into |
+| `COMMAND_LOGS_DIR` | `/var/log/strava-helper/command-logs` | Directory for per-command execution logs — **must be under a mounted volume** |
+| `LOG_FILE` | `/var/log/strava-helper/helper.log` | App log file path — **must be under a mounted volume** |
 | `PORT` | `8081` | HTTP listen port |
 
 ---

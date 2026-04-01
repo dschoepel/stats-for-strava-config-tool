@@ -69,7 +69,8 @@ services:
   #     - USERMAP_UID=${USERMAP_UID}
   #     - USERMAP_GID=${USERMAP_GID}
   #     - HELPER_URL=http://stats-cmd-helper:${STATS_CMD_HELPER_PORT:-8081}
-  #   
+  #     - LOG_FILE=/var/log/stats-cmd-runner/runner.log  # Must match volume mount path
+  #
   #   # ⚠️ IMPORTANT: console-commands.yaml Setup
   #   # This MUST be a FILE, not a directory, or containers will fail to start.
   #   # Create the file BEFORE starting containers:
@@ -103,6 +104,7 @@ services:
   #     - PORT=${STATS_CMD_HELPER_PORT:-8081}
   #     - TARGET_CONTAINER=statistics-for-strava
   #     - COMMAND_LOGS_DIR=/var/log/stats-cmd/command-logs  # Must match volume mount path
+  #     - LOG_FILE=/var/log/stats-cmd/helper.log  # Must be under an already-mounted volume
   #   volumes:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - ./config/settings/console-commands.yaml:/var/www/console-commands.yaml:ro
