@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.7] — 2026-04-18
+
+### Added
+
+- **Peak power output exclusions** — new UI section on the Metrics configuration page to manage the `excludeActivitiesFromPeakPowerOutputs` array. Users can add or remove Strava activity IDs (found at the end of the activity URL) to blacklist specific activities from peak power calculations. Duplicate entries are silently ignored.
+
+### Changed
+
+- Updated `metricsSchema` in `configSchemas.js` to include `excludeActivitiesFromPeakPowerOutputs` as an optional array of strings with a default of `[]`.
+- Updated `public/config-merged.yaml` to include `excludeActivitiesFromPeakPowerOutputs: []` with developer comments in the metrics section.
+
+### Documentation
+
+- Updated `docs/DEVELOPER.md` to document the new Peak Power Output Exclusions section under Metrics Components.
+- Fixed LOG_FILE env var names and corrected stale docker-compose examples in SFS Console docs (`docs/SFS-CONSOLE-SETUP.md`, `docs/TROUBLESHOOTING.md`, `public/docs/help/sfs-console.md`).
+
+---
+
 ## [1.2.6] — 2026-03-10
 
 ### Added

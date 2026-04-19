@@ -24,15 +24,16 @@ import { useSportsList } from '../../../src/contexts/SportsListContext';
  * MetricsConfigEditor - Handles metrics configuration fields
  * Focuses on Eddington score configuration with array of sport groupings
  */
-const MetricsConfigEditor = ({ 
-  initialData, 
-  onSave, 
-  onCancel, 
+const MetricsConfigEditor = ({
+  initialData,
+  onSave,
+  onCancel,
   isLoading,
-  onDirtyChange 
+  onDirtyChange
 }) => {
   const { sportsList } = useSportsList();
   const [expandedEddington, setExpandedEddington] = useState({});
+  const [activityIdInput, setActivityIdInput] = useState('');
 
   // Custom validation for metrics fields
   const validateMetricsFields = useCallback((formData, getNestedValue) => {
@@ -159,6 +160,26 @@ const MetricsConfigEditor = ({
           handleFieldChange('eddington', updated);
         }, [eddingtonArray, handleFieldChange]);
 
+        const excludedActivities = getNestedValue(formData, 'excludeActivitiesFromPeakPowerOutputs') || [];
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleAddExcludedActivity = useCallback(() => {
+          const trimmed = activityIdInput.trim();
+          if (!trimmed) return;
+          if (!excludedActivities.includes(trimmed)) {
+            handleFieldChange('excludeActivitiesFromPeakPowerOutputs', [...excludedActivities, trimmed]);
+          }
+          setActivityIdInput('');
+        }, [activityIdInput, excludedActivities, handleFieldChange]);
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const handleRemoveExcludedActivity = useCallback((id) => {
+          handleFieldChange(
+            'excludeActivitiesFromPeakPowerOutputs',
+            excludedActivities.filter(v => v !== id)
+          );
+        }, [excludedActivities, handleFieldChange]);
+
         // Memoize count computations to avoid re-filtering on every render
         // eslint-disable-next-line react-hooks/rules-of-hooks
         const navBarCount = useMemo(() =>
@@ -174,8 +195,94 @@ const MetricsConfigEditor = ({
 
         return (
           <VStack align="stretch" gap={6}>
+            {/* Peak Power Output Exclusions */}
+            <Box p={4} bg="cardBg" borderRadius="md" border="1px solid" borderColor="border" boxShadow="sm">
+              <VStack align="stretch" gap={4}>
+                <Box>
+                  <Text fontSize={{ base: "md", sm: "lg" }} fontWeight="semibold" color="text">
+                    Exclude Activities from Peak Power Outputs
+                  </Text>
+                  <Text fontSize={{ base: "xs", sm: "sm" }} color="textMuted">
+                    Activity IDs added here will be excluded from peak power output calculations.
+                  </Text>
+                </Box>
+
+                <Field.Root>
+                  <Field.Label>Excluded Activity IDs</Field.Label>
+
+                  {excludedActivities.length > 0 && (
+                    <VStack align="stretch" gap={2} mb={3}>
+                      {excludedActivities.map((id) => (
+                        <Flex
+                          key={id}
+                          p={2}
+                          px={3}
+                          bg="panelBg"
+                          border="1px solid"
+                          borderColor="border"
+                          borderRadius="md"
+                          align="center"
+                          justify="space-between"
+                          gap={2}
+                          _hover={{ borderColor: "primary" }}
+                        >
+                          <Text fontSize="sm" color="text" flex="1">{id}</Text>
+                          <IconButton
+                            size="sm"
+                            variant="ghost"
+                            colorPalette="red"
+                            onClick={() => handleRemoveExcludedActivity(id)}
+                            aria-label="Remove activity ID"
+                          >
+                            <MdDelete />
+                          </IconButton>
+                        </Flex>
+                      ))}
+                    </VStack>
+                  )}
+
+                  <HStack gap={2}>
+                    <Input
+                      value={activityIdInput}
+                      onChange={(e) => setActivityIdInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddExcludedActivity();
+                        }
+                      }}
+                      placeholder="e.g., 18161039085"
+                      bg="inputBg"
+                      flex="1"
+                    />
+                    <Button
+                      onClick={handleAddExcludedActivity}
+                      colorPalette="blue"
+                      size="md"
+                      px={4}
+                      disabled={!activityIdInput.trim()}
+                    >
+                      <MdAdd />
+                      Add
+                    </Button>
+                  </HStack>
+
+                  <Field.HelperText>
+                    Activity IDs are typically numeric values found at the end of the Strava activity URL
+                    (e.g., strava.com/activities/18161039085).
+                  </Field.HelperText>
+
+                  {excludedActivities.length === 0 && (
+                    <Text fontSize="sm" color="textMuted" mt={2} fontStyle="italic">
+                      No activities excluded. All activities are included in peak power calculations.
+                    </Text>
+                  )}
+                </Field.Root>
+              </VStack>
+            </Box>
+
             {/* Introduction */}
-            <Box 
+            <Box
               p={4} 
               bg="blue.50"
               _dark={{ 

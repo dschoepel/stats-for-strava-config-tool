@@ -560,6 +560,13 @@ export const metricsSchema = {
   title: "Metrics Configuration",
   description: "Performance metrics and scoring settings",
   properties: {
+    excludeActivitiesFromPeakPowerOutputs: {
+      type: "array",
+      title: "Exclude Activities from Peak Power Outputs",
+      description: "An array of activity IDs to exclude from peak power calculations. Activity IDs are the numeric value at the end of the Strava activity URL (e.g., strava.com/activities/18161039085).",
+      items: { type: "string" },
+      default: []
+    },
     eddington: {
       type: "array",
       title: "Eddington Score Configuration",
