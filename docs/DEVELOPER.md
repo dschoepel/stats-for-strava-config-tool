@@ -788,6 +788,20 @@ AIConfigurationField.propTypes = {
 
 ### Metrics Components
 
+#### Peak Power Output Exclusions
+
+Section for excluding specific Strava activities from peak power output calculations.
+
+**Location**: `app/(config)/_components/MetricsConfigEditor.jsx`
+
+**Field**: `excludeActivitiesFromPeakPowerOutputs` (array of strings)
+
+**Features**:
+- Add/remove Strava activity IDs to exclude from peak power calculations
+- Activity IDs are strings (typically numeric, from the Strava activity URL)
+- Duplicate entries are silently ignored
+- Positioned above the Eddington section on the Metrics config page
+
 #### EddingtonConfigurationField
 
 Field for managing Eddington score configurations.

@@ -24,7 +24,7 @@ The core feature of this tool is a visual form-based editor that replaces manual
 | **Athlete** | Birthday, heart rate zones, weight history, FTP data, resting heart rate |
 | **Appearance** | Locale, units, date/time formats, dashboard layout |
 | **Import** | Activity import settings, sport type filters, webhooks |
-| **Metrics** | Eddington score calculation, metric groupings |
+| **Metrics** | Eddington score calculation, metric groupings, peak power output exclusions |
 | **Gear** | Equipment tracking, purchase prices, maintenance, currency |
 | **Zwift** | Zwift level and racing score integration |
 | **Integrations** | Notification services, AI provider configuration |
