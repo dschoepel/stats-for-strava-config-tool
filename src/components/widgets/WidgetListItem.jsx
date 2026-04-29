@@ -20,7 +20,7 @@ const WidgetListItem = ({ widget, isExpanded, onToggle, onEdit, onDelete }) => {
         bg="panelBg"
       >
         <Button
-          onClick={() => onToggle(widget.name)}
+          onClick={onToggle}
           variant="ghost"
           flex={1}
           justifyContent="flex-start"
@@ -51,9 +51,9 @@ const WidgetListItem = ({ widget, isExpanded, onToggle, onEdit, onDelete }) => {
         </Button>
         <HStack gap={1} px={2}>
           <IconButton
-            onClick={() => onEdit(widget)}
-            title="Edit widget definition"
-            aria-label="Edit widget"
+            onClick={onEdit}
+            title={widget.name === 'trainingGoals' ? 'Configure Training Goals' : 'Edit widget definition'}
+            aria-label={widget.name === 'trainingGoals' ? 'Configure Training Goals' : 'Edit widget'}
             size="sm"
             variant="ghost"
             colorPalette="gray"
@@ -61,7 +61,7 @@ const WidgetListItem = ({ widget, isExpanded, onToggle, onEdit, onDelete }) => {
             <Icon><MdEdit /></Icon>
           </IconButton>
           <IconButton
-            onClick={() => onDelete(widget.name)}
+            onClick={onDelete}
             title="Delete widget definition"
             aria-label="Delete widget"
             size="sm"

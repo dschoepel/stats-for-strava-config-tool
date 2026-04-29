@@ -62,9 +62,11 @@ Manage sport types and activity classifications:
 
 Access via **Settings > Widgets** to manage widget templates:
 
-- **View widgets** - Widgets are grouped by instance rules
+- **View widgets** - Widgets are grouped by instance rules (single-use vs. multi-use)
 - **Expand details** - Click the toggle arrow to see properties and configuration templates
 - **Add/Edit/Delete** - Use the respective buttons to manage widget definitions
+- **Pre-fill from existing** - When adding a widget, select an existing multi-use widget from the dropdown to pre-fill all technical fields; only a unique Display Name is required
+- **Training Goals visual editor** - Clicking the pencil icon on a `trainingGoals` widget opens a four-tab (Weekly / Monthly / Yearly / Lifetime) goal editor with support for goal type, unit, sport type filtering, and optional date range restrictions
 - **Save changes** - Click the Save button to write all changes to file
 
 Features include:
@@ -72,6 +74,7 @@ Features include:
 - 20+ built-in widget definitions
 - Support for single-instance and multi-instance widgets
 - Custom configuration templates for each widget
+- Visual editor for complex widget configs (Training Goals)
 - Define widget metadata and instance rules
 
 ---

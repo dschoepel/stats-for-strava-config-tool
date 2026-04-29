@@ -44,7 +44,16 @@ function toYAML(definitions) {
       } else {
         result = '\n';
         value.forEach(item => {
-          if (typeof item === 'string') {
+          if (typeof item === 'object' && item !== null) {
+            // Serialize each property of the object as a YAML block sequence entry.
+            // First property uses "- key: val", subsequent properties use "  key: val"
+            // aligned with the text after the dash.
+            Object.entries(item).forEach(([k, v], i) => {
+              const linePrefix = i === 0 ? `${spaces}  - ` : `${spaces}    `;
+              result += `${linePrefix}${k}: `;
+              result += serializeValue(v, indent + 2);
+            });
+          } else if (typeof item === 'string') {
             result += `${spaces}  - "${item}"\n`;
           } else {
             result += `${spaces}  - ${item}\n`;
