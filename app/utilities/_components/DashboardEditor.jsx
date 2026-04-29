@@ -10,6 +10,23 @@ import { useDragAndDrop } from '../../../src/hooks/useDragAndDrop';
 let widgetIdCounter = 0;
 const generateWidgetId = () => `widget-${Date.now()}-${++widgetIdCounter}`;
 
+// Ensure training goal entries always carry a unit key (even '' for non-applicable types).
+// Operates on a deep copy so callers can pass the live definition object safely.
+const UNIT_NOT_APPLICABLE = ['numberOfActivities', 'calories'];
+const GOAL_PERIODS = ['weekly', 'monthly', 'yearly', 'lifetime'];
+function normalizeWidgetConfig(widgetName, rawConfig) {
+  if (widgetName !== 'trainingGoals' || !rawConfig?.goals) return rawConfig;
+  const config = JSON.parse(JSON.stringify(rawConfig));
+  GOAL_PERIODS.forEach(period => {
+    (config.goals[period] || []).forEach(goal => {
+      if (UNIT_NOT_APPLICABLE.includes(goal.type) && goal.unit === undefined) {
+        goal.unit = '';
+      }
+    });
+  });
+  return config;
+}
+
 function DashboardEditor({ dashboardLayout, onClose, onSave }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -167,10 +184,11 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
 
   const handleResetConfigToDefaults = useCallback((index) => {
     setLayout(prevLayout => {
-      const def = widgetDefinitions[prevLayout[index].widget];
+      const widgetName = prevLayout[index].widget;
+      const def = widgetDefinitions[widgetName];
       if (!def?.defaultConfig) return prevLayout;
       const newLayout = [...prevLayout];
-      newLayout[index] = { ...newLayout[index], config: JSON.parse(JSON.stringify(def.defaultConfig)) };
+      newLayout[index] = { ...newLayout[index], config: normalizeWidgetConfig(widgetName, def.defaultConfig) };
       return newLayout;
     });
     setIsDirty(true);
@@ -203,7 +221,9 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     };
 
     if (widgetDef.hasConfig) {
-      newWidget.config = widgetDef.defaultConfig ? { ...widgetDef.defaultConfig } : {};
+      newWidget.config = widgetDef.defaultConfig
+        ? normalizeWidgetConfig(widgetName, widgetDef.defaultConfig)
+        : {};
     }
 
     setLayout(prevLayout => [...prevLayout, newWidget]);
@@ -282,6 +302,12 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
               p={{ base: 3, sm: 4 }}
               minH="300px"
             >
+              <Box p={2} bg="infoBg" border="1px solid" borderColor="infoBorder" borderRadius="md">
+                <Text fontSize="xs" color="infoText">
+                  Layout configuration is loaded when this page opens. If you have manually edited{' '}
+                  <Text as="span" fontFamily="mono">config.yaml</Text>, reload the page to see those changes here.
+                </Text>
+              </Box>
               {!layout || layout.length === 0 ? (
                 <Box textAlign="center" py={{ base: 8, sm: 12 }} px={4} color="textMuted">
                   <Box display="flex" justifyContent="center" mb={4}>

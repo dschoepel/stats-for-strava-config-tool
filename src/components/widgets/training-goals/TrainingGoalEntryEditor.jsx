@@ -34,13 +34,17 @@ const TrainingGoalEntryEditor = ({
   sportsList = {},
 }) => {
   const handleFieldUpdate = (field, value) => {
-    onUpdate(index, { ...goal, [field]: value });
+    const updated = { ...goal, [field]: value };
+    if (UNIT_NOT_APPLICABLE.includes(updated.type) && updated.unit === undefined) {
+      updated.unit = '';
+    }
+    onUpdate(index, updated);
   };
 
   const handleTypeChange = (newType) => {
     const update = { ...goal, type: newType };
     if (UNIT_NOT_APPLICABLE.includes(newType)) {
-      delete update.unit;
+      update.unit = '';
     } else if (!update.unit) {
       update.unit = 'km';
     }

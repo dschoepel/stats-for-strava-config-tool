@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.9] — 2026-04-29
+
+### Fixed
+
+- **`unit` key always written for non-applicable goal types** — changing a Training Goals goal type to `numberOfActivities` or `calories` now sets `unit: ''` instead of deleting the key, which the Stats for Strava app requires to be present even when not applicable. A belt-and-suspenders guard was also added to `handleFieldUpdate` so any edit to an existing goal with a missing `unit` key injects it automatically.
+- **Training Goals modal normalizes stale goals on open** — if `widget-definitions.yaml` was saved before the above fix (goals missing the `unit` key), opening the Training Goals config modal now normalizes those entries in memory before display, preventing silent data loss on re-save.
+- **"Load definition config" sync now includes missing `unit` key** — `DashboardEditor.handleResetConfigToDefaults` and `handleAddWidget` now run the config through a normalization pass, ensuring `unit: ''` is present for all `numberOfActivities` / `calories` goal entries copied from the widget definition, even if the definition file pre-dates the fix.
+- **Clearer Dashboard Layout Editor labels** — "Sync to defaults" button renamed to **"Load definition config"** with an updated tooltip explaining it replaces the layout config with the widget definition's values. Section headers renamed from "Configuration Schema:" / "Current Values:" to **"Widget Definition Config:"** / **"Layout Config:"** to reduce ambiguity.
+- **Info banner in Dashboard Layout Editor** — a note now appears at the top of the layout editor explaining that config is loaded when the page opens; manually edited `config.yaml` files require a page reload to be reflected.
+
+---
+
 ## [1.2.8] — 2026-04-28
 
 ### Added
