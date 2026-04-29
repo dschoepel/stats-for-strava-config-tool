@@ -209,9 +209,9 @@ const DashboardWidgetItem = ({
                     variant="outline"
                     colorPalette="orange"
                     onClick={() => onResetToDefaults(index)}
-                    title="This widget's config differs from the current widget definition defaults. Click to sync."
+                    title="This widget's layout config differs from the widget definition. Click to replace layout config with the definition's values."
                   >
-                    <MdSync /> Sync to defaults
+                    <MdSync /> Load definition config
                   </Button>
                 )}
               </Flex>
@@ -222,7 +222,7 @@ const DashboardWidgetItem = ({
                   {widgetDef && (widgetDef.configTemplate || widgetDef.defaultConfig) && (
                     <Box mb={3} pb={3} borderBottomWidth="1px" borderColor="border">
                       <Text fontSize="xs" fontWeight="600" color="textSecondary" mb={2}>
-                        Configuration Schema:
+                        Widget Definition Config:
                       </Text>
                       <Box
                         as="pre"
@@ -243,7 +243,7 @@ const DashboardWidgetItem = ({
                   )}
                   
                   <Text fontSize="xs" fontWeight="600" color="textSecondary" mb={1}>
-                    Current Values:
+                    Layout Config:
                   </Text>
                   
                   {Object.keys(widget.config).length === 0 ? (

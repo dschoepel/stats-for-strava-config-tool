@@ -5,7 +5,7 @@ import {
 import { MdClose } from 'react-icons/md';
 import { useSportsList } from '../../contexts/SportsListContext';
 import GoalPeriodList from './training-goals/GoalPeriodList';
-import { validateTrainingGoalsConfig, PERIODS } from '../../utils/trainingGoalsValidation';
+import { validateTrainingGoalsConfig, PERIODS, UNIT_NOT_APPLICABLE } from '../../utils/trainingGoalsValidation';
 
 const PERIOD_LABELS = {
   weekly: 'Weekly',
@@ -22,7 +22,15 @@ const TrainingGoalsConfigModal = ({ isOpen, widget, onSave, onClose }) => {
   const [goalsConfig, setGoalsConfig] = useState(() => {
     const base = { goals: { weekly: [], monthly: [], yearly: [], lifetime: [] } };
     if (!widget?.defaultConfig) return base;
-    return JSON.parse(JSON.stringify(widget.defaultConfig));
+    const cloned = JSON.parse(JSON.stringify(widget.defaultConfig));
+    PERIODS.forEach(period => {
+      (cloned.goals?.[period] || []).forEach(goal => {
+        if (UNIT_NOT_APPLICABLE.includes(goal.type) && goal.unit === undefined) {
+          goal.unit = '';
+        }
+      });
+    });
+    return cloned;
   });
   const [errors, setErrors] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);

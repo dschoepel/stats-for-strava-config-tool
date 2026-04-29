@@ -487,10 +487,12 @@ The `trainingGoals` widget has a complex `defaultConfig`:
 }
 ```
 
-Each goal entry: `{ label, enabled, type, unit?, goal, sportTypesToInclude, restrictToDateRange? }`
+Each goal entry: `{ label, enabled, type, unit, goal, sportTypesToInclude, restrictToDateRange? }`
 
 Valid `type` values: `distance`, `elevation`, `movingTime`, `numberOfActivities`, `calories`  
-Valid `unit` values: `km`, `m`, `mi`, `ft`, `hour`, `minute` (not applicable for `numberOfActivities`/`calories`)
+Valid `unit` values: `km`, `m`, `mi`, `ft`, `hour`, `minute`
+
+**`unit` key is always required** — for `numberOfActivities` and `calories` types the unit field is hidden in the UI and the value is `''`, but the key must be present in the YAML or the Stats for Strava app build fails. `TrainingGoalEntryEditor.handleTypeChange` sets `unit = ''` (never deletes the key); `handleFieldUpdate` injects `unit: ''` if editing an entry that was saved before this invariant was enforced. `TrainingGoalsConfigModal` normalizes on load for the same reason. `DashboardEditor.normalizeWidgetConfig` applies the same fix when syncing a widget definition into the layout config.
 
 ### Training Goals Editor Components
 
