@@ -7,6 +7,12 @@ import { ConfirmDialog } from '../../app/_components/ui/ConfirmDialog';
 import WidgetListItem from './widgets/WidgetListItem';
 import WidgetFormModal from './widgets/WidgetFormModal';
 import { validateWidgetForm } from '../utils/widgetValidation';
+import dynamic from 'next/dynamic';
+
+const TrainingGoalsConfigModal = dynamic(
+  () => import('./widgets/TrainingGoalsConfigModal'),
+  { ssr: false }
+);
 
 export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const [widgetDefinitions, setWidgetDefinitions] = useState([]);
@@ -21,6 +27,8 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
   const [showEditWidgetModal, setShowEditWidgetModal] = useState(false);
   const [editingWidget, setEditingWidget] = useState(null);
+  const [showTrainingGoalsModal, setShowTrainingGoalsModal] = useState(false);
+  const [trainingGoalsWidget, setTrainingGoalsWidget] = useState(null);
   const [modalError, setModalError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -64,15 +72,15 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const toggleWidget = (name) => {
-    setExpandedWidgets(prev => ({ ...prev, [name]: !prev[name] }));
+  const toggleWidget = (idx) => {
+    setExpandedWidgets(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
 
   const collapseAll = () => setExpandedWidgets({});
 
   const expandAll = () => {
     const expanded = {};
-    widgetDefinitions.forEach(w => expanded[w.name] = true);
+    widgetDefinitions.forEach((_, i) => { expanded[i] = true; });
     setExpandedWidgets(expanded);
   };
 
@@ -169,14 +177,23 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
     showMessage('Widget definition updated successfully');
   };
 
-  const handleDeleteWidget = (name) => {
+  const handleDeleteWidget = (idx) => {
+    const widget = widgetDefinitions[idx];
     setConfirmDialog({
       isOpen: true,
       title: 'Delete Widget Definition',
-      message: `Are you sure you want to delete the widget definition "${name}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete the widget definition "${widget.displayName}"? This action cannot be undone.`,
       onConfirm: () => {
-        const updatedDefinitions = widgetDefinitions.filter(w => w.name !== name);
-        setWidgetDefinitions(updatedDefinitions);
+        setWidgetDefinitions(prev => prev.filter((_, i) => i !== idx));
+        setExpandedWidgets(prev => {
+          const next = {};
+          Object.keys(prev).forEach(key => {
+            const k = parseInt(key);
+            if (k < idx) next[k] = prev[key];
+            else if (k > idx) next[k - 1] = prev[key];
+          });
+          return next;
+        });
         showMessage('Widget definition deleted successfully');
         setConfirmDialog({ isOpen: false, onConfirm: null, title: '', message: '' });
       }
@@ -217,6 +234,11 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
   };
 
   const openEditModal = (widget) => {
+    if (widget.name === 'trainingGoals') {
+      setTrainingGoalsWidget(widget);
+      setShowTrainingGoalsModal(true);
+      return;
+    }
     setEditingWidget(widget);
     setFormData({
       name: widget.name,
@@ -230,13 +252,20 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
     setShowEditWidgetModal(true);
   };
 
+  const handleSaveTrainingGoals = (updatedWidget) => {
+    setWidgetDefinitions(prev => prev.map(w => w === trainingGoalsWidget ? updatedWidget : w));
+    setShowTrainingGoalsModal(false);
+    setTrainingGoalsWidget(null);
+    showMessage('Training Goals widget updated successfully');
+  };
+
   // Group widgets by allowMultiple property
   const allowMultipleWidgets = widgetDefinitions.filter(w => w.allowMultiple);
   const allowOnceWidgets = widgetDefinitions.filter(w => !w.allowMultiple);
 
-  // Get the settings location
-  const defaultPath = getSetting('files.defaultPath', '~/Documents/strava-config-tool/');
-  const settingsLocation = `${defaultPath}settings`;
+  // Get the settings location (normalize separators to match what the file I/O uses)
+  const rawDefaultPath = getSetting('files.defaultPath', '~/Documents/strava-config-tool/');
+  const settingsLocation = rawDefaultPath.replace(/[\\/]+$/, '').replace(/\\/g, '/') + '/settings';
 
   return (
     <Box p={6} bg="pageBg" minH="100vh">
@@ -335,16 +364,19 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
               Widgets that can be added multiple times ({allowMultipleWidgets.length})
             </Heading>
             <VStack gap={2} align="stretch">
-              {allowMultipleWidgets.map(widget => (
-                <WidgetListItem
-                  key={widget.name}
-                  widget={widget}
-                  isExpanded={expandedWidgets[widget.name]}
-                  onToggle={toggleWidget}
-                  onEdit={openEditModal}
-                  onDelete={handleDeleteWidget}
-                />
-              ))}
+              {allowMultipleWidgets.map(widget => {
+                const idx = widgetDefinitions.indexOf(widget);
+                return (
+                  <WidgetListItem
+                    key={idx}
+                    widget={widget}
+                    isExpanded={expandedWidgets[idx] || false}
+                    onToggle={() => toggleWidget(idx)}
+                    onEdit={() => openEditModal(widget)}
+                    onDelete={() => handleDeleteWidget(idx)}
+                  />
+                );
+              })}
             </VStack>
           </Box>
 
@@ -353,16 +385,19 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
               Widgets that can be added once ({allowOnceWidgets.length})
             </Heading>
             <VStack gap={2} align="stretch">
-              {allowOnceWidgets.map(widget => (
-                <WidgetListItem
-                  key={widget.name}
-                  widget={widget}
-                  isExpanded={expandedWidgets[widget.name]}
-                  onToggle={toggleWidget}
-                  onEdit={openEditModal}
-                  onDelete={handleDeleteWidget}
-                />
-              ))}
+              {allowOnceWidgets.map(widget => {
+                const idx = widgetDefinitions.indexOf(widget);
+                return (
+                  <WidgetListItem
+                    key={idx}
+                    widget={widget}
+                    isExpanded={expandedWidgets[idx] || false}
+                    onToggle={() => toggleWidget(idx)}
+                    onEdit={() => openEditModal(widget)}
+                    onDelete={() => handleDeleteWidget(idx)}
+                  />
+                );
+              })}
             </VStack>
           </Box>
         </VStack>
@@ -377,6 +412,7 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
         onSubmit={handleAddWidget}
         onClose={() => { setShowAddWidgetModal(false); resetForm(); }}
         error={modalError}
+        widgetDefinitions={widgetDefinitions}
       />
 
       {/* Edit Widget Modal */}
@@ -389,6 +425,19 @@ export default function WidgetDefinitionsEditor({ settings, onDirtyChange }) {
         onClose={() => { setShowEditWidgetModal(false); setEditingWidget(null); resetForm(); }}
         error={modalError}
       />
+
+      {/* Training Goals Config Modal */}
+      {showTrainingGoalsModal && (
+        <TrainingGoalsConfigModal
+          isOpen={showTrainingGoalsModal}
+          widget={trainingGoalsWidget}
+          onSave={handleSaveTrainingGoals}
+          onClose={() => {
+            setShowTrainingGoalsModal(false);
+            setTrainingGoalsWidget(null);
+          }}
+        />
+      )}
 
       {/* Confirmation Dialog */}
       <ConfirmDialog

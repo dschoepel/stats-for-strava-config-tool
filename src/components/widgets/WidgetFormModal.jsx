@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Flex, Box, Heading, VStack, Button, Field, Input, Textarea, Checkbox } from '@chakra-ui/react';
+import { Flex, Box, Heading, VStack, Button, Field, Input, Textarea, Checkbox, NativeSelectRoot, NativeSelectField, Text } from '@chakra-ui/react';
 import { MdAutoFixHigh } from 'react-icons/md';
 
 /**
@@ -106,16 +106,31 @@ const yamlToJson = (yamlText) => {
 /**
  * WidgetFormModal - Modal for adding/editing widget definitions
  */
-const WidgetFormModal = ({ 
-  isOpen, 
+const WidgetFormModal = ({
+  isOpen,
   mode = 'add', // 'add' or 'edit'
-  formData, 
-  onChange, 
-  onSubmit, 
-  onClose, 
-  error 
+  formData,
+  onChange,
+  onSubmit,
+  onClose,
+  error,
+  widgetDefinitions = []
 }) => {
   const [convertError, setConvertError] = useState('');
+
+  const multiUseWidgets = widgetDefinitions.filter(w => w.allowMultiple);
+
+  const handlePreFill = (widgetName) => {
+    const source = multiUseWidgets.find(w => w.name === widgetName);
+    if (!source) return;
+    onChange('name', source.name);
+    onChange('allowMultiple', source.allowMultiple);
+    onChange('hasConfig', source.hasConfig);
+    onChange('configTemplate', source.configTemplate || '');
+    onChange('defaultConfig', source.defaultConfig ? JSON.stringify(source.defaultConfig, null, 2) : '');
+    onChange('displayName', '');
+    onChange('description', '');
+  };
 
   if (!isOpen) return null;
 
@@ -207,6 +222,37 @@ const WidgetFormModal = ({
                 disabled={mode === 'edit'}
               />
             </Field.Root>
+
+            {mode === 'add' && multiUseWidgets.length > 0 && (
+              <Box>
+                <Text fontSize="xs" color="textMuted" mb={1}>
+                  Or pre-fill from an existing multi-use widget:
+                </Text>
+                <NativeSelectRoot size="sm">
+                  <NativeSelectField
+                    value=""
+                    onChange={e => {
+                      if (e.target.value) handlePreFill(e.target.value);
+                      e.target.value = '';
+                    }}
+                    bg="inputBg"
+                  >
+                    <option value="" disabled>Select widget to pre-fill...</option>
+                    {multiUseWidgets.map(w => (
+                      <option key={w.name} value={w.name}>{w.displayName} ({w.name})</option>
+                    ))}
+                  </NativeSelectField>
+                </NativeSelectRoot>
+              </Box>
+            )}
+
+            {mode === 'add' && formData.name === 'trainingGoals' && (
+              <Box p={2} bg="infoBg" border="1px solid" borderColor="infoBorder" borderRadius="md">
+                <Text fontSize="xs" color="infoText">
+                  After adding, click the pencil icon on this widget to configure its goals using the visual editor.
+                </Text>
+              </Box>
+            )}
 
             <Field.Root>
               <Field.Label color="text">Display Name*</Field.Label>

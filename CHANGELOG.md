@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.8] — 2026-04-28
+
+### Added
+
+- **Training Goals visual editor** — clicking the pencil icon on any `trainingGoals` widget in Settings → Widgets now opens a purpose-built four-tab modal (Weekly / Monthly / Yearly / Lifetime). Each goal entry supports: label, enabled toggle, goal type (distance / elevation / movingTime / numberOfActivities / calories), unit (km / m / mi / ft / hour / minute), goal value, sport type multi-select, and optional date range restriction. Multiple `trainingGoals` widget instances are supported.
+- **Add Widget pre-fill pulldown** — the Add Widget form now includes a dropdown listing all `allowMultiple: true` widget definitions. Selecting one pre-fills all technical fields (config template, default config, flags) so the user only needs to supply a unique Display Name and Description.
+- **"Sync to defaults" button in Dashboard Layout Editor** — when a widget's stored config in `config.yaml` has drifted from the current widget definition's `defaultConfig` (e.g. after updating training goals), an orange "Sync to defaults" button appears next to the Configuration toggle. Clicking it replaces the widget's config with a deep copy of the current definition defaults and marks the layout as dirty.
+- **Nested object display in Dashboard Layout Editor** — widget config values that are nested objects (e.g. the `goals` structure of Training Goals) now render as a formatted, scrollable JSON preview instead of `[object Object]`.
+
+### Fixed
+
+- **Widget deletion by index** — `handleDeleteWidget` now filters by array index instead of widget name, so deleting one of multiple `allowMultiple` widgets with the same name no longer removes all instances.
+- **Expand/collapse keyed by index** — expand/collapse state in the Widget Definitions editor now uses array index as the key, so multiple widgets sharing the same `name` toggle independently.
+- **Duplicate name validation for `allowMultiple` widgets** — the validator now permits adding a second widget with the same `name` when `allowMultiple: true`; it enforces Display Name uniqueness per name instead.
+- **YAML serialization of object arrays** — `widgetDefinitionsManager.js` `toYAML()` was calling `.toString()` on object items in arrays, producing `- [object Object]`. Fixed to serialize each property as a proper YAML block sequence entry.
+- **`config.yaml` complex config formatting** — `update-section` route was using `JSON.stringify` for nested config objects, collapsing training goals onto a single line. Replaced with a recursive formatter that expands objects and arrays into readable YAML flow style.
+- **Dev server OOM crash on navigation** — `TrainingGoalsConfigModal` is now loaded via `next/dynamic({ ssr: false })` and `DateInput` (`react-datepicker` + `date-fns`, 32 MB) is replaced with a native `<input type="date">` in `TrainingGoalEntryEditor`, preventing heap exhaustion when Turbopack compiled the training goals chunk.
+
+---
+
 ## [1.2.7] — 2026-04-18
 
 ### Added

@@ -369,6 +369,66 @@ export async function POST(request) {
       }
     }
     
+    // Recursively format a widget config value as readable YAML flow style.
+    // Objects expand to multiple lines; goal entry arrays put one item per line;
+    // primitive arrays stay inline: ['Ride', 'VirtualRide'].
+    function formatWidgetConfigValue(value, baseSpaces) {
+      if (value === null || value === undefined) return 'null';
+      if (typeof value === 'boolean' || typeof value === 'number') return String(value);
+      if (typeof value === 'string') return `'${value}'`;
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) return '[]';
+        if (typeof value[0] === 'object' && value[0] !== null) {
+          // Array of objects (e.g. goal entries) — one item per line, inline flow
+          const innerSpaces = baseSpaces + '  ';
+          const lines = ['['];
+          value.forEach(item => {
+            const fields = Object.entries(item).map(([k, v]) => {
+              if (v === null || v === undefined) return `${k}: null`;
+              if (Array.isArray(v)) {
+                if (v.length === 0) return `${k}: []`;
+                return `${k}: [${v.map(i => typeof i === 'string' ? `'${i}'` : String(i)).join(', ')}]`;
+              }
+              if (typeof v === 'object') {
+                const nested = Object.entries(v).map(([nk, nv]) => `${nk}: '${nv}'`).join(', ');
+                return `${k}: { ${nested} }`;
+              }
+              if (typeof v === 'string') return `${k}: '${v}'`;
+              return `${k}: ${v}`;
+            }).join(', ');
+            lines.push(`${innerSpaces}{ ${fields} },`);
+          });
+          lines.push(`${baseSpaces}]`);
+          return lines.join('\n');
+        }
+        // Primitive array — inline single quotes
+        return `[${value.map(v => typeof v === 'string' ? `'${v}'` : String(v)).join(', ')}]`;
+      }
+
+      if (typeof value === 'object') {
+        const entries = Object.entries(value);
+        if (entries.length === 0) return '{}';
+        const innerSpaces = baseSpaces + '  ';
+        const lines = ['{'];
+        entries.forEach(([k, v]) => {
+          const fv = formatWidgetConfigValue(v, innerSpaces);
+          if (fv.includes('\n')) {
+            const vLines = fv.split('\n');
+            lines.push(`${innerSpaces}'${k}': ${vLines[0]}`);
+            for (let j = 1; j < vLines.length - 1; j++) lines.push(vLines[j]);
+            lines.push(vLines[vLines.length - 1] + ',');
+          } else {
+            lines.push(`${innerSpaces}'${k}': ${fv},`);
+          }
+        });
+        lines.push(`${baseSpaces}}`);
+        return lines.join('\n');
+      }
+
+      return String(value);
+    }
+
     // Helper function to add a YAML field with proper formatting
     function addYamlField(result, baseIndent, key, value) {
       // Special handling for dashboard.layout - use JSON-like formatting or null
@@ -413,31 +473,14 @@ export async function POST(request) {
             
             // Handle config if present
             if (widget.config && Object.keys(widget.config).length > 0) {
+              const configBodySpaces = objIndent + '  ';
+              const configFormatted = formatWidgetConfigValue(widget.config, configBodySpaces);
               result.push(`${objIndent}"config":`);
-              result.push(`${objIndent}  {`);
-              
-              const configKeys = Object.keys(widget.config);
-              configKeys.forEach((configKey, idx) => {
-                const configValue = widget.config[configKey];
-                const isLast = idx === configKeys.length - 1;
-                const comma = isLast ? ',' : ',';
-                
-                if (Array.isArray(configValue)) {
-                  // Format arrays inline
-                  const arrayStr = JSON.stringify(configValue);
-                  result.push(`${objIndent}    "${configKey}": ${arrayStr}${comma}`);
-                } else if (typeof configValue === 'object' && configValue !== null) {
-                  // Format nested objects
-                  result.push(`${objIndent}    "${configKey}": ${JSON.stringify(configValue)}${comma}`);
-                } else if (typeof configValue === 'string') {
-                  result.push(`${objIndent}    "${configKey}": "${configValue}"${comma}`);
-                } else {
-                  // Numbers, booleans, null
-                  result.push(`${objIndent}    "${configKey}": ${configValue}${comma}`);
-                }
+              const configLines = configFormatted.split('\n');
+              configLines.forEach((line, i) => {
+                result.push(i === 0 ? `${configBodySpaces}${line}` : line);
               });
-              
-              result.push(`${objIndent}  },`);
+              result[result.length - 1] += ',';
             }
             
             // Closing brace

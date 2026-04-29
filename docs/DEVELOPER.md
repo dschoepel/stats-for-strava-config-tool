@@ -454,6 +454,67 @@ function MyComponent() {
   - `message` (string): Text to display
   - `type` (string): 'success' | 'error' | 'warning' | 'info'
 
+## Widget Definitions System
+
+### Overview
+
+Widget definitions are stored in `{defaultPath}/settings/widget-definitions.yaml` and loaded at runtime by `src/utils/widgetDefinitionsManager.js`. Each definition has the shape:
+
+```javascript
+{
+  name: string,           // camelCase identifier
+  displayName: string,
+  description: string,
+  allowMultiple: boolean, // whether multiple instances can exist in the dashboard
+  hasConfig: boolean,
+  configTemplate: string, // optional YAML schema (shown in Dashboard Layout Editor)
+  defaultConfig: object   // optional initial values when widget is added to layout
+}
+```
+
+### Training Goals Widget
+
+The `trainingGoals` widget has a complex `defaultConfig`:
+
+```javascript
+{
+  goals: {
+    weekly: [],    // array of goal entry objects
+    monthly: [],
+    yearly: [],
+    lifetime: []
+  }
+}
+```
+
+Each goal entry: `{ label, enabled, type, unit?, goal, sportTypesToInclude, restrictToDateRange? }`
+
+Valid `type` values: `distance`, `elevation`, `movingTime`, `numberOfActivities`, `calories`  
+Valid `unit` values: `km`, `m`, `mi`, `ft`, `hour`, `minute` (not applicable for `numberOfActivities`/`calories`)
+
+### Training Goals Editor Components
+
+| File | Role |
+|------|------|
+| `src/utils/trainingGoalsValidation.js` | Constants (GOAL_TYPES, UNIT_TYPES, PERIODS) and `validateGoalEntry` / `validateTrainingGoalsConfig` |
+| `src/components/widgets/training-goals/TrainingGoalEntryEditor.jsx` | Expandable card for a single goal entry |
+| `src/components/widgets/training-goals/GoalPeriodList.jsx` | Manages the list of goals for one period (add/remove/reorder) |
+| `src/components/widgets/TrainingGoalsConfigModal.jsx` | Four-tab modal; loaded via `next/dynamic({ ssr: false })` to avoid pulling `react-datepicker`/`date-fns` into the main bundle |
+
+### YAML Serialization
+
+`widgetDefinitionsManager.js` uses a hand-written `toYAML()` / `fromYAML()` pair rather than the `yaml` library for serialization (to preserve comment structure). The `serializeValue()` helper handles nested arrays of objects: the first property of each item uses `- key: val` and subsequent properties use 4-space continuation indent aligned with the text after the dash. The `fromYAML()` parser delegates `defaultConfig` blocks to `YAML.parse()` (the library) after stripping 4 leading spaces.
+
+### config.yaml Layout Serialization
+
+`app/api/update-section/route.js` serializes `dashboard.layout` with `addYamlField()`. The `formatWidgetConfigValue()` helper (defined just above `addYamlField`) handles nested objects recursively: objects expand to multi-line flow style with single-quoted keys; arrays of objects render one item per line as inline flow mappings; primitive arrays stay inline.
+
+### Bundle Size Caution
+
+`react-datepicker` pulls in `date-fns` (~32 MB). Any component that imports `DateInput` directly will add this to the compiled chunk. In the training goals editor, date range inputs use a native `<Input type="date">` instead to avoid this. If you need the full date picker in a new feature, wrap the component with `next/dynamic({ ssr: false })`.
+
+---
+
 ## Reusable Components
 
 ### Form Field Components

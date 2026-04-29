@@ -25,15 +25,32 @@ export function validateWidgetForm(formData, existingWidgets, editingName = null
     };
   }
 
-  // Check for duplicate names (skip if editing the same widget)
+  // For allowMultiple widgets, multiple instances with the same name are permitted.
+  // For single-instance widgets, block duplicate names (skip when editing that same widget).
   const isDuplicate = existingWidgets.some(
-    w => w.name === formData.name && w.name !== editingName
+    w => w.name === formData.name && w.name !== editingName && !w.allowMultiple
   );
   if (isDuplicate) {
     return {
       isValid: false,
       error: `A widget with the name "${formData.name}" already exists`
     };
+  }
+
+  // For allowMultiple widgets, display name must be unique among instances with the same name
+  const isAllowMultiple = formData.allowMultiple ||
+    existingWidgets.some(w => w.name === formData.name && w.allowMultiple);
+  if (isAllowMultiple && editingName === null) {
+    const isDuplicateDisplayName = existingWidgets.some(
+      w => w.name === formData.name &&
+        w.displayName.trim().toLowerCase() === formData.displayName.trim().toLowerCase()
+    );
+    if (isDuplicateDisplayName) {
+      return {
+        isValid: false,
+        error: `A "${formData.name}" widget with display name "${formData.displayName}" already exists. Use a unique display name.`
+      };
+    }
   }
 
   return { isValid: true, error: null };

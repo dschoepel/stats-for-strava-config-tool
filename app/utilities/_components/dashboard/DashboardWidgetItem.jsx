@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Box, Flex, Text, Button, Input, VStack, NativeSelectRoot, NativeSelectField } from '@chakra-ui/react';
-import { MdDragIndicator, MdExpandMore, MdChevronRight, MdArrowUpward, MdArrowDownward, MdDelete, MdClose } from 'react-icons/md';
+import { MdDragIndicator, MdExpandMore, MdChevronRight, MdArrowUpward, MdArrowDownward, MdDelete, MdClose, MdSync } from 'react-icons/md';
 
 /**
  * DashboardWidgetItem - Displays a single widget in the dashboard layout editor
@@ -23,6 +23,7 @@ const DashboardWidgetItem = ({
   onWidthChange,
   onEnabledToggle,
   onConfigChange,
+  onResetToDefaults,
   onToggleConfigEditor,
   onDragStart,
   onDragOver,
@@ -34,6 +35,10 @@ const DashboardWidgetItem = ({
   const widgetDef = widgetDefinitions[widget.widget];
   const displayName = widgetDef?.displayName || widget.widget;
   const description = widgetDef?.description || '';
+
+  const configDiffersFromDefault = widgetDef?.defaultConfig != null &&
+    widget.config != null &&
+    JSON.stringify(widget.config) !== JSON.stringify(widgetDef.defaultConfig);
 
   return (
     <Box
@@ -189,15 +194,27 @@ const DashboardWidgetItem = ({
           {/* Widget Configuration */}
           {widgetDef?.hasConfig && widget.config !== undefined && (
             <Box mt={3} pt={3} borderTopWidth="1px" borderColor="border">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onToggleConfigEditor(index)}
-                mb={expandedConfigs[index] ? 2 : 0}
-                leftIcon={expandedConfigs[index] ? <MdExpandMore /> : <MdChevronRight />}
-              >
-                Configuration
-              </Button>
+              <Flex align="center" justify="space-between" mb={expandedConfigs[index] ? 2 : 0}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onToggleConfigEditor(index)}
+                  leftIcon={expandedConfigs[index] ? <MdExpandMore /> : <MdChevronRight />}
+                >
+                  Configuration
+                </Button>
+                {configDiffersFromDefault && (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    colorPalette="orange"
+                    onClick={() => onResetToDefaults(index)}
+                    title="This widget's config differs from the current widget definition defaults. Click to sync."
+                  >
+                    <MdSync /> Sync to defaults
+                  </Button>
+                )}
+              </Flex>
 
               {expandedConfigs[index] && (
                 <VStack align="stretch" gap={3} pl={4}>
@@ -307,6 +324,24 @@ const DashboardWidgetItem = ({
                               ))}
                             </Flex>
                           </VStack>
+                        ) : typeof value === 'object' && value !== null ? (
+                          <Box
+                            as="pre"
+                            bg="inputBg"
+                            p={2}
+                            borderRadius="md"
+                            border="1px solid"
+                            borderColor="border"
+                            fontSize="xs"
+                            fontFamily="monospace"
+                            whiteSpace="pre-wrap"
+                            color="text"
+                            maxH="200px"
+                            overflowY="auto"
+                            flex="1"
+                          >
+                            {JSON.stringify(value, null, 2)}
+                          </Box>
                         ) : (
                           <Input
                             type="text"
@@ -353,6 +388,7 @@ DashboardWidgetItem.propTypes = {
   onWidthChange: PropTypes.func.isRequired,
   onEnabledToggle: PropTypes.func.isRequired,
   onConfigChange: PropTypes.func.isRequired,
+  onResetToDefaults: PropTypes.func.isRequired,
   onToggleConfigEditor: PropTypes.func.isRequired,
   onDragStart: PropTypes.func.isRequired,
   onDragOver: PropTypes.func.isRequired,

@@ -165,6 +165,17 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
     }));
   }, []);
 
+  const handleResetConfigToDefaults = useCallback((index) => {
+    setLayout(prevLayout => {
+      const def = widgetDefinitions[prevLayout[index].widget];
+      if (!def?.defaultConfig) return prevLayout;
+      const newLayout = [...prevLayout];
+      newLayout[index] = { ...newLayout[index], config: JSON.parse(JSON.stringify(def.defaultConfig)) };
+      return newLayout;
+    });
+    setIsDirty(true);
+  }, [widgetDefinitions]);
+
   const handleConfigChange = useCallback((index, configKey, value) => {
     setLayout(prevLayout => {
       const newLayout = [...prevLayout];
@@ -313,6 +324,7 @@ function DashboardEditor({ dashboardLayout, onClose, onSave }) {
                     onWidthChange={handleWidthChange}
                     onEnabledToggle={handleEnabledToggle}
                     onConfigChange={handleConfigChange}
+                    onResetToDefaults={handleResetConfigToDefaults}
                     onToggleConfigEditor={toggleConfigEditor}
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
