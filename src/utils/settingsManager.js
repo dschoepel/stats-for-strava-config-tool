@@ -78,9 +78,6 @@ const getDefaultSettings = () => ({
     wordWrap: true,
     highlightSearch: true,
   },
-  validation: {
-    maxZwiftLevel: 100, // Maximum Zwift level (can increase in future)
-  }
 });
 
 // Maintain backwards compatibility

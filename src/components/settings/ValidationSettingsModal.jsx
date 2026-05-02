@@ -5,8 +5,6 @@ import {
   Heading,
   Text,
   Button,
-  Field,
-  Input,
   Flex,
   Icon,
 } from '@chakra-ui/react';
@@ -46,19 +44,6 @@ const ValidationSettingsModal = ({ isOpen, onClose, embedded = false }) => {
     onClose();
   };
 
-  const handleChange = (path, value) => {
-    const keys = path.split('.');
-    const newSettings = { ...settings };
-    let current = newSettings;
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) current[keys[i]] = {};
-      current = current[keys[i]];
-    }
-    current[keys[keys.length - 1]] = value;
-    setSettings(newSettings);
-    setIsDirty(true);
-  };
-
   const handleSave = async () => {
     const success = await saveSettings(settings);
     if (success) {
@@ -80,22 +65,9 @@ const ValidationSettingsModal = ({ isOpen, onClose, embedded = false }) => {
             Configure validation limits that may change in the future. These values affect schema validation when editing configuration files.
           </Text>
 
-          {/* Maximum Zwift Level Setting */}
-          <Field.Root>
-            <Field.Label fontWeight="500" mb={2}>Maximum Zwift Level</Field.Label>
-            <Input
-              type="number"
-              min="1"
-              max="200"
-              value={settings.validation?.maxZwiftLevel || 100}
-              onChange={(e) => handleChange('validation.maxZwiftLevel', parseInt(e.target.value))}
-              bg="inputBg"
-              width={{ base: "100%", sm: "150px" }}
-            />
-            <Field.HelperText color="textMuted" fontSize="sm" mt={1}>
-              The maximum allowed Zwift level. Currently capped at {settings.validation?.maxZwiftLevel || 100}. Zwift may increase this limit in the future.
-            </Field.HelperText>
-          </Field.Root>
+          <Text fontSize="sm" color="textMuted" fontStyle="italic">
+            No validation limits are currently configured.
+          </Text>
         </VStack>
 
         {/* Modal Footer */}
@@ -192,22 +164,9 @@ const ValidationSettingsModal = ({ isOpen, onClose, embedded = false }) => {
             Configure validation limits that may change in the future. These values affect schema validation when editing configuration files.
           </Text>
 
-          {/* Maximum Zwift Level Setting */}
-          <Field.Root>
-            <Field.Label fontWeight="500" mb={2}>Maximum Zwift Level</Field.Label>
-            <Input
-              type="number"
-              min="1"
-              max="200"
-              value={settings.validation?.maxZwiftLevel || 100}
-              onChange={(e) => handleChange('validation.maxZwiftLevel', parseInt(e.target.value))}
-              bg="inputBg"
-              width={{ base: "100%", sm: "150px" }}
-            />
-            <Field.HelperText color="textMuted" fontSize="sm" mt={1}>
-              The maximum allowed Zwift level. Currently capped at {settings.validation?.maxZwiftLevel || 100}. Zwift may increase this limit in the future.
-            </Field.HelperText>
-          </Field.Root>
+          <Text fontSize="sm" color="textMuted" fontStyle="italic">
+            No validation limits are currently configured.
+          </Text>
         </VStack>
 
         {/* Modal Footer */}

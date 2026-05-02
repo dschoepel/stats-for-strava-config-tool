@@ -1,45 +1,34 @@
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import React, { useCallback, memo } from 'react';
 import { Box, Text, Input, Flex, VStack, Heading, Icon } from '@chakra-ui/react';
 import { MdInfo } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
-import { loadSettings } from '../../../src/utils/settingsManager';
 
 /**
  * ZwiftConfigEditor - Handles Zwift integration configuration fields
  * Uses BaseConfigEditor for standard field rendering
  */
-const ZwiftConfigEditor = ({ 
-  initialData, 
-  onSave, 
-  onCancel, 
+const ZwiftConfigEditor = ({
+  initialData,
+  onSave,
+  onCancel,
   isLoading,
-  onDirtyChange 
+  onDirtyChange
 }) => {
-  const [maxZwiftLevel, setMaxZwiftLevel] = useState(100);
-
-  // Load max Zwift level from settings
-  useEffect(() => {
-    queueMicrotask(() => {
-      const settings = loadSettings();
-      setMaxZwiftLevel(settings.validation?.maxZwiftLevel || 100);
-    });
-  }, []);
-
   // Memoize custom validation function to prevent BaseConfigEditor re-renders
   const validateZwiftFields = useCallback((formData, getNestedValue) => {
     const errors = {};
-    
+
     const level = getNestedValue(formData, 'level');
     const racingScore = getNestedValue(formData, 'racingScore');
-    
-    // Validate level range if provided
+
+    // Validate level is at least 1 if provided (Zwift has no upper cap)
     if (level !== null && level !== undefined && level !== '') {
       const levelNum = parseInt(level);
-      if (isNaN(levelNum) || levelNum < 1 || levelNum > maxZwiftLevel) {
-        errors['level'] = `Zwift level must be between 1 and ${maxZwiftLevel}`;
+      if (isNaN(levelNum) || levelNum < 1) {
+        errors['level'] = 'Zwift level must be 1 or higher';
       }
     }
-    
+
     // Validate racing score range if provided
     if (racingScore !== null && racingScore !== undefined && racingScore !== '') {
       const scoreNum = parseInt(racingScore);
@@ -49,7 +38,7 @@ const ZwiftConfigEditor = ({
     }
 
     return errors;
-  }, [maxZwiftLevel]); // Depends on maxZwiftLevel for validation
+  }, []);
 
   return (
     <BaseConfigEditor
@@ -82,25 +71,24 @@ const ZwiftConfigEditor = ({
               <Box>
                 <Flex align="center" gap={2} mb={1}>
                   <Text fontWeight="500">Zwift Level</Text>
-                  <Text 
-                    fontSize="sm" 
-                    color="textMuted" 
+                  <Text
+                    fontSize="sm"
+                    color="textMuted"
                     cursor="help"
-                    title="Your Zwift level (1 - 100). Will be used to render your Zwift badge. Leave empty to disable this feature"
+                    title="Your Zwift level (1 or higher). Will be used to render your Zwift badge. Leave empty to disable this feature"
                   >
                     ⓘ
                   </Text>
                 </Flex>
                 <Text fontSize="sm" color="textMuted" mb={2}>
-                  Your Zwift level (1 - {maxZwiftLevel}). Will be used to render your Zwift badge. Leave empty to disable this feature.
+                  Your Zwift level (1 or higher). Will be used to render your Zwift badge. Leave empty to disable this feature.
                 </Text>
                 <Input
                   type="number"
                   value={levelValue === null || levelValue === undefined ? '' : levelValue}
                   onChange={(e) => handleFieldChange('level', e.target.value === '' ? null : parseInt(e.target.value))}
-                  placeholder={`Enter your Zwift level (1-${maxZwiftLevel})`}
+                  placeholder="Enter your Zwift level (1 or higher)"
                   min="1"
-                  max={maxZwiftLevel}
                   borderColor={errors['level'] ? 'red.500' : 'border'}
                   bg="inputBg"
                 />

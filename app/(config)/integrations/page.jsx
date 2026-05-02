@@ -16,12 +16,12 @@ export default function IntegrationsPage() {
   const { sectionData, saveSectionData, isLoadingSectionData, loadSectionData, sectionToFileMap } = useConfig()
   const { setHasUnsavedChanges, checkAndConfirmNavigation } = useDirtyState()
 
-  // Load section data if not already loaded
+  // Reload on every navigation to pick up external file edits
   useEffect(() => {
-    if (sectionToFileMap.size > 0 && !sectionData.integrations) {
+    if (sectionToFileMap.size > 0) {
       loadSectionData('Integrations')
     }
-  }, [sectionToFileMap, sectionData.integrations, loadSectionData])
+  }, [sectionToFileMap, loadSectionData])
 
   const handleSave = (data) => saveSectionData('integrations', data)
   const handleCancel = () => {
