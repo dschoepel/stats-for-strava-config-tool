@@ -16,12 +16,12 @@ export default function DaemonPage() {
   const { sectionData, saveSectionData, isLoadingSectionData, loadSectionData, sectionToFileMap } = useConfig()
   const { setHasUnsavedChanges, checkAndConfirmNavigation } = useDirtyState()
 
-  // Load section data if not already loaded
+  // Reload on every navigation to pick up external file edits
   useEffect(() => {
-    if (sectionToFileMap.size > 0 && !sectionData.daemon) {
+    if (sectionToFileMap.size > 0) {
       loadSectionData('Scheduling Daemon')
     }
-  }, [sectionToFileMap, sectionData.daemon, loadSectionData])
+  }, [sectionToFileMap, loadSectionData])
 
   const handleSave = (data) => saveSectionData('daemon', data)
   const handleCancel = () => {

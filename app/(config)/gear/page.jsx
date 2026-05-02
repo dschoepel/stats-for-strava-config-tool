@@ -16,12 +16,12 @@ export default function GearPage() {
   const { sectionData, saveSectionData, isLoadingSectionData, loadSectionData, sectionToFileMap } = useConfig()
   const { setHasUnsavedChanges, checkAndConfirmNavigation } = useDirtyState()
 
-  // Load section data if not already loaded
+  // Reload on every navigation to pick up external file edits
   useEffect(() => {
-    if (sectionToFileMap.size > 0 && !sectionData.gear) {
+    if (sectionToFileMap.size > 0) {
       loadSectionData('Gear')
     }
-  }, [sectionToFileMap, sectionData.gear, loadSectionData])
+  }, [sectionToFileMap, loadSectionData])
 
   const handleSave = (data) => saveSectionData('gear', data)
   const handleCancel = () => {

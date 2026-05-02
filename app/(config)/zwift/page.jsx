@@ -16,12 +16,12 @@ export default function ZwiftPage() {
   const { sectionData, saveSectionData, isLoadingSectionData, loadSectionData, sectionToFileMap } = useConfig()
   const { setHasUnsavedChanges, checkAndConfirmNavigation } = useDirtyState()
 
-  // Load section data if not already loaded
+  // Reload on every navigation to pick up external file edits
   useEffect(() => {
-    if (sectionToFileMap.size > 0 && !sectionData.zwift) {
+    if (sectionToFileMap.size > 0) {
       loadSectionData('Zwift')
     }
-  }, [sectionToFileMap, sectionData.zwift, loadSectionData])
+  }, [sectionToFileMap, loadSectionData])
 
   const handleSave = (data) => saveSectionData('zwift', data)
   const handleCancel = () => {

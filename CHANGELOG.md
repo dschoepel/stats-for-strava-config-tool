@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.10] — 2026-05-02
+
+### Changed
+
+- **Zwift level cap removed** — the Zwift Level field now accepts any value ≥ 1 with no upper limit, reflecting Zwift's removal of the level 100 cap. Help text and placeholder updated to read "1 or higher".
+- **Validation Settings tab simplified** — the "Maximum Zwift Level" setting has been removed from Settings → Validation since there is no longer a configurable cap. The tab now shows a placeholder for future validation settings.
+- **Config pages always reload from disk on navigation** — all nine configuration pages (General, Athlete, Appearance, Import, Metrics, Gear, Integrations, Scheduling Daemon, Zwift) previously cached section data after the first load and would show stale values if the config file was edited externally. They now re-read from disk on every navigation.
+
+### Fixed
+
+- **Zwift level validation async bug** — `ZwiftConfigEditor` was calling `loadSettings()` without `await`, receiving a Promise instead of the actual settings object and always falling back to the default level cap of 100 regardless of what was configured in Validation Settings. The `maxZwiftLevel` concept has been removed entirely as part of the cap removal.
+
+---
+
 ## [1.2.9] — 2026-04-29
 
 ### Fixed
