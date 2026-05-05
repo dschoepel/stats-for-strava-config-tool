@@ -699,6 +699,19 @@ HeatmapTileLayerField.propTypes = {
 - Supports array of URLs
 - Add/remove layer functionality
 
+#### Heatmap initialCenter / initialZoom fields
+
+Two optional fields rendered inline in `AppearanceConfigEditor.jsx` after `enableGreyScale`.
+
+- **initialCenter** — two `<Input type="number">` fields (latitude −90/90, longitude −180/180) rendered side-by-side, plus a "Use My Location" button (browser Geolocation API) and a "Clear" button (resets both fields and `initialZoom` to null).
+- **initialZoom** — single `<Input type="number">` (1–18) with a zoom-level hint beneath it.
+
+**Cross-field validation** (in `useAppearanceConfig.js` → `validateAppearanceFields`):
+- If `initialCenter` is set, `initialZoom` is required (and vice versa).
+- Latitude must be in range −90 to 90; longitude in range −180 to 180.
+
+**Schema**: `src/schemas/configSchemas.js` → `appearanceSchema.properties.heatmap.properties.initialCenter` / `initialZoom`. Neither field is in `required` — both are optional when omitted entirely.
+
 #### PhotosDefaultFiltersField
 
 Combined field for default photo filters (sport types and country).
