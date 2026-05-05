@@ -370,6 +370,25 @@ export const appearanceSchema = {
           title: "Enable Grayscale",
           description: "Apply grayscale styling to the heatmap",
           default: true
+        },
+        initialCenter: {
+          type: ["array", "null"],
+          title: "Initial Center",
+          description: "Optional fixed center point [latitude, longitude] for the heatmap. When set together with initialZoom, the map will use this fixed viewport instead of auto-fitting to your most active area. Leave empty to auto-fit.",
+          items: { type: "number" },
+          minItems: 2,
+          maxItems: 2,
+          default: null,
+          examples: [[51.05, 3.72], null]
+        },
+        initialZoom: {
+          type: ["integer", "null"],
+          title: "Initial Zoom",
+          description: "Initial zoom level for the heatmap (1–18, where 1 is fully zoomed out and 18 is street-level). Must be used together with initialCenter.",
+          minimum: 1,
+          maximum: 18,
+          default: null,
+          examples: [12, null]
         }
       },
       required: ["polylineColor", "tileLayerUrl", "enableGreyScale"]

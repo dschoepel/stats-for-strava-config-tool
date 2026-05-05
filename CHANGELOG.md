@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.11] — 2026-05-05
+
+### Added
+
+- **Heatmap initial viewport settings** — two new optional fields in the Appearance → Heatmap section: `initialCenter` (latitude/longitude) and `initialZoom` (1–18). When both are set, the Stats for Strava heatmap opens at that fixed viewport instead of auto-fitting to the user's most active area. The fields must be used together — saving only one produces a validation error.
+- **"Use My Location" button** — clicking this button in the Initial Center row calls the browser Geolocation API and fills both latitude and longitude from the device's current position (rounded to 4 decimal places). A clear error message is shown if geolocation is unavailable or denied.
+- **Zoom level hint text** — helper text below the Initial Zoom input explains the Leaflet zoom scale: 1–5 for continent/country, 6–12 for region/city, 13–18 for street/building detail.
+
+---
+
 ## [1.2.10] — 2026-05-02
 
 ### Changed

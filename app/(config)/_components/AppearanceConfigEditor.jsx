@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, memo, lazy, Suspense } from 'react';
 import { Box, Button, Flex, Text, VStack, HStack, Icon, ColorPicker, Portal, parseColor, Input, Code, Badge, Spinner } from '@chakra-ui/react';
-import { MdInfo, MdWarning, MdDashboard, MdExpandMore, MdChevronRight, MdAdd, MdClose } from 'react-icons/md';
+import { MdInfo, MdWarning, MdDashboard, MdExpandMore, MdChevronRight, MdAdd, MdClose, MdMyLocation } from 'react-icons/md';
 import BaseConfigEditor from './BaseConfigEditor';
 import CountrySelector from '../../_components/fields/CountrySelector';
 const DashboardEditor = lazy(() => import('../../../app/utilities/_components/DashboardEditor'));
@@ -25,6 +25,7 @@ const AppearanceConfigEditor = ({
   const [showDashboardEditor, setShowDashboardEditor] = useState(false);
   const [dashboardJustSaved, setDashboardJustSaved] = useState(false);
   const [dashboardLayout, setDashboardLayout] = useState(initialData?.dashboard?.layout || []);
+  const [geoError, setGeoError] = useState(null);
   const countryChangeHandlerRef = useRef(null);
   const formDataRef = useRef(null);
   const [expandedGroups, setExpandedGroups] = useState({
@@ -537,6 +538,143 @@ const AppearanceConfigEditor = ({
                   
                   {/* enableGreyScale */}
                   {renderBasicField('heatmap.enableGreyScale', fieldSchema.properties.enableGreyScale)}
+
+                  {/* initialCenter */}
+                  {(() => {
+                    const initialCenterValue = getNestedValue(formData, 'heatmap.initialCenter');
+                    const lat = Array.isArray(initialCenterValue) ? initialCenterValue[0] : '';
+                    const lng = Array.isArray(initialCenterValue) ? initialCenterValue[1] : '';
+                    const centerSet = initialCenterValue !== null && initialCenterValue !== undefined;
+
+                    const handleLatChange = (e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        handleFieldChange('heatmap.initialCenter', null);
+                      } else {
+                        const parsed = parseFloat(val);
+                        if (!isNaN(parsed)) {
+                          handleFieldChange('heatmap.initialCenter', [parsed, Array.isArray(initialCenterValue) ? initialCenterValue[1] : 0]);
+                        }
+                      }
+                    };
+
+                    const handleLngChange = (e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        handleFieldChange('heatmap.initialCenter', null);
+                      } else {
+                        const parsed = parseFloat(val);
+                        if (!isNaN(parsed)) {
+                          handleFieldChange('heatmap.initialCenter', [Array.isArray(initialCenterValue) ? initialCenterValue[0] : 0, parsed]);
+                        }
+                      }
+                    };
+
+                    const handleUseMyLocation = () => {
+                      if (!navigator.geolocation) {
+                        setGeoError('Geolocation is not supported by your browser');
+                        return;
+                      }
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          const lat = Math.round(position.coords.latitude * 10000) / 10000;
+                          const lng = Math.round(position.coords.longitude * 10000) / 10000;
+                          handleFieldChange('heatmap.initialCenter', [lat, lng]);
+                          setGeoError(null);
+                        },
+                        () => setGeoError('Unable to retrieve your location')
+                      );
+                    };
+
+                    return (
+                      <Box mb={4}>
+                        <Text fontWeight="500" mb={1}>{fieldSchema.properties.initialCenter.title}</Text>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.properties.initialCenter.description}</Text>
+                        <Flex gap={2} wrap="wrap" align="center" mb={1}>
+                          <Input
+                            type="number"
+                            placeholder="Latitude (e.g. 51.05)"
+                            value={lat}
+                            onChange={handleLatChange}
+                            step="0.0001"
+                            min="-90"
+                            max="90"
+                            borderColor={errors['heatmap.initialCenter'] ? 'red.500' : 'border'}
+                            flex="1"
+                            minW="160px"
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Longitude (e.g. 3.72)"
+                            value={lng}
+                            onChange={handleLngChange}
+                            step="0.0001"
+                            min="-180"
+                            max="180"
+                            borderColor={errors['heatmap.initialCenter'] ? 'red.500' : 'border'}
+                            flex="1"
+                            minW="160px"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleUseMyLocation}
+                            flexShrink={0}
+                          >
+                            <Box as={MdMyLocation} mr={1} /> Use My Location
+                          </Button>
+                          {centerSet && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              colorPalette="red"
+                              onClick={() => {
+                                handleFieldChange('heatmap.initialCenter', null);
+                                handleFieldChange('heatmap.initialZoom', null);
+                              }}
+                              flexShrink={0}
+                            >
+                              <Box as={MdClose} mr={1} /> Clear
+                            </Button>
+                          )}
+                        </Flex>
+                        {geoError && <Text color="red.500" fontSize="sm" mb={1}>{geoError}</Text>}
+                        {errors['heatmap.initialCenter'] && (
+                          <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.initialCenter']}</Text>
+                        )}
+                      </Box>
+                    );
+                  })()}
+
+                  {/* initialZoom */}
+                  {(() => {
+                    const initialZoomValue = getNestedValue(formData, 'heatmap.initialZoom');
+                    return (
+                      <Box mb={4}>
+                        <Text fontWeight="500" mb={1}>{fieldSchema.properties.initialZoom.title}</Text>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.properties.initialZoom.description}</Text>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 12"
+                          value={initialZoomValue ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            handleFieldChange('heatmap.initialZoom', val === '' ? null : parseInt(val, 10));
+                          }}
+                          min="1"
+                          max="18"
+                          borderColor={errors['heatmap.initialZoom'] ? 'red.500' : 'border'}
+                          maxW="120px"
+                        />
+                        <Text fontSize="xs" color="textMuted" mt={1}>
+                          1–5: continent/country · 6–12: region/city · 13–18: street/building detail
+                        </Text>
+                        {errors['heatmap.initialZoom'] && (
+                          <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.initialZoom']}</Text>
+                        )}
+                      </Box>
+                    );
+                  })()}
                     </Box>
                   )}
                 </Box>

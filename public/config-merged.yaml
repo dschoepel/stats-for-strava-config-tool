@@ -270,6 +270,8 @@ appearance:
     polylineColor: "#fc6719"
     tileLayerUrl: https://tile.openstreetmap.org/{z}/{x}/{y}.png
     enableGreyScale: true
+    initialCenter: null
+    initialZoom: null
 
 #---------------------------------#
 # Photos Configuration Settings
