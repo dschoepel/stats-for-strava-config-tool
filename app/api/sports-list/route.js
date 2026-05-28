@@ -58,6 +58,26 @@ export async function GET(request) {
         return NextResponse.json({ success: true, sportsList: INITIAL_SPORTS_LIST });
       }
       
+      // Merge any new default sports into the stored list (non-destructive: only adds)
+      let mergeChanged = false;
+      for (const [category, defaultSports] of Object.entries(INITIAL_SPORTS_LIST)) {
+        if (!sportsList[category]) {
+          sportsList[category] = [...defaultSports];
+          mergeChanged = true;
+        } else {
+          for (const sport of defaultSports) {
+            if (!sportsList[category].includes(sport)) {
+              sportsList[category].push(sport);
+              mergeChanged = true;
+            }
+          }
+        }
+      }
+      if (mergeChanged) {
+        const yamlStr = yaml.dump(sportsList);
+        await fs.writeFile(filePath, yamlStr, 'utf-8');
+      }
+
       return NextResponse.json({ success: true, sportsList });
     } catch (error) {
       // File doesn't exist, return initial list

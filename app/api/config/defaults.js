@@ -51,7 +51,7 @@ export const INITIAL_SPORTS_LIST = {
     'Badminton', 'Pickleball', 'Racquetball', 'Squash', 'TableTennis', 'Tennis', 'Padel'
   ],
   Fitness: [
-    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining', 'Dance'
+    'Crossfit', 'WeightTraining', 'Workout', 'StairStepper', 'VirtualRow', 'Elliptical', 'HighIntensityIntervalTraining', 'Dance', 'PhysicalTherapy'
   ],
   'Mind & Body Sports': [
     'Pilates', 'Yoga'

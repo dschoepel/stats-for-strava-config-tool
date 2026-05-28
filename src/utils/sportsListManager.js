@@ -25,8 +25,8 @@ export async function readSportsList(settings = {}) {
 // Write sports list to server via API
 export async function writeSportsList(settings, sportsList) {
   try {
-    const defaultPath = settings.files?.defaultPath || '';
-    const filePath = `${defaultPath}/sports-list.yaml`;
+    const defaultPath = (settings.files?.defaultPath || '').replace(/[\\/]+$/, '').replace(/\\/g, '/');
+    const filePath = `${defaultPath}/settings/strava-sports-by-category.yaml`;
     const data = await saveSportsList(filePath, sportsList);
 
     if (!data.success) {

@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.12] — 2026-05-28
+
+### Added
+
+- **PhysicalTherapy sport type** — added to the Fitness category in the default sport types list (`INITIAL_SPORTS_LIST`).
+- **Auto-merge of new default sport types** — the sports list API now merges any sport types present in the built-in defaults but missing from a user's stored `strava-sports-by-category.yaml` on every load. New sport types added in future releases will automatically appear in existing users' lists without requiring a manual reset. The merge is additive only — user-added custom sports and categories are never removed.
+
+### Fixed
+
+- **Sports List editor save writing to wrong path** — `writeSportsList` was constructing `${defaultPath}/sports-list.yaml` as the save target. The POST handler derives `defaultPath` by walking two directory levels up from that path, which resolved to the parent of the config directory. Saves appeared to succeed but were silently written to the wrong location, causing changes to disappear on the next modal open. The path is now constructed as `${defaultPath}/settings/strava-sports-by-category.yaml`, consistent with how the initializer and GET handler locate the file.
+
+---
+
 ## [1.2.11] — 2026-05-05
 
 ### Added
