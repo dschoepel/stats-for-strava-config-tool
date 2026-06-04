@@ -699,7 +699,7 @@ HeatmapTileLayerField.propTypes = {
 - Supports array of URLs
 - Add/remove layer functionality
 
-#### Heatmap initialCenter / initialZoom fields
+#### Maps initialCenter / initialZoom fields
 
 Two optional fields rendered inline in `AppearanceConfigEditor.jsx` after `enableGreyScale`.
 
@@ -710,7 +710,9 @@ Two optional fields rendered inline in `AppearanceConfigEditor.jsx` after `enabl
 - If `initialCenter` is set, `initialZoom` is required (and vice versa).
 - Latitude must be in range −90 to 90; longitude in range −180 to 180.
 
-**Schema**: `src/schemas/configSchemas.js` → `appearanceSchema.properties.heatmap.properties.initialCenter` / `initialZoom`. Neither field is in `required` — both are optional when omitted entirely.
+**Schema**: `src/schemas/configSchemas.js` → `appearanceSchema.properties.maps.properties.heatmap.properties.initialCenter` / `initialZoom`. Neither field is in `required` — both are optional when omitted entirely.
+
+**Config path**: `appearance.maps.heatmap.initialCenter` / `appearance.maps.heatmap.initialZoom` (moved from `appearance.heatmap.*` in v1.2.13).
 
 #### PhotosDefaultFiltersField
 

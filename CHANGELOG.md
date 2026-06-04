@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.13] — 2026-06-04
+
+### Changed
+
+- **Appearance → Maps Settings (renamed from Heatmap Settings)** — the `appearance.heatmap` config key has been renamed to `appearance.maps` to align with the Stats for Strava developer's updated configuration structure. The fields `polylineColor`, `tileLayerUrl`, and `enableGreyScale` remain at the `maps` level; `initialCenter` and `initialZoom` move under `maps.heatmap`.
+- **Fallback config updated** — the bundled fallback config (used when the developer's default config cannot be fetched) has been replaced with the developer's latest published version, adding the `gear.recordingDevices` section, updating all documentation URLs to `docs.getsfs.app`, and listing new AI provider options (`grok`, `huggingFace`, `openAILike`, `openAIResponses`).
+- **Documentation URLs** — all 14 references to the old `statistics-for-strava-docs.robiningelbrecht.be` domain in `public/config.yaml` have been updated to `docs.getsfs.app`.
+
+### Fixed
+
+- **Automatic migration of existing configs** — opening the Appearance page with a config that still uses the old `appearance.heatmap` key automatically migrates the data to the new `appearance.maps` structure. The old `heatmap` key is removed and the new `maps` key is written on the next save — no manual YAML editing required.
+
+---
+
 ## [1.2.12] — 2026-05-28
 
 ### Added
