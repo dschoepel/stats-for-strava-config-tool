@@ -324,15 +324,15 @@ export const appearanceSchema = {
         }
       }
     },
-    heatmap: {
+    maps: {
       type: "object",
-      title: "Heatmap Settings",
-      description: "Configuration for activity heatmap visualization",
+      title: "Maps Settings",
+      description: "Configuration for all map visualizations",
       properties: {
         polylineColor: {
           type: "string",
           title: "Polyline Color",
-          description: "Color for route lines on the heatmap. Accepts any valid CSS color (e.g., 'red', '#FF0000', 'rgb(255,0,0)')",
+          description: "Color for route lines on the maps. Accepts any valid CSS color (e.g., 'red', '#FF0000', 'rgb(255,0,0)')",
           default: "#fc6719",
           pattern: "^(#[0-9A-Fa-f]{3,6}|rgb\\(|rgba\\(|hsl\\(|hsla\\(|[a-z]+).*$",
           examples: ["#fc6719", "red", "rgb(252, 103, 25)", "rgba(252, 103, 25, 0.8)"]
@@ -368,27 +368,34 @@ export const appearanceSchema = {
         enableGreyScale: {
           type: "boolean",
           title: "Enable Grayscale",
-          description: "Apply grayscale styling to the heatmap",
+          description: "Apply grayscale styling to the maps",
           default: true
         },
-        initialCenter: {
-          type: ["array", "null"],
-          title: "Initial Center",
-          description: "Optional fixed center point [latitude, longitude] for the heatmap. When set together with initialZoom, the map will use this fixed viewport instead of auto-fitting to your most active area. Leave empty to auto-fit.",
-          items: { type: "number" },
-          minItems: 2,
-          maxItems: 2,
-          default: null,
-          examples: [[51.05, 3.72], null]
-        },
-        initialZoom: {
-          type: ["integer", "null"],
-          title: "Initial Zoom",
-          description: "Initial zoom level for the heatmap (1–18, where 1 is fully zoomed out and 18 is street-level). Must be used together with initialCenter.",
-          minimum: 1,
-          maximum: 18,
-          default: null,
-          examples: [12, null]
+        heatmap: {
+          type: "object",
+          title: "Heatmap Settings",
+          description: "Heatmap-specific settings",
+          properties: {
+            initialCenter: {
+              type: ["array", "null"],
+              title: "Initial Center",
+              description: "Optional fixed center point [latitude, longitude] for the heatmap. When set together with initialZoom, the map will use this fixed viewport instead of auto-fitting to your most active area. Leave empty to auto-fit.",
+              items: { type: "number" },
+              minItems: 2,
+              maxItems: 2,
+              default: null,
+              examples: [[51.05, 3.72], null]
+            },
+            initialZoom: {
+              type: ["integer", "null"],
+              title: "Initial Zoom",
+              description: "Initial zoom level for the heatmap (1–18, where 1 is fully zoomed out and 18 is street-level). Must be used together with initialCenter.",
+              minimum: 1,
+              maximum: 18,
+              default: null,
+              examples: [12, null]
+            }
+          }
         }
       },
       required: ["polylineColor", "tileLayerUrl", "enableGreyScale"]

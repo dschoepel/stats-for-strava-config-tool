@@ -21,6 +21,26 @@ const AppearanceConfigEditor = ({
   onDirtyChange 
 }) => {
   const { sportsList, validateAppearanceFields } = useAppearanceConfig();
+
+  // Migrate old appearance.heatmap key to appearance.maps when loading a pre-existing config
+  const migratedInitialData = useMemo(() => {
+    if (!initialData?.heatmap) return initialData;
+    const { heatmap: oldHeatmap, ...rest } = initialData;
+    const existingMaps = initialData.maps || {};
+    return {
+      ...rest,
+      maps: {
+        polylineColor: existingMaps.polylineColor ?? oldHeatmap.polylineColor,
+        tileLayerUrl: existingMaps.tileLayerUrl ?? oldHeatmap.tileLayerUrl,
+        enableGreyScale: existingMaps.enableGreyScale ?? oldHeatmap.enableGreyScale,
+        heatmap: {
+          initialCenter: existingMaps.heatmap?.initialCenter ?? oldHeatmap.initialCenter ?? null,
+          initialZoom: existingMaps.heatmap?.initialZoom ?? oldHeatmap.initialZoom ?? null
+        }
+      }
+    };
+  }, [initialData]);
+
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showDashboardEditor, setShowDashboardEditor] = useState(false);
   const [dashboardJustSaved, setDashboardJustSaved] = useState(false);
@@ -32,7 +52,7 @@ const AppearanceConfigEditor = ({
     globalSettings: false,
     dateFormat: false,
     dashboard: false,
-    heatmap: false,
+    maps: false,
     photos: false,
     sportTypesSortingOrder: false
   });
@@ -49,7 +69,7 @@ const AppearanceConfigEditor = ({
       globalSettings: false,
       dateFormat: false,
       dashboard: false,
-      heatmap: false,
+      maps: false,
       photos: false,
       sportTypesSortingOrder: false
     });
@@ -60,7 +80,7 @@ const AppearanceConfigEditor = ({
       globalSettings: true,
       dateFormat: true,
       dashboard: true,
-      heatmap: true,
+      maps: true,
       photos: true,
       sportTypesSortingOrder: true
     });
@@ -137,7 +157,7 @@ const AppearanceConfigEditor = ({
     <>
       <BaseConfigEditor
         sectionName="appearance"
-        initialData={initialData}
+        initialData={migratedInitialData}
         onSave={onSave}
         onCancel={onCancel}
         isLoading={isLoading}
@@ -373,15 +393,15 @@ const AppearanceConfigEditor = ({
               );
             }
 
-            // Handle heatmap with special tileLayerUrl rendering
-            if (fieldName === 'heatmap') {
-              const tileLayerValue = getNestedValue(formData, 'heatmap.tileLayerUrl');
+            // Handle maps with special tileLayerUrl rendering
+            if (fieldName === 'maps') {
+              const tileLayerValue = getNestedValue(formData, 'maps.tileLayerUrl');
               const isArray = Array.isArray(tileLayerValue);
               
               return (
                 <Box key={fieldName} mb={4} borderWidth="1px" borderColor="border" borderRadius="md" overflow="hidden">
                   <Button
-                    onClick={() => toggleGroup('heatmap')}
+                    onClick={() => toggleGroup('maps')}
                     width="100%"
                     justifyContent="flex-start"
                     variant="ghost"
@@ -394,10 +414,10 @@ const AppearanceConfigEditor = ({
                     py={2}
                     wordBreak="break-word"
                   >
-                    <Box as={expandedGroups.heatmap ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
+                    <Box as={expandedGroups.maps ? MdExpandMore : MdChevronRight} mr={2} flexShrink={0} />
                     {fieldSchema.title}
                   </Button>
-                  {expandedGroups.heatmap && (
+                  {expandedGroups.maps && (
                     <Box p={4}>
                       {fieldSchema.description && (
                         <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.description}</Text>
@@ -414,7 +434,7 @@ const AppearanceConfigEditor = ({
                           </Text>
                         )}
                         {(() => {
-                          const currentColor = getNestedValue(formData, 'heatmap.polylineColor') || '#fc6719';
+                          const currentColor = getNestedValue(formData, 'maps.polylineColor') || '#fc6719';
                           let parsedColor;
                           try {
                             parsedColor = parseColor(currentColor);
@@ -425,7 +445,7 @@ const AppearanceConfigEditor = ({
                             <ColorPicker.Root 
                               value={parsedColor}
                               onValueChange={(details) => {
-                                handleFieldChange('heatmap.polylineColor', details.valueAsString);
+                                handleFieldChange('maps.polylineColor', details.valueAsString);
                               }}
                               maxW="300px"
                             >
@@ -456,14 +476,14 @@ const AppearanceConfigEditor = ({
                             </ColorPicker.Root>
                           );
                         })()}
-                        {errors['heatmap.polylineColor'] && (
-                          <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.polylineColor']}</Text>
+                        {errors['maps.polylineColor'] && (
+                          <Text color="red.500" fontSize="sm" mt={1}>{errors['maps.polylineColor']}</Text>
                         )}
                       </Box>
                   
                   {/* tileLayerUrl - special handling for oneOf (string or array) */}
                   <Box mb={4}>
-                    <Text fontWeight="500" mb={1} htmlFor="heatmap.tileLayerUrl">
+                    <Text fontWeight="500" mb={1} htmlFor="maps.tileLayerUrl">
                       {fieldSchema.properties.tileLayerUrl.oneOf[0].title || 'Tile Layer URL'}
                     </Text>
                     <Text fontSize="sm" color="textMuted" mb={2}>
@@ -473,15 +493,15 @@ const AppearanceConfigEditor = ({
                     {!isArray ? (
                       <>
                         <Input
-                          id="heatmap.tileLayerUrl"
+                          id="maps.tileLayerUrl"
                           value={tileLayerValue || ''}
-                          onChange={(e) => handleFieldChange('heatmap.tileLayerUrl', e.target.value)}
-                          borderColor={errors['heatmap.tileLayerUrl'] ? 'red.500' : 'border'}
+                          onChange={(e) => handleFieldChange('maps.tileLayerUrl', e.target.value)}
+                          borderColor={errors['maps.tileLayerUrl'] ? 'red.500' : 'border'}
                           placeholder="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
                           mb={2}
                         />
                         <Button
-                          onClick={() => handleFieldChange('heatmap.tileLayerUrl', [tileLayerValue || ''])}
+                          onClick={() => handleFieldChange('maps.tileLayerUrl', [tileLayerValue || ''])}
                           size={{ base: "xs", sm: "sm" }}
                           variant="outline"
                           width={{ base: "100%", sm: "auto" }}
@@ -502,7 +522,7 @@ const AppearanceConfigEditor = ({
                                 onChange={(e) => {
                                   const newArray = [...tileLayerValue];
                                   newArray[index] = e.target.value;
-                                  handleFieldChange('heatmap.tileLayerUrl', newArray);
+                                  handleFieldChange('maps.tileLayerUrl', newArray);
                                 }}
                                 placeholder={`Layer ${index + 1} URL`}
                                 flex="1"
@@ -510,7 +530,7 @@ const AppearanceConfigEditor = ({
                               <Button
                                 onClick={() => {
                                   const newArray = tileLayerValue.filter((_, i) => i !== index);
-                                  handleFieldChange('heatmap.tileLayerUrl', newArray.length === 1 ? newArray[0] : newArray);
+                                  handleFieldChange('maps.tileLayerUrl', newArray.length === 1 ? newArray[0] : newArray);
                                 }}
                                 size={{ base: "xs", sm: "sm" }}
                                 variant="outline"
@@ -524,7 +544,7 @@ const AppearanceConfigEditor = ({
                           ))}
                         </VStack>
                         <Button
-                          onClick={() => handleFieldChange('heatmap.tileLayerUrl', [...tileLayerValue, ''])}
+                          onClick={() => handleFieldChange('maps.tileLayerUrl', [...tileLayerValue, ''])}
                           size={{ base: "xs", sm: "sm" }}
                           variant="outline"
                           width={{ base: "100%", sm: "auto" }}
@@ -533,15 +553,15 @@ const AppearanceConfigEditor = ({
                         </Button>
                       </>
                     )}
-                    {errors['heatmap.tileLayerUrl'] && <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.tileLayerUrl']}</Text>}
+                    {errors['maps.tileLayerUrl'] && <Text color="red.500" fontSize="sm" mt={1}>{errors['maps.tileLayerUrl']}</Text>}
                   </Box>
                   
                   {/* enableGreyScale */}
-                  {renderBasicField('heatmap.enableGreyScale', fieldSchema.properties.enableGreyScale)}
+                  {renderBasicField('maps.enableGreyScale', fieldSchema.properties.enableGreyScale)}
 
                   {/* initialCenter */}
                   {(() => {
-                    const initialCenterValue = getNestedValue(formData, 'heatmap.initialCenter');
+                    const initialCenterValue = getNestedValue(formData, 'maps.heatmap.initialCenter');
                     const lat = Array.isArray(initialCenterValue) ? initialCenterValue[0] : '';
                     const lng = Array.isArray(initialCenterValue) ? initialCenterValue[1] : '';
                     const centerSet = initialCenterValue !== null && initialCenterValue !== undefined;
@@ -549,11 +569,11 @@ const AppearanceConfigEditor = ({
                     const handleLatChange = (e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        handleFieldChange('heatmap.initialCenter', null);
+                        handleFieldChange('maps.heatmap.initialCenter', null);
                       } else {
                         const parsed = parseFloat(val);
                         if (!isNaN(parsed)) {
-                          handleFieldChange('heatmap.initialCenter', [parsed, Array.isArray(initialCenterValue) ? initialCenterValue[1] : 0]);
+                          handleFieldChange('maps.heatmap.initialCenter', [parsed, Array.isArray(initialCenterValue) ? initialCenterValue[1] : 0]);
                         }
                       }
                     };
@@ -561,11 +581,11 @@ const AppearanceConfigEditor = ({
                     const handleLngChange = (e) => {
                       const val = e.target.value;
                       if (val === '') {
-                        handleFieldChange('heatmap.initialCenter', null);
+                        handleFieldChange('maps.heatmap.initialCenter', null);
                       } else {
                         const parsed = parseFloat(val);
                         if (!isNaN(parsed)) {
-                          handleFieldChange('heatmap.initialCenter', [Array.isArray(initialCenterValue) ? initialCenterValue[0] : 0, parsed]);
+                          handleFieldChange('maps.heatmap.initialCenter', [Array.isArray(initialCenterValue) ? initialCenterValue[0] : 0, parsed]);
                         }
                       }
                     };
@@ -579,7 +599,7 @@ const AppearanceConfigEditor = ({
                         (position) => {
                           const lat = Math.round(position.coords.latitude * 10000) / 10000;
                           const lng = Math.round(position.coords.longitude * 10000) / 10000;
-                          handleFieldChange('heatmap.initialCenter', [lat, lng]);
+                          handleFieldChange('maps.heatmap.initialCenter', [lat, lng]);
                           setGeoError(null);
                         },
                         () => setGeoError('Unable to retrieve your location')
@@ -588,8 +608,8 @@ const AppearanceConfigEditor = ({
 
                     return (
                       <Box mb={4}>
-                        <Text fontWeight="500" mb={1}>{fieldSchema.properties.initialCenter.title}</Text>
-                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.properties.initialCenter.description}</Text>
+                        <Text fontWeight="500" mb={1}>{fieldSchema.properties.heatmap.properties.initialCenter.title}</Text>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.properties.heatmap.properties.initialCenter.description}</Text>
                         <Flex gap={2} wrap="wrap" align="center" mb={1}>
                           <Input
                             type="number"
@@ -599,7 +619,7 @@ const AppearanceConfigEditor = ({
                             step="0.0001"
                             min="-90"
                             max="90"
-                            borderColor={errors['heatmap.initialCenter'] ? 'red.500' : 'border'}
+                            borderColor={errors['maps.heatmap.initialCenter'] ? 'red.500' : 'border'}
                             flex="1"
                             minW="160px"
                           />
@@ -611,7 +631,7 @@ const AppearanceConfigEditor = ({
                             step="0.0001"
                             min="-180"
                             max="180"
-                            borderColor={errors['heatmap.initialCenter'] ? 'red.500' : 'border'}
+                            borderColor={errors['maps.heatmap.initialCenter'] ? 'red.500' : 'border'}
                             flex="1"
                             minW="160px"
                           />
@@ -629,8 +649,8 @@ const AppearanceConfigEditor = ({
                               variant="outline"
                               colorPalette="red"
                               onClick={() => {
-                                handleFieldChange('heatmap.initialCenter', null);
-                                handleFieldChange('heatmap.initialZoom', null);
+                                handleFieldChange('maps.heatmap.initialCenter', null);
+                                handleFieldChange('maps.heatmap.initialZoom', null);
                               }}
                               flexShrink={0}
                             >
@@ -639,8 +659,8 @@ const AppearanceConfigEditor = ({
                           )}
                         </Flex>
                         {geoError && <Text color="red.500" fontSize="sm" mb={1}>{geoError}</Text>}
-                        {errors['heatmap.initialCenter'] && (
-                          <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.initialCenter']}</Text>
+                        {errors['maps.heatmap.initialCenter'] && (
+                          <Text color="red.500" fontSize="sm" mt={1}>{errors['maps.heatmap.initialCenter']}</Text>
                         )}
                       </Box>
                     );
@@ -648,29 +668,29 @@ const AppearanceConfigEditor = ({
 
                   {/* initialZoom */}
                   {(() => {
-                    const initialZoomValue = getNestedValue(formData, 'heatmap.initialZoom');
+                    const initialZoomValue = getNestedValue(formData, 'maps.heatmap.initialZoom');
                     return (
                       <Box mb={4}>
-                        <Text fontWeight="500" mb={1}>{fieldSchema.properties.initialZoom.title}</Text>
-                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.properties.initialZoom.description}</Text>
+                        <Text fontWeight="500" mb={1}>{fieldSchema.properties.heatmap.properties.initialZoom.title}</Text>
+                        <Text fontSize="sm" color="textMuted" mb={2}>{fieldSchema.properties.heatmap.properties.initialZoom.description}</Text>
                         <Input
                           type="number"
                           placeholder="e.g. 12"
                           value={initialZoomValue ?? ''}
                           onChange={(e) => {
                             const val = e.target.value;
-                            handleFieldChange('heatmap.initialZoom', val === '' ? null : parseInt(val, 10));
+                            handleFieldChange('maps.heatmap.initialZoom', val === '' ? null : parseInt(val, 10));
                           }}
                           min="1"
                           max="18"
-                          borderColor={errors['heatmap.initialZoom'] ? 'red.500' : 'border'}
+                          borderColor={errors['maps.heatmap.initialZoom'] ? 'red.500' : 'border'}
                           maxW="120px"
                         />
                         <Text fontSize="xs" color="textMuted" mt={1}>
                           1–5: continent/country · 6–12: region/city · 13–18: street/building detail
                         </Text>
-                        {errors['heatmap.initialZoom'] && (
-                          <Text color="red.500" fontSize="sm" mt={1}>{errors['heatmap.initialZoom']}</Text>
+                        {errors['maps.heatmap.initialZoom'] && (
+                          <Text color="red.500" fontSize="sm" mt={1}>{errors['maps.heatmap.initialZoom']}</Text>
                         )}
                       </Box>
                     );

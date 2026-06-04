@@ -48,7 +48,7 @@ function generateTableOfContents(configData) {
     { key: 'appearance', label: 'Appearance configuration settings', subsections: [
       { key: 'dateFormat', label: 'Date format configuration settings' },
       { key: 'dashboard', label: 'Dashboard configuration settings' },
-      { key: 'heatmap', label: 'Heatmap configuration settings' },
+      { key: 'maps', label: 'Maps configuration settings' },
       { key: 'photos', label: 'Photos configuration settings' }
     ]},
     { key: 'import', label: 'Import configuration settings' },
@@ -245,7 +245,7 @@ export async function POST(request) {
       appearance: [
         { key: 'dateFormat', label: 'Date Format Configuration Settings' },
         { key: 'dashboard', label: 'Dashboard Configuration Settings' },
-        { key: 'heatmap', label: 'Heatmap Configuration Settings' },
+        { key: 'maps', label: 'Maps Configuration Settings' },
         { key: 'photos', label: 'Photos Configuration Settings' }
       ],
       metrics: [{ key: 'eddington', label: 'Eddington Score Configuration Settings' }],

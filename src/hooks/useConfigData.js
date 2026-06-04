@@ -447,7 +447,12 @@ export const useConfigData = (fileCache, sectionToFileMap, showError, showSucces
         if (parentInfo) {
           // Extract keys that belong in parent file (not in any nested mapping)
           // IMPORTANT: Use originalNestedMappings (before filtering) to determine which keys to exclude
-          const nestedKeys = nestedMappings.map(([key]) => key.split('.')[1]);
+          // Only preserve nested keys that are present in the save data.
+          // Nested keys absent from data (e.g., old 'heatmap' after migration) are
+          // intentionally omitted so they are removed from the file rather than preserved.
+          const nestedKeys = nestedMappings
+            .map(([key]) => key.split('.')[1])
+            .filter(secondKey => secondKey in data);
           const allNestedKeys = originalNestedMappings.map(([key]) => key.split('.')[1]);
           const parentData = {};
           for (const [key, value] of Object.entries(data)) {

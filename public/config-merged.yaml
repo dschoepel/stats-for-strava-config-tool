@@ -264,14 +264,15 @@ appearance:
         enabled: true
 
 #---------------------------------#
-# Heatmap Configuration Settings
+# Maps Configuration Settings
 #---------------------------------#
-  heatmap:
+  maps:
     polylineColor: "#fc6719"
     tileLayerUrl: https://tile.openstreetmap.org/{z}/{x}/{y}.png
     enableGreyScale: true
-    initialCenter: null
-    initialZoom: null
+    heatmap:
+      initialCenter: null
+      initialZoom: null
 
 #---------------------------------#
 # Photos Configuration Settings

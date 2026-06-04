@@ -79,7 +79,7 @@ export async function POST(request) {
       athlete: 'Athlete Configuration Settings',
       dateFormat: 'Date Format Configuration Settings',
       dashboard: 'Dashboard Configuration Settings',
-      heatmap: 'Heatmap Configuration Settings',
+      maps: 'Maps Configuration Settings',
       photos: 'Photos Configuration Settings',
       eddington: 'Eddington Score Configuration Settings',
       stravaGear: 'Strava Gear Configuration Settings',
@@ -91,7 +91,7 @@ export async function POST(request) {
     
     const nestedSections = {
       general: ['athlete'],
-      appearance: ['dateFormat', 'dashboard', 'heatmap', 'photos'],
+      appearance: ['dateFormat', 'dashboard', 'maps', 'photos'],
       metrics: ['eddington'],
       gear: ['stravaGear', 'customGear'],
       integrations: ['notifications', 'ai'],
